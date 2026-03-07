@@ -148,7 +148,7 @@ To make OpenClaw pick up this skill in a workspace session, keep it under:
 - `<workspace>/skills/comfyui-skill-openclaw/`
 
 OpenClaw reads `SKILL.md` and then uses:
-- `scripts/registry.py list`
+- `scripts/registry.py list --agent`
 - `scripts/comfyui_client.py --workflow ... --args '...json...'`
 
 ---

@@ -37,7 +37,7 @@ If the user provides you with a new ComfyUI workflow JSON (API format) and asks 
 
 Before attempting to generate any image, you must **first query the registry** to understand which workflows are currently supported and what parameters they require:
 ```bash
-python ./scripts/registry.py list
+python ./scripts/registry.py list --agent
 ```
 
 **Return Format Parsing**:

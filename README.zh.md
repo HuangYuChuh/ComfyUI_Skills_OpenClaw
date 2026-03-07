@@ -142,7 +142,7 @@ python scripts/comfyui_client.py \
 - `<workspace>/skills/comfyui-skill-openclaw/`
 
 OpenClaw 会读取 `SKILL.md`，并调用：
-- `scripts/registry.py list`
+- `scripts/registry.py list --agent`
 - `scripts/comfyui_client.py --workflow ... --args '...json...'`
 
 ---
