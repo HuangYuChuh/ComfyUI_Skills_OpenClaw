@@ -45,7 +45,7 @@ def get_workflows():
     print(json.dumps({
         "status": "success",
         "workflows": workflows
-    }, ensure_ascii=False))
+    }, ensure_ascii=False, indent=2))
 
 
 def main():
