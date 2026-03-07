@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8">
@@ -75,8 +75,8 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(config)
           });
-          alert('全局配置已保存');
-        } catch (e) { alert('保存失败'); }
+          alert('Global config saved.');
+        } catch (e) { alert('Save failed.'); }
       };
 
       const handleFileUpload = (e) => {
@@ -126,12 +126,12 @@
       };
 
       const saveWorkflow = async () => {
-        if (!wfId) return alert("请命名 Workflow ID");
+        if (!wfId) return alert("Please provide a Workflow ID.");
 
         const finalSchema = {};
         for (const p of Object.values(schemaParams)) {
           if (p.exposed) {
-            if (!p.name) return alert(`暴露的参数缺少 Alias 名称 (Node ${p.node_id} / ${p.field})`);
+            if (!p.name) return alert(`Exposed parameter is missing an alias (Node ${p.node_id} / ${p.field})`);
             finalSchema[p.name] = {
               node_id: p.node_id,
               field: p.field,
@@ -154,7 +154,7 @@
             })
           });
           if (res.ok) {
-            alert('保存成功！Agent 现在可以调度该工作流了。');
+            alert('Saved successfully. The agent can now call this workflow.');
             setUploadedData(null);
             setWfId('');
             setWfDesc('');
@@ -162,16 +162,16 @@
             fetchWorkflows();
             setTimeout(() => window.lucide.createIcons(), 100);
           }
-        } catch (e) { alert('保存失败'); }
+        } catch (e) { alert('Save failed.'); }
       };
 
       const deleteWorkflow = async (id) => {
-        if (!confirm(`确定删除工作流 ${id} 吗？`)) return;
+        if (!confirm(`Delete workflow ${id}?`)) return;
         try {
           await fetch(`/api/workflow/${id}`, { method: 'DELETE' });
           fetchWorkflows();
           setTimeout(() => window.lucide.createIcons(), 100);
-        } catch (e) { alert('删除失败'); }
+        } catch (e) { alert('Delete failed.'); }
       };
 
       return (
@@ -182,7 +182,7 @@
             </div>
             <div>
               <h1 className="text-3xl font-bold tracking-tight text-white">ComfyUI OpenClaw Skill</h1>
-              <p className="text-gray-400 mt-1">动态解析架构工作流，为 Agent 构建可视化参数映射表。</p>
+              <p className="text-gray-400 mt-1">Dynamically parse workflow graphs and build visual parameter mappings for agents.</p>
             </div>
           </header>
 
@@ -190,11 +190,11 @@
           <section className="bg-[#111318]/50 border border-gray-800 backdrop-blur-sm rounded-2xl p-6 shadow-xl">
             <div className="flex items-center space-x-2 mb-6 text-gray-200">
               <i data-lucide="settings" className="w-5 h-5 text-gray-400"></i>
-              <h2 className="text-xl font-semibold">全局系统配置 (Global Config)</h2>
+              <h2 className="text-xl font-semibold">Global Config</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">ComfyUI 服务器地址</label>
+                <label className="block text-sm font-medium text-gray-400 mb-2">ComfyUI Server URL</label>
                 <input
                   className="w-full bg-[#090b0f] border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-mono text-sm"
                   value={config.comfyui_server_url}
@@ -203,7 +203,7 @@
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">图片输出存档目录</label>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Image Output Directory</label>
                 <input
                   className="w-full bg-[#090b0f] border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-mono text-sm"
                   value={config.output_dir}
@@ -213,7 +213,7 @@
               </div>
             </div>
             <button onClick={saveConfig} className="mt-6 flex items-center bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-lg font-medium transition-colors">
-              <i data-lucide="save" className="w-4 h-4 mr-2"></i> 保存配置信息
+              <i data-lucide="save" className="w-4 h-4 mr-2"></i> Save Config
             </button>
           </section>
 
@@ -221,10 +221,10 @@
           <section className="bg-[#111318]/50 border border-gray-800 backdrop-blur-sm rounded-2xl p-6 shadow-xl">
             <div className="flex items-center space-x-2 mb-6 text-gray-200">
               <i data-lucide="layers" className="w-5 h-5 text-green-400"></i>
-              <h2 className="text-xl font-semibold">已注册的工作流 (Registry)</h2>
+              <h2 className="text-xl font-semibold">Registered Workflows (Registry)</h2>
             </div>
             {workflows.length === 0 ? (
-              <div className="text-gray-500 text-sm py-4 bg-[#090b0f] rounded-xl px-4 border border-dashed border-gray-800">当前尚未配置任何工作流映射。</div>
+              <div className="text-gray-500 text-sm py-4 bg-[#090b0f] rounded-xl px-4 border border-dashed border-gray-800">No workflow mappings configured yet.</div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {workflows.map(wf => (
@@ -243,7 +243,7 @@
           <section className="bg-[#111318]/50 border border-gray-800 backdrop-blur-sm rounded-2xl p-6 shadow-xl">
             <div className="flex items-center space-x-2 mb-6 text-gray-200">
               <i data-lucide="upload-cloud" className="w-5 h-5 text-indigo-400"></i>
-              <h2 className="text-xl font-semibold">注册新工作流 (Upload & Mapping)</h2>
+              <h2 className="text-xl font-semibold">Register New Workflow (Upload & Mapping)</h2>
             </div>
 
             <div className="border-2 border-dashed border-gray-700 bg-[#090b0f] rounded-xl p-8 text-center hover:border-indigo-500/50 transition-colors relative cursor-pointer overflow-hidden group">
@@ -253,8 +253,8 @@
                   <i data-lucide="upload-cloud" className="w-10 h-10 text-indigo-500"></i>
                 </div>
                 <div>
-                  <p className="text-gray-300 font-medium text-lg">拖拽或点击上传 ComfyUI workflow_api.json</p>
-                  <p className="text-gray-500 text-sm mt-1">上传后可按节点对参数进行重新映射</p>
+                  <p className="text-gray-300 font-medium text-lg">Drag or click to upload ComfyUI workflow_api.json</p>
+                  <p className="text-gray-500 text-sm mt-1">After upload, you can remap parameters by node.</p>
                 </div>
               </div>
             </div>
@@ -264,17 +264,17 @@
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[#090b0f] p-6 rounded-xl border border-gray-800 relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">Workflow ID (需英文字母)</label>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">Workflow ID (letters/numbers recommended)</label>
                     <input placeholder="e.g. sd_basic" value={wfId} onChange={e => setWfId(e.target.value)} className="w-full bg-[#111318] border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500 font-mono" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">功能描述 (给 Agent 阅读)</label>
-                    <input placeholder="e.g. 用于生成二次元基础图片" value={wfDesc} onChange={e => setWfDesc(e.target.value)} className="w-full bg-[#111318] border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500" />
+                    <label className="block text-sm font-medium text-gray-400 mb-2">Description (for agent use)</label>
+                    <input placeholder="e.g. Generate anime-style base images" value={wfDesc} onChange={e => setWfDesc(e.target.value)} className="w-full bg-[#111318] border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500" />
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-300 border-b border-gray-800 pb-2">解析到的输入节点清单</h3>
+                  <h3 className="text-lg font-medium text-gray-300 border-b border-gray-800 pb-2">Parsed Input Node List</h3>
                   {Object.entries(uploadedData).map(([nodeId, nodeObj]) => {
                     const props = Object.keys(schemaParams).filter(k => schemaParams[k].node_id === parseInt(nodeId));
                     if (props.length === 0) return null;
@@ -301,22 +301,22 @@
                                   </label>
                                   <div>
                                     <div className={`text-sm font-medium ${p.exposed ? 'text-indigo-300' : 'text-gray-300'}`}>{p.field}</div>
-                                    <div className="text-xs text-gray-500 max-w-[150px] truncate" title={String(p.currentVal)}>当前值: {String(p.currentVal)}</div>
+                                    <div className="text-xs text-gray-500 max-w-[150px] truncate" title={String(p.currentVal)}>Current value: {String(p.currentVal)}</div>
                                   </div>
                                 </div>
 
                                 {p.exposed && (
                                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-1 animate-in fade-in zoom-in-95 duration-200">
                                     <div>
-                                      <label className="block text-xs text-gray-400 mb-1">暴露别名 (Alias)</label>
+                                      <label className="block text-xs text-gray-400 mb-1">Alias (exposed name)</label>
                                       <input value={p.name} onChange={e => handleParamChange(pKey, 'name', e.target.value)} className="w-full bg-[#090b0f] border border-gray-700 focus:border-indigo-500 rounded p-2 text-sm text-white font-mono" />
                                     </div>
                                     <div className="col-span-1 md:col-span-2">
-                                      <label className="block text-xs text-gray-400 mb-1">AI 描述 (Desc)</label>
-                                      <input placeholder="如: 高清风景提示词" value={p.description} onChange={e => handleParamChange(pKey, 'description', e.target.value)} className="w-full bg-[#090b0f] border border-gray-700 focus:border-indigo-500 rounded p-2 text-sm text-white" />
+                                      <label className="block text-xs text-gray-400 mb-1">AI Description</label>
+                                      <input placeholder="e.g. High-quality landscape prompt" value={p.description} onChange={e => handleParamChange(pKey, 'description', e.target.value)} className="w-full bg-[#090b0f] border border-gray-700 focus:border-indigo-500 rounded p-2 text-sm text-white" />
                                     </div>
                                     <div>
-                                      <label className="block text-xs text-gray-400 mb-1">类型 (Type)</label>
+                                      <label className="block text-xs text-gray-400 mb-1">Type</label>
                                       <select value={p.type} onChange={e => handleParamChange(pKey, 'type', e.target.value)} className="w-full bg-[#090b0f] border border-gray-700 focus:border-indigo-500 rounded p-2 text-sm text-white font-mono cursor-pointer">
                                         <option value="string">String</option>
                                         <option value="int">Integer</option>
@@ -325,7 +325,7 @@
                                       </select>
                                       <div className="mt-2 text-xs flex items-center space-x-2">
                                         <input type="checkbox" id={`req_${pKey}`} checked={p.required} onChange={e => handleParamChange(pKey, 'required', e.target.checked)} className="rounded border-gray-700 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
-                                        <label htmlFor={`req_${pKey}`} className="text-gray-400 cursor-pointer hover:text-gray-300">必填给大模型</label>
+                                        <label htmlFor={`req_${pKey}`} className="text-gray-400 cursor-pointer hover:text-gray-300">Required for model</label>
                                       </div>
                                     </div>
                                   </div>
@@ -340,7 +340,7 @@
                 </div>
 
                 <button onClick={saveWorkflow} className="w-full py-4 mt-8 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white rounded-xl font-bold text-lg shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center transform hover:-translate-y-0.5">
-                  <i data-lucide="save" className="w-5 h-5 mr-3"></i> 保存此工作流及映射 Schema
+                  <i data-lucide="save" className="w-5 h-5 mr-3"></i> Save Workflow and Mapping Schema
                 </button>
               </div>
             )}
