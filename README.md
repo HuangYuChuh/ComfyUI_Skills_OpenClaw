@@ -1,5 +1,6 @@
 # ComfyUI Skills for OpenClaw
 
+![ComfyUI Skills Banner](./asset/banner.jpg)
 <p>
   <a href="./README.zh.md">
     <img src="https://img.shields.io/badge/简体中文-README.zh.md-blue?style=flat-square" alt="简体中文" />
