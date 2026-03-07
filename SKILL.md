@@ -1,5 +1,5 @@
 ---
-name: comfyui-agent
+name: comfyui-skill-openclaw
 description: |
   Generate images utilizing ComfyUI's powerful node-based workflow capabilities. Supports dynamically loading multiple pre-configured generation workflows and their corresponding parameter mappings, converting natural language into parameters, driving local or remote ComfyUI services, and ultimately returning the images to the target client.
   
