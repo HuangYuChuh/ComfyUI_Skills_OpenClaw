@@ -714,14 +714,43 @@
                 if (typeof val === 'number') typeGuess = Number.isInteger(val) ? 'int' : 'float';
                 else if (typeof val === 'boolean') typeGuess = 'boolean';
 
+                // --- AI NATIVE: Heuristic Auto-Configuration ---
+                let shouldExpose = false;
+                let autoName = field;
+                let autoDesc = '';
+                let isRequired = false;
+                const cType = nodeObj.class_type || '';
+
+                if (cType.includes('KSampler')) {
+                  if (field === 'seed') { shouldExpose = true; autoDesc = 'Random seed (for reproducibility)'; }
+                  if (field === 'steps') { shouldExpose = true; autoDesc = 'Generation steps'; }
+                } else if (cType.includes('CLIPTextEncode') || cType.includes('Text') || cType.includes('Prompt')) {
+                  if (field === 'text' || field === 'prompt') {
+                    shouldExpose = true; isRequired = true;
+                    autoName = `prompt_${nodeId}`;
+                    autoDesc = 'Text prompt description';
+                  }
+                } else if (cType === 'EmptyLatentImage') {
+                  if (field === 'width' || field === 'height' || field === 'batch_size') {
+                    shouldExpose = true; autoDesc = `Image ${field}`;
+                  }
+                } else if (cType === 'SaveImage') {
+                  if (field === 'filename_prefix') { shouldExpose = true; autoDesc = 'Output file prefix'; }
+                } else if (cType === 'LightCCDoubaoImageNode') {
+                  if (field === 'prompt') { shouldExpose = true; isRequired = true; autoDesc = 'Positive image prompt'; }
+                  if (field === 'size') { shouldExpose = true; autoDesc = 'e.g., 1:1,2048x2048'; }
+                  if (field === 'seed') { shouldExpose = true; autoDesc = 'Random seed'; }
+                  if (field === 'num') { shouldExpose = true; autoDesc = 'Number of images to generate'; }
+                }
+
                 schemaParams[paramKey] = {
-                  exposed: false,
+                  exposed: shouldExpose,
                   node_id: parseInt(nodeId),
                   field: field,
-                  name: field,
+                  name: autoName,
                   type: typeGuess,
-                  required: false,
-                  description: '',
+                  required: isRequired,
+                  description: autoDesc,
                   currentVal: val,
                   nodeClass: nodeObj.class_type
                 };
