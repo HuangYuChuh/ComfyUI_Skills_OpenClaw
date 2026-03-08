@@ -36,6 +36,42 @@ class ConfigModel(BaseModel):
     default_server: str = "local"
 
 
+class CreateServerModel(BaseModel):
+    id: str | None = None
+    name: str = Field(min_length=1)
+    url: str = Field(min_length=1)
+    enabled: bool = True
+    output_dir: str = "./outputs"
+
+    @field_validator("id")
+    @classmethod
+    def validate_optional_id(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        value = value.strip()
+        if not value:
+            return None
+        if any(c in value for c in ("/", "\\", " ")) or value in {".", ".."}:
+            raise ValueError("Server ID contains invalid characters")
+        return value
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Server name is required")
+        return value
+
+    @field_validator("url")
+    @classmethod
+    def validate_url(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Server URL is required")
+        return value
+
+
 class SchemaModel(BaseModel):
     workflow_id: str = Field(min_length=1)
     server_id: str = Field(min_length=1, default="local")

@@ -12,11 +12,11 @@ _project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_project_root / "scripts"))
 
 try:
-    from .models import ConfigModel, SchemaModel, ServerModel, ToggleModel
+    from .models import ConfigModel, CreateServerModel, SchemaModel, ServerModel, ToggleModel
     from .services import UIStorageService
     from .settings import DEFAULT_HOST, DEFAULT_PORT, STATIC_DIR, ensure_runtime_dirs
 except ImportError:
-    from models import ConfigModel, SchemaModel, ServerModel, ToggleModel
+    from models import ConfigModel, CreateServerModel, SchemaModel, ServerModel, ToggleModel
     from services import UIStorageService
     from settings import DEFAULT_HOST, DEFAULT_PORT, STATIC_DIR, ensure_runtime_dirs
 
@@ -53,12 +53,14 @@ def create_app() -> FastAPI:
         return {"servers": servers, "default_server": config.get("default_server", "")}
 
     @app.post("/api/servers")
-    async def add_server(server: ServerModel) -> dict:
+    async def add_server(server: CreateServerModel) -> dict:
         try:
             created = service.add_server(server.model_dump())
             return {"status": "success", "server": created}
         except FileExistsError as e:
             raise HTTPException(status_code=409, detail=str(e)) from e
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
 
     @app.put("/api/servers/{server_id}")
     async def update_server(server_id: str, server: ServerModel) -> dict:

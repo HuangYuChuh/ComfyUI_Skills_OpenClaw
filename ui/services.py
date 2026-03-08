@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import re
 from dataclasses import dataclass, field
 from json import JSONDecodeError
 from pathlib import Path
@@ -67,22 +68,38 @@ class UIStorageService:
     def add_server(self, server: dict[str, Any]) -> dict[str, Any]:
         config = self.get_config()
         servers = config.get("servers", [])
+        existing_ids = {str(s.get("id", "")).strip() for s in servers if s.get("id")}
+
+        raw_id = str(server.get("id") or "").strip()
+        raw_name = str(server.get("name") or "").strip()
+        server_id = raw_id or self._next_server_id(existing_ids, seed=raw_name or "server")
+        server_name = raw_name or server_id
+
+        if any(c in server_id for c in ("/", "\\", " ")) or server_id in {".", ".."}:
+            raise ValueError("Server ID contains invalid characters")
 
         # Duplicate check
-        for s in servers:
-            if s.get("id") == server.get("id"):
-                raise FileExistsError(f"Server '{server['id']}' already exists")
+        if server_id in existing_ids:
+            raise FileExistsError(f"Server '{server_id}' already exists")
 
-        servers.append(server)
+        normalized_server = {
+            "id": server_id,
+            "name": server_name,
+            "url": str(server.get("url") or "").strip(),
+            "enabled": bool(server.get("enabled", True)),
+            "output_dir": str(server.get("output_dir") or "./outputs").strip() or "./outputs",
+        }
+
+        servers.append(normalized_server)
         config["servers"] = servers
 
         # Create directories
-        sid = server["id"]
+        sid = server_id
         get_server_workflows_dir(sid).mkdir(parents=True, exist_ok=True)
         get_server_schemas_dir(sid).mkdir(parents=True, exist_ok=True)
 
         self.save_config(config)
-        return server
+        return normalized_server
 
     def update_server(self, server_id: str, updates: dict[str, Any]) -> dict[str, Any]:
         config = self.get_config()
@@ -237,3 +254,21 @@ class UIStorageService:
     @staticmethod
     def _schema_path(server_id: str, workflow_id: str) -> Path:
         return get_server_schemas_dir(server_id) / f"{workflow_id}.json"
+
+    @staticmethod
+    def _slugify_server_id(value: str) -> str:
+        text = re.sub(r"[^a-zA-Z0-9_-]+", "-", value.strip().lower())
+        text = text.strip("-_")
+        return text or "server"
+
+    def _next_server_id(self, existing_ids: set[str], seed: str) -> str:
+        base = self._slugify_server_id(seed)
+        if base not in existing_ids:
+            return base
+
+        index = 2
+        while True:
+            candidate = f"{base}-{index}"
+            if candidate not in existing_ids:
+                return candidate
+            index += 1
