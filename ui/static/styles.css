@@ -94,6 +94,10 @@ button:focus-visible,
   box-shadow: var(--focus-ring);
 }
 
+.custom-select-native {
+  display: none !important;
+}
+
 label {
   display: block;
   margin-bottom: 8px;
@@ -128,6 +132,13 @@ label {
   gap: 16px;
   align-items: center;
   margin-bottom: calc(var(--space-6) + var(--space-1));
+}
+
+.page-header.custom-select-host-open,
+.card.custom-select-host-open,
+.server-config-container.custom-select-host-open {
+  position: relative;
+  z-index: 40;
 }
 
 /* View 2 Navigation */
@@ -341,7 +352,9 @@ h1 {
 }
 
 .server-selector-wrapper {
-  min-width: clamp(240px, 34vw, 380px);
+  width: clamp(180px, 24vw, 260px);
+  min-width: 180px;
+  position: relative;
 }
 
 .server-selector {
@@ -358,6 +371,157 @@ h1 {
   background-position: right 12px center;
   background-size: 16px;
   cursor: pointer;
+}
+
+.custom-select {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select.is-lang-select {
+  width: 136px;
+  flex-shrink: 0;
+}
+
+.custom-select.is-lang-select .custom-select-trigger {
+  min-height: 42px;
+  padding: 8px 36px 8px 12px;
+  font-size: 0.92rem;
+}
+
+.custom-select.is-server-select .custom-select-trigger {
+  min-height: 40px;
+  padding: 8px 36px 8px 12px;
+  font-size: 0.95rem;
+}
+
+.custom-select.is-server-select .custom-select-chevron {
+  right: 12px;
+}
+
+.custom-select-trigger {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 42px 10px 14px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(180deg, rgba(20, 24, 32, 0.94) 0%, rgba(11, 15, 21, 0.98) 100%);
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background 0.2s ease;
+}
+
+.custom-select-trigger:hover,
+.custom-select.is-open .custom-select-trigger {
+  border-color: rgba(225, 29, 72, 0.55);
+  background:
+    linear-gradient(180deg, rgba(29, 34, 45, 0.96) 0%, rgba(15, 19, 27, 0.98) 100%);
+}
+
+.custom-select-trigger:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: var(--focus-ring);
+}
+
+.custom-select-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-select-chevron {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid rgba(226, 232, 240, 0.72);
+  border-bottom: 2px solid rgba(226, 232, 240, 0.72);
+  transform: translateY(-65%) rotate(45deg);
+  transition: transform 0.18s ease, border-color 0.18s ease;
+}
+
+.custom-select.is-open .custom-select-chevron {
+  transform: translateY(-30%) rotate(-135deg);
+  border-color: #fff1f2;
+}
+
+.custom-select-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 1600;
+  display: none;
+  padding: 8px;
+  border: 1px solid rgba(225, 29, 72, 0.32);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(16, 20, 27, 0.98) 0%, rgba(10, 14, 20, 0.99) 100%);
+  box-shadow:
+    0 24px 52px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(225, 29, 72, 0.08);
+  backdrop-filter: blur(14px);
+  max-height: min(320px, 48vh);
+  overflow-y: auto;
+}
+
+.custom-select.is-open .custom-select-menu {
+  display: block;
+  animation: customSelectFadeIn 0.16s ease-out;
+}
+
+.custom-select-option {
+  width: 100%;
+  padding: 11px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-main);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease, transform 0.16s ease;
+  white-space: nowrap;
+}
+
+.custom-select-option:hover,
+.custom-select-option:focus-visible {
+  outline: none;
+  background: rgba(225, 29, 72, 0.12);
+  color: #fff1f2;
+}
+
+.custom-select-option.is-selected {
+  background:
+    linear-gradient(180deg, rgba(225, 29, 72, 0.18) 0%, rgba(190, 24, 93, 0.14) 100%);
+  color: #ffe4e6;
+  box-shadow: inset 0 0 0 1px rgba(251, 113, 133, 0.2);
+}
+
+.custom-select.is-disabled .custom-select-trigger,
+.custom-select-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+@keyframes customSelectFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .server-config-container {

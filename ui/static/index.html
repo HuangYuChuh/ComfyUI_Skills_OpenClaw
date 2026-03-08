@@ -200,6 +200,10 @@
             data-i18n="mapping_expose_visible">Expose visible</button>
           <button id="mapping-unexpose-visible" type="button" class="btn btn-secondary"
             data-i18n="mapping_unexpose_visible">Unexpose visible</button>
+          <button id="mapping-collapse-configs" type="button" class="btn btn-secondary"
+            data-i18n="mapping_collapse_configs">Collapse parameter configs</button>
+          <button id="mapping-expand-configs" type="button" class="btn btn-secondary"
+            data-i18n="mapping_expand_configs">Expand parameter configs</button>
           <button id="mapping-collapse-all" type="button" class="btn btn-secondary"
             data-i18n="mapping_collapse_all">Collapse all nodes</button>
           <button id="mapping-expand-all" type="button" class="btn btn-secondary"
@@ -249,6 +253,22 @@
       <div class="modal-actions">
         <button id="btn-close-server-modal" type="button" class="btn btn-secondary" data-i18n="cancel">Cancel</button>
         <button id="btn-save-server-modal" type="button" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirm-modal-overlay" class="modal-overlay hidden" aria-hidden="true">
+    <div class="modal-card confirm-modal-card" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title"
+      aria-describedby="confirm-modal-message">
+      <div class="modal-header">
+        <h3 id="confirm-modal-title" class="card-title" data-i18n="confirm_action_title">Confirm Action</h3>
+      </div>
+      <div class="modal-body">
+        <p id="confirm-modal-message" class="confirm-modal-message"></p>
+      </div>
+      <div class="modal-actions">
+        <button id="btn-cancel-confirm-modal" type="button" class="btn btn-secondary" data-i18n="cancel">Cancel</button>
+        <button id="btn-confirm-confirm-modal" type="button" class="btn btn-primary" data-i18n="confirm">Confirm</button>
       </div>
     </div>
   </div>

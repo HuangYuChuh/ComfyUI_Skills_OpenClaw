@@ -17,6 +17,7 @@ import {
   getCurrentServer,
 } from "./state.js";
 import { showToast } from "./toast.js";
+import { enhanceCustomSelects } from "./custom-select.js";
 import {
   renderEditorMode,
   renderEmptyNodes,
@@ -81,6 +82,7 @@ function refreshServerSelector() {
     elements.serverSelector.append(`<option value="">${escapeHtml(t("no_servers"))}</option>`);
     elements.serverSelector.prop("disabled", true);
     elements.currentServerActions.hide();
+    enhanceCustomSelects(document);
     return;
   }
   elements.serverConfigContainer.removeClass("hidden");
@@ -108,6 +110,8 @@ function refreshServerSelector() {
     elements.serverEnabledLabel.removeClass("status-on status-off");
     elements.currentServerActions.hide();
   }
+
+  enhanceCustomSelects(document);
 }
 
 // ── Server Modal ─────────────────────────────────────────────────
@@ -264,6 +268,7 @@ function refreshEditorPanel() {
   renderEditorMode(elements.editorModeBadge, elements.saveWorkflowButton);
   const stats = renderNodes(elements.nodesContainer, { ...editorFilters, collapsedNodeIds, expandedParamKeys });
   latestEditorStats = stats;
+  enhanceCustomSelects(elements.viewEditor[0]);
   refreshMappingSummary(stats);
   refreshEditorProgress();
 }
@@ -591,7 +596,6 @@ async function loadWorkflowForEditing(serverId, workflowId, $button) {
       description: data.description || "",
       editingWorkflowId: data.workflow_id || workflowId,
     });
-    showToast(t("ok_load_saved_wf"), "success");
   } catch (error) {
     showToast(error.message || t("err_load_saved_wf"), "error");
     showView("main");
@@ -820,6 +824,7 @@ function syncLanguage() {
   setLanguage(currentLanguage);
   elements.langSelect.val(currentLanguage);
   applyTranslations();
+  enhanceCustomSelects(document);
   refreshServerModalText();
   refreshServerSelector();
   if (!elements.viewMain.hasClass("hidden")) {
@@ -1136,6 +1141,7 @@ function bindEvents() {
     }
     setLanguage(nextLanguage);
     applyTranslations();
+    enhanceCustomSelects(document);
     refreshServerModalText();
     refreshServerSelector();
     if (!elements.viewMain.hasClass("hidden")) {
@@ -1203,6 +1209,7 @@ async function init() {
   // Show Main View initially
   showView("main");
   renderEmptyNodes(elements.nodesContainer);
+  enhanceCustomSelects(document);
 
   // Load servers first, then workflows
   await loadServers();
