@@ -565,6 +565,29 @@ body.modal-open {
   gap: var(--space-1);
 }
 
+.confirm-modal-card {
+  width: min(100%, 460px);
+}
+
+.confirm-modal-message {
+  margin: 0;
+  color: var(--text-main);
+  line-height: 1.7;
+}
+
+.btn.btn-danger {
+  border-color: rgba(244, 63, 94, 0.6);
+  background: linear-gradient(180deg, rgba(225, 29, 72, 0.96) 0%, rgba(190, 24, 93, 0.96) 100%);
+  color: #fff1f2;
+  box-shadow: 0 16px 28px rgba(136, 19, 55, 0.3);
+}
+
+.btn.btn-danger:hover,
+.btn.btn-danger:focus-visible {
+  border-color: rgba(251, 113, 133, 0.78);
+  box-shadow: 0 18px 34px rgba(136, 19, 55, 0.36);
+}
+
 .server-config-actions {
   display: flex;
   align-items: center;
@@ -1055,11 +1078,12 @@ button:disabled,
 .param-main {
   display: flex;
   gap: 16px;
-  align-items: flex-start;
+  align-items: center;
   min-width: 0;
 }
 
 .param-main-copy {
+  flex: 1;
   min-width: 0;
 }
 
@@ -1074,9 +1098,30 @@ button:disabled,
 }
 
 .param-config {
-  display: grid;
+  display: none;
   gap: 14px;
   width: 100%;
+  padding-top: 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.param-config.is-expanded {
+  display: grid;
+}
+
+.param-config-toggle {
+  flex-shrink: 0;
+  min-width: 22px;
+  min-height: 22px;
+  margin-left: auto;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.param-config-toggle:hover,
+.param-config-toggle:focus-visible {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .checkbox-inline {

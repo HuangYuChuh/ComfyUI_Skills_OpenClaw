@@ -41,9 +41,11 @@ const editorFilters = {
   paramSort: "default",
 };
 const collapsedNodeIds = new Set();
+const expandedParamKeys = new Set();
 let latestEditorStats = null;
 let hasEditorUnsavedChanges = false;
 let serverModalMode = "add";
+let confirmModalResolver = null;
 
 function $(...args) {
   return window.jQuery(...args);
@@ -155,6 +157,55 @@ function closeServerModal() {
   $("body").removeClass("modal-open");
 }
 
+function closeConfirmModal(confirmed = false) {
+  if (!confirmModalResolver) {
+    elements.confirmModalOverlay.addClass("hidden").attr("aria-hidden", "true");
+    if (elements.serverModalOverlay.hasClass("hidden")) {
+      $("body").removeClass("modal-open");
+    }
+    return;
+  }
+
+  const resolve = confirmModalResolver;
+  confirmModalResolver = null;
+  elements.confirmModalOverlay.addClass("hidden").attr("aria-hidden", "true");
+  elements.confirmModalConfirmBtn.removeClass("btn-danger").addClass("btn-primary");
+  if (elements.serverModalOverlay.hasClass("hidden")) {
+    $("body").removeClass("modal-open");
+  }
+  resolve(confirmed);
+}
+
+function openConfirmModal({
+  title = t("confirm_action_title"),
+  message,
+  confirmLabel = t("confirm"),
+  cancelLabel = t("cancel"),
+  tone = "primary",
+}) {
+  if (confirmModalResolver) {
+    closeConfirmModal(false);
+  }
+
+  elements.confirmModalTitle.text(title);
+  elements.confirmModalMessage.text(message || "");
+  elements.confirmModalCancelBtn.text(cancelLabel);
+  elements.confirmModalConfirmBtn
+    .text(confirmLabel)
+    .toggleClass("btn-danger", tone === "danger")
+    .toggleClass("btn-primary", tone !== "danger");
+
+  elements.confirmModalOverlay.removeClass("hidden").attr("aria-hidden", "false");
+  $("body").addClass("modal-open");
+
+  return new Promise((resolve) => {
+    confirmModalResolver = resolve;
+    window.setTimeout(() => {
+      elements.confirmModalConfirmBtn.trigger("focus");
+    }, 0);
+  });
+}
+
 function refreshWorkflowPanel() {
   renderWorkflowSummary(elements.workflowSummary);
   renderWorkflowList(elements.workflowList);
@@ -211,7 +262,7 @@ function refreshMappingSummary(stats) {
 
 function refreshEditorPanel() {
   renderEditorMode(elements.editorModeBadge, elements.saveWorkflowButton);
-  const stats = renderNodes(elements.nodesContainer, { ...editorFilters, collapsedNodeIds });
+  const stats = renderNodes(elements.nodesContainer, { ...editorFilters, collapsedNodeIds, expandedParamKeys });
   latestEditorStats = stats;
   refreshMappingSummary(stats);
   refreshEditorProgress();
@@ -232,6 +283,10 @@ function resetEditorFilters() {
 
 function resetCollapsedNodes() {
   collapsedNodeIds.clear();
+}
+
+function resetExpandedParamConfigs() {
+  expandedParamKeys.clear();
 }
 
 function shouldAutoExposeParameter(parameter) {
@@ -327,15 +382,30 @@ function setAllVisibleNodesCollapsed(isCollapsed) {
   refreshEditorPanel();
 }
 
+function setAllVisibleParamConfigsExpanded(isExpanded) {
+  const visibleExposedParamKeys = latestEditorStats?.visibleExposedParamKeys || [];
+  visibleExposedParamKeys.forEach((paramKey) => {
+    if (isExpanded) {
+      expandedParamKeys.add(String(paramKey));
+    } else {
+      expandedParamKeys.delete(String(paramKey));
+    }
+  });
+  refreshEditorPanel();
+}
+
 function isEditorVisible() {
   return !elements.viewEditor.hasClass("hidden");
 }
 
-function confirmLeaveEditorIfDirty() {
+async function confirmLeaveEditorIfDirty() {
   if (!isEditorVisible() || !hasEditorUnsavedChanges) {
     return true;
   }
-  return window.confirm(t("confirm_unsaved_leave"));
+  return openConfirmModal({
+    message: t("confirm_unsaved_leave"),
+    confirmLabel: t("leave_anyway"),
+  });
 }
 
 function clearEditorFields() {
@@ -344,14 +414,15 @@ function clearEditorFields() {
   elements.fileUpload.val("");
 }
 
-function exitEditor() {
-  if (!confirmLeaveEditorIfDirty()) {
+async function exitEditor() {
+  if (!(await confirmLeaveEditorIfDirty())) {
     return false;
   }
   resetMappingState();
   setEditingWorkflowId(null);
   resetEditorFilters();
   resetCollapsedNodes();
+  resetExpandedParamConfigs();
   clearEditorFields();
   markEditorDirty(false);
   setEditorVisibility(elements, false);
@@ -369,6 +440,7 @@ function enterEditor({ workflowData, schemaParams, workflowId = "", description 
   elements.workflowDescription.val(description);
   resetEditorFilters();
   resetCollapsedNodes();
+  resetExpandedParamConfigs();
   markEditorDirty(false);
   setEditorVisibility(elements, !!workflowData);
   refreshEditorPanel();
@@ -555,7 +627,12 @@ async function toggleWorkflowStatus(serverId, workflowId, $checkbox) {
 }
 
 async function deleteWorkflow(serverId, workflowId, $button) {
-  if (!window.confirm(t("del_wf_confirm", { id: workflowId }))) {
+  const confirmed = await openConfirmModal({
+    message: t("del_wf_confirm", { id: workflowId }),
+    confirmLabel: t("delete"),
+    tone: "danger",
+  });
+  if (!confirmed) {
     return;
   }
 
@@ -563,7 +640,7 @@ async function deleteWorkflow(serverId, workflowId, $button) {
   try {
     await fetchJSON(`/api/servers/${encodeURIComponent(serverId)}/workflow/${encodeURIComponent(workflowId)}`, { method: "DELETE" });
     if (getState().editingWorkflowId === workflowId) {
-      exitEditor();
+      await exitEditor();
     }
     showToast(t("ok_del_wf", { id: workflowId }), "success");
     await loadWorkflows();
@@ -602,7 +679,11 @@ async function requestSaveWorkflow({
       throw error;
     }
 
-    const confirmed = window.confirm(t("warn_overwrite_wf", { id: workflowId }));
+    const confirmed = await openConfirmModal({
+      message: t("warn_overwrite_wf", { id: workflowId }),
+      confirmLabel: t("overwrite"),
+      tone: "danger",
+    });
     if (!confirmed) {
       error.cancelled = true;
       throw error;
@@ -642,7 +723,10 @@ async function saveWorkflow() {
     return;
   }
 
-  if (exposedCount === 0 && !window.confirm(t("warn_no_params"))) {
+  if (exposedCount === 0 && !(await openConfirmModal({
+    message: t("warn_no_params"),
+    confirmLabel: t("save_anyway"),
+  }))) {
     return;
   }
 
@@ -669,7 +753,7 @@ async function saveWorkflow() {
     showToast(t("ok_save_wf"), "success");
     markEditorDirty(false);
     await loadWorkflows();
-    exitEditor();
+    await exitEditor();
   } catch (error) {
     if (error?.cancelled) {
       return;
@@ -766,11 +850,25 @@ function bindServerEvents() {
     }
   });
 
+  elements.confirmModalCancelBtn.on("click", () => closeConfirmModal(false));
+  elements.confirmModalConfirmBtn.on("click", () => closeConfirmModal(true));
+  elements.confirmModalOverlay.on("click", (event) => {
+    if (event.target === elements.confirmModalOverlay[0]) {
+      closeConfirmModal(false);
+    }
+  });
+
   $(document).on("keydown", (event) => {
-    if (event.key !== "Escape" || elements.serverModalOverlay.hasClass("hidden")) {
+    if (event.key !== "Escape") {
       return;
     }
-    closeServerModal();
+    if (!elements.confirmModalOverlay.hasClass("hidden")) {
+      closeConfirmModal(false);
+      return;
+    }
+    if (!elements.serverModalOverlay.hasClass("hidden")) {
+      closeServerModal();
+    }
   });
 
   elements.serverEnabledToggle.on("change", async function () {
@@ -799,7 +897,12 @@ function bindServerEvents() {
     const currentServer = getCurrentServer();
     if (!currentServer) return;
 
-    if (!window.confirm(t("del_server_confirm", { id: currentServer.id }))) {
+    const confirmed = await openConfirmModal({
+      message: t("del_server_confirm", { id: currentServer.id }),
+      confirmLabel: t("delete"),
+      tone: "danger",
+    });
+    if (!confirmed) {
       return;
     }
 
@@ -828,8 +931,8 @@ function bindWorkflowEvents() {
     enterEditor({ workflowData: null, schemaParams: {} });
   });
 
-  elements.editorBackBtn.on("click", () => {
-    exitEditor();
+  elements.editorBackBtn.on("click", async () => {
+    await exitEditor();
   });
 
   elements.workflowList.on("click", "button[data-action='delete-workflow']", function () {
@@ -867,6 +970,9 @@ function bindNodeFieldUpdates() {
     markEditorDirty(true);
 
     if (field === "exposed") {
+      if (!value) {
+        expandedParamKeys.delete(String(paramKey));
+      }
       refreshEditorPanel();
     }
   });
@@ -877,6 +983,16 @@ function bindNodeFieldUpdates() {
       collapsedNodeIds.delete(nodeId);
     } else {
       collapsedNodeIds.add(nodeId);
+    }
+    refreshEditorPanel();
+  });
+
+  elements.nodesContainer.on("click", "button[data-action='toggle-param-config']", function () {
+    const paramKey = String($(this).data("paramKey"));
+    if (expandedParamKeys.has(paramKey)) {
+      expandedParamKeys.delete(paramKey);
+    } else {
+      expandedParamKeys.add(paramKey);
     }
     refreshEditorPanel();
   });
@@ -923,6 +1039,14 @@ function bindMappingToolbarEvents() {
 
   elements.mappingUnexposeVisibleButton.on("click", () => {
     applyExposeToVisible(false);
+  });
+
+  elements.mappingCollapseConfigsButton.on("click", () => {
+    setAllVisibleParamConfigsExpanded(false);
+  });
+
+  elements.mappingExpandConfigsButton.on("click", () => {
+    setAllVisibleParamConfigsExpanded(true);
   });
 
   elements.mappingCollapseAllButton.on("click", () => {

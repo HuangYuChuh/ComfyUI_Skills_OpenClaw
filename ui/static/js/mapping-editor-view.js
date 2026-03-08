@@ -19,13 +19,13 @@ function renderTypeOptions(parameter) {
     .join("");
 }
 
-function renderParamConfig(parameter) {
+function renderParamConfig(parameter, isConfigExpanded) {
   if (!parameter.exposed) {
     return "";
   }
 
   return `
-    <div class="param-config">
+    <div class="param-config${isConfigExpanded ? " is-expanded" : ""}">
       <div>
         <label for="alias-${escapeHtml(parameter.key)}">${escapeHtml(t("alias"))}</label>
         <input id="alias-${escapeHtml(parameter.key)}" type="text" data-param-key="${escapeHtml(parameter.key)}" data-field="name" value="${escapeHtml(parameter.name)}">
@@ -48,9 +48,19 @@ function renderParamConfig(parameter) {
   `;
 }
 
-function renderParamRow(parameter) {
+function renderParamRow(parameter, expandedParamKeys = new Set()) {
   const rowClass = parameter.exposed ? "param-row active" : "param-row";
   const titleClass = parameter.exposed ? "param-title active" : "param-title";
+  const isConfigExpanded = parameter.exposed && expandedParamKeys.has(parameter.key);
+  const configToggle = parameter.exposed
+    ? `
+        <button type="button" class="btn btn-secondary btn-icon small param-config-toggle"
+          data-action="toggle-param-config" data-param-key="${escapeHtml(parameter.key)}"
+          aria-label="${escapeHtml(t("toggle_param_config", { field: parameter.field }))}">
+          ${isConfigExpanded ? "▾" : "▸"}
+        </button>
+      `
+    : "";
 
   return `
     <div class="${rowClass}">
@@ -63,15 +73,18 @@ function renderParamRow(parameter) {
           <div class="${titleClass}">${escapeHtml(parameter.field)}</div>
           <div class="param-meta">${escapeHtml(t("curr_val"))}: ${escapeHtml(parameter.currentVal)}</div>
         </div>
+        ${configToggle}
       </div>
-      ${renderParamConfig(parameter)}
+      ${renderParamConfig(parameter, isConfigExpanded)}
     </div>
   `;
 }
 
-function renderNodeCard([nodeId, nodeData], collapsedNodeIds = new Set()) {
+function renderNodeCard([nodeId, nodeData], collapsedNodeIds = new Set(), expandedParamKeys = new Set()) {
   const isCollapsed = collapsedNodeIds.has(String(nodeId));
-  const paramsHtml = nodeData.params.map((parameter) => renderParamRow({ key: parameter.key, ...parameter })).join("");
+  const paramsHtml = nodeData.params
+    .map((parameter) => renderParamRow({ key: parameter.key, ...parameter }, expandedParamKeys))
+    .join("");
 
   return `
     <article class="node-card${isCollapsed ? " is-collapsed" : ""}">
@@ -171,6 +184,7 @@ export function renderNodes($container, options = {}) {
   const nodeSort = options.nodeSort || "node_id_asc";
   const paramSort = options.paramSort || "default";
   const collapsedNodeIds = options.collapsedNodeIds instanceof Set ? options.collapsedNodeIds : new Set();
+  const expandedParamKeys = options.expandedParamKeys instanceof Set ? options.expandedParamKeys : new Set();
 
   const allParams = Object.values(schemaParams);
   const totalParams = allParams.length;
@@ -213,9 +227,12 @@ export function renderNodes($container, options = {}) {
     };
   }
 
-  $container.html(filteredNodes.map((entry) => renderNodeCard(entry, collapsedNodeIds)).join(""));
+  $container.html(filteredNodes.map((entry) => renderNodeCard(entry, collapsedNodeIds, expandedParamKeys)).join(""));
   const visibleParams = filteredNodes.reduce((sum, [, nodeData]) => sum + nodeData.params.length, 0);
   const visibleParamKeys = filteredNodes.flatMap(([, nodeData]) => nodeData.params.map((param) => param.key));
+  const visibleExposedParamKeys = filteredNodes.flatMap(([, nodeData]) =>
+    nodeData.params.filter((param) => param.exposed).map((param) => param.key),
+  );
   const visibleNodeIds = filteredNodes.map(([nodeId]) => String(nodeId));
 
   return {
@@ -224,6 +241,7 @@ export function renderNodes($container, options = {}) {
     visibleParams,
     visibleNodes: filteredNodes.length,
     visibleParamKeys,
+    visibleExposedParamKeys,
     visibleNodeIds,
   };
 }
