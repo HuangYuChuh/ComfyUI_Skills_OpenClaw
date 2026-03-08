@@ -1,6 +1,6 @@
 # ComfyUI Skills for OpenClaw
 
-![ComfyUI Skills Banner](./asset/banner.jpg)
+![ComfyUI Skills Banner](./asset/banner-ui-20250309.jpg)
 <p>
   <a href="./README.zh.md">
     <img src="https://img.shields.io/badge/简体中文-README.zh.md-blue?style=flat-square" alt="简体中文" />
@@ -10,28 +10,6 @@
 This project is a ComfyUI skill integration layer for OpenClaw and other LLM agents. It turns the workflows you build and export from ComfyUI (API format) into callable skills that agents can trigger with natural language.
 
 It converts natural language requests into structured skill arguments, maps them to ComfyUI workflow inputs, submits jobs to ComfyUI, waits for completion, then pulls generated images back to local disk.
-
----
-
-## Project Keywords
-
-This repository is optimized around these search intents:
-
-- OpenClaw
-- ComfyUI
-- ComfyUI Skills
-- ComfyUI workflow automation
-- OpenClaw ComfyUI integration
-- AI image generation skill
-- Xiao Long Xia (small crawfish / 小龙虾, project nickname)
-
-Related files for project understanding and retrieval:
-- `README.md` (English overview)
-- `README.zh.md` (Chinese overview)
-- `SKILL.md` (agent execution contract)
-- `docs/llms.txt` and `docs/llms-full.txt` (LLM-oriented summaries)
-
----
 
 ## Current Project Structure
 
@@ -46,7 +24,7 @@ ComfyUI_Skills_OpenClaw/
 ├── config.example.json         # Example runtime config
 ├── config.json                 # Actual local runtime config (gitignored)
 ├── asset/
-│   └── banner.jpg
+│   └── banner-ui-20250309.jpg
 ├── data/
 │   ├── <server_id>/
 │   │   ├── workflows/
@@ -242,6 +220,26 @@ In short: **API-format workflow + Save Image output node** are required for stab
 - Better schema validation before queueing
 - Richer error reporting from ComfyUI node errors
 - Optional batch generation / multi-seed helpers
+
+---
+
+## Project Keywords
+
+This repository is optimized around these search intents:
+
+- OpenClaw
+- ComfyUI
+- ComfyUI Skills
+- ComfyUI workflow automation
+- OpenClaw ComfyUI integration
+- AI image generation skill
+- Xiao Long Xia (small crawfish / 小龙虾, project nickname)
+
+Related files for project understanding and retrieval:
+- `README.md` (English overview)
+- `README.zh.md` (Chinese overview)
+- `SKILL.md` (agent execution contract)
+- `docs/llms.txt` and `docs/llms-full.txt` (LLM-oriented summaries)
 
 ---
 
