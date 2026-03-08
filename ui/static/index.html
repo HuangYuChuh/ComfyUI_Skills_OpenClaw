@@ -12,41 +12,143 @@
 <body>
   <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
 
-  <main class="page shell">
+  <!-- ═══════════════════════════════════════════════════════════════
+       VIEW 1 : Main Dashboard
+       ═══════════════════════════════════════════════════════════════ -->
+  <main id="view-main" class="page shell">
     <header class="page-header">
       <div class="logo-icon" aria-hidden="true">OC</div>
       <div class="page-title-group">
         <h1 data-i18n="title">ComfyUI OpenClaw Skill</h1>
-        <p class="subtitle" data-i18n="subtitle">Dynamically parse workflow graphs and build visual parameter mappings for agents.</p>
+        <p class="subtitle" data-i18n="subtitle">Dynamically parse workflow graphs and build visual parameter mappings
+          for agents.</p>
       </div>
-      <button id="lang-toggle" type="button" class="lang-toggle" data-i18n="lang_btn" aria-label="Switch language">中/EN</button>
+      <button id="lang-toggle" type="button" class="lang-toggle" data-i18n="lang_btn"
+        aria-label="Switch language">中/EN</button>
     </header>
 
-    <section class="card" aria-labelledby="global-config-title">
-      <h2 id="global-config-title" class="card-title" data-i18n="global_config">Global Config</h2>
-      <div class="grid-2">
-        <div class="form-group">
-          <label for="config-url" data-i18n="server_url">ComfyUI Server URL</label>
-          <input type="text" id="config-url" placeholder="http://127.0.0.1:8188" autocomplete="off">
-        </div>
-        <div class="form-group">
-          <label for="config-out" data-i18n="output_dir">Image Output Directory</label>
-          <input type="text" id="config-out" placeholder="./outputs" autocomplete="off">
+    <!-- Server Management -->
+    <section class="card" aria-labelledby="server-manager-title">
+      <div class="section-header">
+        <h2 id="server-manager-title" class="card-title" data-i18n="server_manager">Server Manager</h2>
+        <div class="server-selector-wrapper">
+          <select id="server-selector" class="server-selector"></select>
         </div>
       </div>
-      <button id="save-config-btn" type="button" class="btn" data-i18n="save_config">Save Config</button>
+
+      <div class="server-config-container card card-nested">
+        <div class="server-config-header">
+          <h3 class="section-title" data-i18n="current_server_config">Server Config</h3>
+          <!-- Current Server Summary & Controls -->
+          <div class="server-header-controls">
+            <div class="server-status-toggle">
+              <label class="toggle-inline" title="Enable/Disable Server" style="margin: 0;">
+                <span id="server-enabled-label" data-i18n="server_enabled">Enabled</span>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="server-enabled-toggle" checked />
+                  <span class="slider"></span>
+                </div>
+              </label>
+              <button id="btn-edit-server" class="btn-icon" aria-label="Edit Server">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                  class="lucide lucide-pencil">
+                  <path
+                    d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
+                  <path d="m15 5 4 4" />
+                </svg>
+              </button>
+              <button id="delete-server-btn" class="btn-icon danger" aria-label="Delete Server">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 6h18"></path>
+                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Current Server Edit Panel (Hidden by default) -->
+        <div id="current-server-config-panel" class="server-config-form hidden">
+          <!-- Details for the selected server -->
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="config-url" data-i18n="server_url_label">Server URL</label>
+              <input type="text" id="config-url" class="input-field" placeholder="http://127.0.0.1:8188" />
+            </div>
+            <div class="form-group flex-1">
+              <label for="config-out" data-i18n="server_output_dir">Output Directory</label>
+              <input type="text" id="config-out" class="input-field" placeholder="./outputs" />
+            </div>
+          </div>
+          <div class="actions">
+            <button id="save-config-btn" type="button" class="btn btn-primary" data-i18n="save_config">Save
+              Config</button>
+            <button id="btn-cancel-edit-server" type="button" class="btn btn-secondary">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add New Server Section -->
+      <div class="add-server-panel"
+        style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--card-border);">
+        <h4 style="font-size: 14px; color: var(--text-muted); margin-bottom: 12px; margin-top: 0;">添加新服务器</h4>
+        <div class="add-server-inline" style="display: flex; gap: 12px; max-width: 100%; align-items: center;">
+          <input type="text" id="new-server-id" class="input-field" placeholder="new-server-id" autocomplete="off"
+            style="flex: 1;">
+          <input type="text" id="new-server-url" class="input-field" placeholder="http://10.0.0.1:8188"
+            autocomplete="off" style="flex: 2;">
+          <button id="add-server-btn" type="button" class="btn btn-secondary"
+            style="flex-shrink: 0; white-space: nowrap;" data-i18n="add_server">Add Server</button>
+        </div>
+      </div>
     </section>
 
+    <!-- Workflow List -->
     <section class="card" aria-labelledby="workflow-manager-title">
       <div class="section-header">
         <h2 id="workflow-manager-title" class="card-title" data-i18n="workflow_manager">Workflows Manager</h2>
-        <p id="workflow-summary" class="section-meta"></p>
+        <div class="section-header-right">
+          <p id="workflow-summary" class="section-meta"></p>
+          <button id="add-workflow-btn" type="button" class="btn btn-secondary" data-i18n="register_new_short">+ New
+            Workflow</button>
+        </div>
       </div>
       <div id="workflow-list" class="workflow-list" aria-live="polite"></div>
     </section>
+  </main>
 
-    <section class="card" aria-labelledby="register-title">
-      <h2 id="register-title" class="card-title" data-i18n="register_new">Register New Workflow (Upload & Mapping)</h2>
+  <!-- ═══════════════════════════════════════════════════════════════
+       VIEW 2 : Workflow Editor (second-level view)
+       ═══════════════════════════════════════════════════════════════ -->
+  <main id="view-editor" class="page shell hidden">
+    <nav class="editor-nav">
+      <button id="editor-back-btn" type="button" class="btn btn-secondary editor-back-btn">
+        <span aria-hidden="true">&larr;</span> <span data-i18n="back">Back</span>
+      </button>
+      <div class="editor-nav-title">
+        <p id="editor-mode-badge" class="editor-mode-badge" data-i18n="editor_mode_create">Create new workflow mapping
+        </p>
+      </div>
+    </nav>
+
+    <!-- Upload + Basic Info -->
+    <section class="card" aria-labelledby="editor-info-title">
+      <h2 id="editor-info-title" class="card-title" data-i18n="wf_basic_info">Workflow Info</h2>
+      <div class="grid-2 compact-grid" style="margin-bottom: 16px;">
+        <div class="form-group no-margin">
+          <label for="wf-id" data-i18n="wf_id_label">Workflow ID (letters/numbers recommended)</label>
+          <input type="text" id="wf-id" data-i18n-placeholder="wf_id_placeholder" placeholder="e.g. sd_basic"
+            autocomplete="off">
+        </div>
+        <div class="form-group no-margin">
+          <label for="wf-desc" data-i18n="wf_desc_label">Description (for agent use)</label>
+          <input type="text" id="wf-desc" data-i18n-placeholder="wf_desc_placeholder"
+            placeholder="e.g. Generate anime-style base images" autocomplete="off">
+        </div>
+      </div>
 
       <label class="upload-zone" id="upload-zone" for="file-upload" tabindex="0">
         <input type="file" id="file-upload" accept=".json">
@@ -57,37 +159,18 @@
       <aside class="upload-reminder" aria-live="polite">
         <h3 class="upload-reminder-title" data-i18n="upload_reminder_title">Upload Reminder</h3>
         <ul class="upload-reminder-list">
-          <li data-i18n="upload_reminder_api">Please export the workflow as ComfyUI API format JSON (`workflow_api.json`), not the editor workflow JSON.</li>
+          <li data-i18n="upload_reminder_api">Please export the workflow as ComfyUI API format JSON.</li>
           <li data-i18n="upload_reminder_how">In ComfyUI, use the API format export option before uploading here.</li>
-          <li data-i18n="upload_reminder_path">After saving, files will be written to `data/workflows/&lt;workflow_id&gt;.json` and `data/schemas/&lt;workflow_id&gt;.json`.</li>
-          <li data-i18n="upload_reminder_local_path">Browsers usually only expose the selected file name during upload, not the full local path.</li>
         </ul>
       </aside>
+    </section>
 
-      <div id="mapping-section" class="mapping-section hidden">
-        <div class="mapping-intro card card-nested">
-          <div class="grid-2 compact-grid">
-            <div class="form-group no-margin">
-              <label for="wf-id" data-i18n="wf_id_label">Workflow ID (letters/numbers recommended)</label>
-              <input type="text" id="wf-id" data-i18n-placeholder="wf_id_placeholder" placeholder="e.g. sd_basic" autocomplete="off">
-            </div>
-            <div class="form-group no-margin">
-              <label for="wf-desc" data-i18n="wf_desc_label">Description (for agent use)</label>
-              <input type="text" id="wf-desc" data-i18n-placeholder="wf_desc_placeholder" placeholder="e.g. Generate anime-style base images" autocomplete="off">
-            </div>
-          </div>
-        </div>
-
-        <div class="section-header section-header-spaced">
-          <div>
-            <p id="editor-mode-badge" class="editor-mode-badge" data-i18n="editor_mode_create">Create new workflow mapping</p>
-            <h3 class="section-title" data-i18n="parsed_input">Parsed Input Node List</h3>
-          </div>
-        </div>
-        <div id="nodes-container" class="nodes-container" aria-live="polite"></div>
-
-        <button id="save-workflow-btn" type="button" class="btn btn-wide btn-accent" data-i18n="save_workflow">Save Workflow and Mapping Schema</button>
-      </div>
+    <!-- Parameter Mapping -->
+    <section id="mapping-section" class="card hidden" aria-labelledby="mapping-title">
+      <h2 id="mapping-title" class="card-title" data-i18n="parsed_input">Parsed Input Node List</h2>
+      <div id="nodes-container" class="nodes-container" aria-live="polite"></div>
+      <button id="save-workflow-btn" type="button" class="btn btn-wide btn-accent" data-i18n="save_workflow">Save
+        Workflow and Mapping Schema</button>
     </section>
   </main>
 

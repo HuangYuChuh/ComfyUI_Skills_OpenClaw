@@ -4,6 +4,10 @@ const state = {
   schemaParams: {},
   workflows: [],
   editingWorkflowId: null,
+  // Multi-server state
+  servers: [],
+  currentServerId: localStorage.getItem("ui-server") || null,
+  defaultServerId: null,
 };
 
 export function getState() {
@@ -47,4 +51,30 @@ export function setWorkflows(workflows) {
 
 export function setEditingWorkflowId(workflowId) {
   state.editingWorkflowId = workflowId;
+}
+
+// Multi-server state management
+
+export function setServers(servers) {
+  state.servers = servers;
+}
+
+export function setDefaultServerId(defaultServerId) {
+  state.defaultServerId = defaultServerId;
+}
+
+export function setCurrentServerId(serverId) {
+  state.currentServerId = serverId;
+  if (serverId) {
+    localStorage.setItem("ui-server", serverId);
+  }
+}
+
+export function getCurrentServerId() {
+  return state.currentServerId || state.defaultServerId || (state.servers[0]?.id ?? null);
+}
+
+export function getCurrentServer() {
+  const sid = getCurrentServerId();
+  return state.servers.find((s) => s.id === sid) || null;
 }

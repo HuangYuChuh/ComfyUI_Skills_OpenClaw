@@ -11,6 +11,11 @@ import {
   setWorkflows,
   toggleLanguage,
   updateSchemaParam,
+  setServers,
+  setDefaultServerId,
+  setCurrentServerId,
+  getCurrentServerId,
+  getCurrentServer,
 } from "./state.js";
 import { showToast } from "./toast.js";
 import {
@@ -25,12 +30,76 @@ import {
   renderWorkflowSummary,
 } from "./workflow-list-view.js";
 import { buildFinalSchema, extractSchemaParams, parseWorkflowUpload } from "./workflow-mapper.js";
-import { scrollToElement, setBusy } from "./ui-utils.js";
+import { scrollToElement, setBusy, escapeHtml } from "./ui-utils.js";
 
 let elements;
 
 function $(...args) {
   return window.jQuery(...args);
+}
+
+// ── View Management ───────────────────────────────────────────────
+
+function showView(viewName) {
+  if (viewName === "main") {
+    elements.viewMain.removeClass("hidden");
+    elements.viewEditor.addClass("hidden");
+  } else if (viewName === "editor") {
+    elements.viewMain.addClass("hidden");
+    elements.viewEditor.removeClass("hidden");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+}
+
+// ── Rendering & UI Refresh ────────────────────────────────────────
+
+function refreshServerSelector() {
+  const { servers } = getState();
+  const currentId = getCurrentServerId();
+
+  elements.serverSelector.empty();
+  if (servers.length === 0) {
+    elements.serverSelector.append(`<option value="">${escapeHtml(t("no_servers"))}</option>`);
+    elements.serverSelector.prop("disabled", true);
+  } else {
+    servers.forEach(s => {
+      const selected = s.id === currentId ? "selected" : "";
+      const statusIcon = s.enabled ? "🟢" : "⚫";
+      elements.serverSelector.append(`<option value="${escapeHtml(s.id)}" ${selected}>${statusIcon} ${escapeHtml(s.name)}</option>`);
+    });
+    elements.serverSelector.prop("disabled", false);
+  }
+
+  // Update config fields based on current server
+  const currentServer = getCurrentServer();
+  if (currentServer) {
+    elements.configUrl.val(currentServer.url || "");
+    elements.configOutput.val(currentServer.output_dir || "");
+    elements.serverEnabledToggle.prop("checked", currentServer.enabled);
+    elements.serverEnabledLabel.attr("data-i18n", currentServer.enabled ? "server_enabled" : "server_disabled");
+    elements.serverEnabledLabel.text(t(currentServer.enabled ? "server_enabled" : "server_disabled"));
+    elements.currentServerActions.show();
+
+    // reset edit panel
+    closeServerEditPanel();
+  } else {
+    elements.configUrl.val("");
+    elements.configOutput.val("");
+    elements.currentServerActions.hide();
+    elements.currentServerConfigPanel.addClass("hidden");
+  }
+}
+
+// ── Edit Panel Interactivity ──────────────────────────────────────
+
+function openServerEditPanel() {
+  elements.currentServerConfigPanel.removeClass("hidden");
+  elements.btnEditServer.addClass("hidden");
+}
+
+function closeServerEditPanel() {
+  elements.currentServerConfigPanel.addClass("hidden");
+  elements.btnEditServer.removeClass("hidden");
 }
 
 function refreshWorkflowPanel() {
@@ -55,6 +124,7 @@ function exitEditor() {
   clearEditorFields();
   setEditorVisibility(elements, false);
   refreshEditorPanel();
+  showView("main");
 }
 
 function enterEditor({ workflowData, schemaParams, workflowId = "", description = "", editingWorkflowId = null }) {
@@ -64,9 +134,12 @@ function enterEditor({ workflowData, schemaParams, workflowId = "", description 
   elements.fileUpload.val("");
   elements.workflowId.val(workflowId);
   elements.workflowDescription.val(description);
-  setEditorVisibility(elements, true);
+  setEditorVisibility(elements, !!workflowData);
   refreshEditorPanel();
+  showView("editor");
 }
+
+// ── Data Hydration ────────────────────────────────────────────────
 
 function hydrateSchemaParams(workflowData, savedSchemaParams) {
   const extractedParams = extractSchemaParams(workflowData);
@@ -90,34 +163,93 @@ function hydrateSchemaParams(workflowData, savedSchemaParams) {
   return extractedParams;
 }
 
-async function loadConfig() {
+// ── Server API Calls ──────────────────────────────────────────────
+
+async function loadServers() {
   try {
-    const config = await fetchJSON("/api/config");
-    elements.configUrl.val(config.comfyui_server_url || "");
-    elements.configOutput.val(config.output_dir || "");
-  } catch {
+    const data = await fetchJSON("/api/servers");
+    setServers(data.servers || []);
+    setDefaultServerId(data.default_server);
+    // Ensure current server is valid
+    const sid = getCurrentServerId();
+    if (!data.servers.find(s => s.id === sid)) {
+      setCurrentServerId(data.servers[0]?.id || null);
+    }
+    refreshServerSelector();
+  } catch (error) {
     showToast(t("err_load_cfg"), "error");
+    setServers([]);
+    refreshServerSelector();
   }
 }
 
-async function saveConfig() {
+async function saveCurrentServerConfig() {
+  const currentServer = getCurrentServer();
+  if (!currentServer) return;
+
   setBusy(elements.saveConfigButton, true);
   try {
-    await fetchJSON("/api/config", {
-      method: "POST",
+    const url = elements.configUrl.val().trim();
+    const output_dir = elements.configOutput.val().trim();
+
+    await fetchJSON(`/api/servers/${encodeURIComponent(currentServer.id)}`, {
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        comfyui_server_url: elements.configUrl.val().trim(),
-        output_dir: elements.configOutput.val().trim(),
-      }),
+      body: JSON.stringify({ ...currentServer, url, output_dir }),
     });
+
+    await loadServers();
     showToast(t("ok_save_cfg"), "success");
+    closeServerEditPanel();
   } catch (error) {
     showToast(error.message || t("err_save_cfg"), "error");
   } finally {
     setBusy(elements.saveConfigButton, false);
   }
 }
+
+async function addNewServer() {
+  const btn = $("#add-server-btn");
+  const idInput = $("#new-server-id");
+  const urlInput = $("#new-server-url");
+
+  const id = idInput.val().trim();
+  const url = urlInput.val().trim();
+
+  if (!id || !url) {
+    showToast("Server ID and URL are required", "error");
+    return;
+  }
+
+  setBusy(btn, true);
+  try {
+    await fetchJSON("/api/servers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id,
+        name: id,
+        url,
+        enabled: true,
+        output_dir: "./outputs"
+      }),
+    });
+
+    idInput.val("");
+    urlInput.val("");
+    await loadServers();
+    setCurrentServerId(id);
+    refreshServerSelector();
+    refreshWorkflowPanel();
+    showToast(t("ok_add_server"), "success");
+  } catch (error) {
+    showToast(error.message || t("err_add_server"), "error");
+  } finally {
+    setBusy(btn, false);
+  }
+}
+
+// ── Workflow API Calls ────────────────────────────────────────────
 
 async function loadWorkflows() {
   renderWorkflowLoading(elements.workflowList);
@@ -132,13 +264,13 @@ async function loadWorkflows() {
   }
 }
 
-async function loadWorkflowForEditing(workflowId, $button) {
+async function loadWorkflowForEditing(serverId, workflowId, $button) {
   if ($button?.length) {
     $button.prop("disabled", true);
   }
 
   try {
-    const data = await fetchJSON(`/api/workflow/${encodeURIComponent(workflowId)}`);
+    const data = await fetchJSON(`/api/servers/${encodeURIComponent(serverId)}/workflow/${encodeURIComponent(workflowId)}`);
     enterEditor({
       workflowData: data.workflow_data,
       schemaParams: hydrateSchemaParams(data.workflow_data, data.schema_params),
@@ -146,10 +278,10 @@ async function loadWorkflowForEditing(workflowId, $button) {
       description: data.description || "",
       editingWorkflowId: data.workflow_id || workflowId,
     });
-    scrollToElement(elements.mappingSection, 20);
     showToast(t("ok_load_saved_wf"), "success");
   } catch (error) {
     showToast(error.message || t("err_load_saved_wf"), "error");
+    showView("main");
   } finally {
     if ($button?.length) {
       $button.prop("disabled", false);
@@ -157,18 +289,18 @@ async function loadWorkflowForEditing(workflowId, $button) {
   }
 }
 
-async function toggleWorkflowStatus(workflowId, $checkbox) {
+async function toggleWorkflowStatus(serverId, workflowId, $checkbox) {
   $checkbox.prop("disabled", true);
   try {
     const enabled = $checkbox.prop("checked");
-    await fetchJSON(`/api/workflow/${encodeURIComponent(workflowId)}/toggle`, {
+    await fetchJSON(`/api/servers/${encodeURIComponent(serverId)}/workflow/${encodeURIComponent(workflowId)}/toggle`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ enabled }),
     });
 
     const updatedWorkflows = getState().workflows.map((workflow) =>
-      workflow.id === workflowId ? { ...workflow, enabled } : workflow,
+      workflow.id === workflowId && workflow.server_id === serverId ? { ...workflow, enabled } : workflow,
     );
     setWorkflows(updatedWorkflows);
     refreshWorkflowPanel();
@@ -181,14 +313,14 @@ async function toggleWorkflowStatus(workflowId, $checkbox) {
   }
 }
 
-async function deleteWorkflow(workflowId, $button) {
+async function deleteWorkflow(serverId, workflowId, $button) {
   if (!window.confirm(t("del_wf_confirm", { id: workflowId }))) {
     return;
   }
 
   $button.prop("disabled", true);
   try {
-    await fetchJSON(`/api/workflow/${encodeURIComponent(workflowId)}`, { method: "DELETE" });
+    await fetchJSON(`/api/servers/${encodeURIComponent(serverId)}/workflow/${encodeURIComponent(workflowId)}`, { method: "DELETE" });
     if (getState().editingWorkflowId === workflowId) {
       exitEditor();
     }
@@ -200,91 +332,8 @@ async function deleteWorkflow(workflowId, $button) {
   }
 }
 
-function readFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (event) => resolve(event.target?.result || "");
-    reader.onerror = () => reject(reader.error);
-    reader.readAsText(file);
-  });
-}
-
-function getUploadErrorMessage(error) {
-  if (error?.code === "EDITOR_WORKFLOW_FORMAT") {
-    return { message: t("err_ui_workflow_format"), duration: 5000 };
-  }
-
-  if (error?.code === "NO_MAPPABLE_PARAMS") {
-    return { message: t("err_no_mappable_params"), duration: 4500 };
-  }
-
-  return { message: t("err_invalid_json"), duration: 3000 };
-}
-
-async function handleWorkflowFile(file) {
-  if (!file) {
-    return;
-  }
-
-  try {
-    const fileContents = await readFile(file);
-    const parsed = parseWorkflowUpload(fileContents);
-    enterEditor({
-      workflowData: parsed.workflowData,
-      schemaParams: parsed.schemaParams,
-    });
-    clearEditorFields();
-    showToast(t("ok_wf_load"), "success");
-  } catch (error) {
-    const uploadError = getUploadErrorMessage(error);
-    showToast(uploadError.message, "error", uploadError.duration);
-  }
-}
-
-async function saveWorkflow() {
-  const workflowId = elements.workflowId.val().trim();
-  const description = elements.workflowDescription.val().trim();
-  const { currentUploadData, schemaParams, editingWorkflowId } = getState();
-
-  if (!workflowId) {
-    showToast(t("err_no_id"), "error");
-    return;
-  }
-
-  const { finalSchema, exposedCount, missingAlias } = buildFinalSchema(schemaParams);
-  if (missingAlias) {
-    showToast(t("err_no_alias", { node: missingAlias.node_id, val: missingAlias.field }), "error");
-    return;
-  }
-
-  if (exposedCount === 0 && !window.confirm(t("warn_no_params"))) {
-    return;
-  }
-
-  setBusy(elements.saveWorkflowButton, true);
-  try {
-    await requestSaveWorkflow({
-      workflowId,
-      originalWorkflowId: editingWorkflowId,
-      description,
-      workflowData: currentUploadData,
-      schemaParams: finalSchema,
-    });
-    showToast(t("ok_save_wf"), "success");
-    await loadWorkflows();
-    exitEditor();
-    scrollToElement(elements.workflowList, 32);
-  } catch (error) {
-    if (error?.cancelled) {
-      return;
-    }
-    showToast(error.message || t("err_save_wf"), "error");
-  } finally {
-    setBusy(elements.saveWorkflowButton, false);
-  }
-}
-
 async function requestSaveWorkflow({
+  serverId,
   workflowId,
   originalWorkflowId,
   description,
@@ -293,6 +342,7 @@ async function requestSaveWorkflow({
 }) {
   const savePayload = {
     workflow_id: workflowId,
+    server_id: serverId,
     original_workflow_id: originalWorkflowId,
     description,
     workflow_data: workflowData,
@@ -301,7 +351,7 @@ async function requestSaveWorkflow({
   };
 
   try {
-    return await fetchJSON("/api/workflow/save", {
+    return await fetchJSON(`/api/servers/${encodeURIComponent(serverId)}/workflow/save`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(savePayload),
@@ -317,7 +367,7 @@ async function requestSaveWorkflow({
       throw error;
     }
 
-    return fetchJSON("/api/workflow/save", {
+    return fetchJSON(`/api/servers/${encodeURIComponent(serverId)}/workflow/save`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -328,30 +378,220 @@ async function requestSaveWorkflow({
   }
 }
 
+async function saveWorkflow() {
+  const serverId = getCurrentServerId();
+  if (!serverId) {
+    showToast("No server selected", "error");
+    return;
+  }
+
+  const workflowId = elements.workflowId.val().trim();
+  const description = elements.workflowDescription.val().trim();
+  const { currentUploadData, schemaParams, editingWorkflowId } = getState();
+
+  if (!workflowId) {
+    showToast(t("err_no_id"), "error");
+    return;
+  }
+
+  // Generate mapping schema from UI state
+  const { finalSchema, exposedCount, missingAlias } = buildFinalSchema(schemaParams);
+  if (missingAlias) {
+    showToast(t("err_no_alias", { node: missingAlias.node_id, val: missingAlias.field }), "error");
+    return;
+  }
+
+  if (exposedCount === 0 && !window.confirm(t("warn_no_params"))) {
+    return;
+  }
+
+  // Prepare workflowData. If new upload, use currentUploadData.
+  // If editing and no new upload, backend requires us to resend existing data,
+  // but we skip the "need upload" check if editingWorkflowId is set.
+  if (!currentUploadData && !editingWorkflowId) {
+    showToast("No workflow data uploaded. Please upload a workflow JSON.", "error");
+    return;
+  }
+
+  setBusy(elements.saveWorkflowButton, true);
+  try {
+    await requestSaveWorkflow({
+      serverId,
+      workflowId,
+      originalWorkflowId: editingWorkflowId,
+      description,
+      // If editing but no new file uploaded, we might have partial data (the existing graph). 
+      // The backend will fetch the existing one if we pass null for workflow_data.
+      workflowData: currentUploadData || null,
+      schemaParams: finalSchema,
+    });
+    showToast(t("ok_save_wf"), "success");
+    await loadWorkflows();
+    exitEditor();
+  } catch (error) {
+    if (error?.cancelled) {
+      return;
+    }
+    showToast(error.message || t("err_save_wf"), "error");
+  } finally {
+    setBusy(elements.saveWorkflowButton, false);
+  }
+}
+
+// ── File Upload ───────────────────────────────────────────────────
+
+function readFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => resolve(event.target?.result || "");
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(file);
+  });
+}
+
+function getUploadErrorMessage(error) {
+  if (error?.code === "EDITOR_WORKFLOW_FORMAT") {
+    return { message: t("err_ui_workflow_format"), duration: 5000 };
+  }
+  if (error?.code === "NO_MAPPABLE_PARAMS") {
+    return { message: t("err_no_mappable_params"), duration: 4500 };
+  }
+  return { message: t("err_invalid_json"), duration: 3000 };
+}
+
+async function handleWorkflowFile(file) {
+  if (!file) return;
+
+  if (!getCurrentServerId()) {
+    showToast("Please add/select a server first.", "error");
+    return;
+  }
+
+  try {
+    const fileContents = await readFile(file);
+    const parsed = parseWorkflowUpload(fileContents);
+    // Merge new parsed schemaParams with potentially existing ones (if user uploads a new json over an existing mapping)
+    const { schemaParams: oldParams } = getState();
+    const newSchema = { ...parsed.schemaParams };
+
+    setUploadData(parsed.workflowData);
+    setSchemaParams(newSchema);
+
+    setEditorVisibility(elements, true);
+    refreshEditorPanel();
+
+    showToast(t("ok_wf_load"), "success");
+  } catch (error) {
+    const uploadError = getUploadErrorMessage(error);
+    showToast(uploadError.message, "error", uploadError.duration);
+  }
+}
+
+// ── Event Binding ─────────────────────────────────────────────────
+
 function syncLanguage() {
   setLanguage(getState().currentLang);
   applyTranslations();
+  refreshServerSelector();
   refreshWorkflowPanel();
   refreshEditorPanel();
 }
 
+function bindServerEvents() {
+  elements.serverSelector.on("change", function () {
+    const sid = $(this).val();
+    setCurrentServerId(sid);
+    refreshServerSelector(); // updates config inputs
+    refreshWorkflowPanel(); // updates workflow list
+  });
+
+  $("#add-server-btn").on("click", addNewServer);
+
+  elements.serverEnabledToggle.on("change", async function () {
+    const enabled = $(this).prop("checked");
+    const currentServer = getCurrentServer();
+    if (!currentServer) return;
+
+    $(this).prop("disabled", true);
+    try {
+      await fetchJSON(`/api/servers/${encodeURIComponent(currentServer.id)}/toggle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled }),
+      });
+      await loadServers();
+      showToast(t("ok_toggle_server"), "success");
+    } catch (e) {
+      $(this).prop("checked", !enabled);
+      showToast(t("err_toggle_server"), "error");
+    } finally {
+      $(this).prop("disabled", false);
+    }
+  });
+
+  elements.deleteServerBtn.on("click", async function () {
+    const currentServer = getCurrentServer();
+    if (!currentServer) return;
+
+    if (!window.confirm(t("del_server_confirm", { id: currentServer.id }))) {
+      return;
+    }
+
+    const $btn = $(this);
+    $btn.prop("disabled", true);
+    try {
+      await fetchJSON(`/api/servers/${encodeURIComponent(currentServer.id)}`, { method: "DELETE" });
+      await loadServers();
+      refreshWorkflowPanel();
+      showToast(t("ok_del_server"), "success");
+    } catch (e) {
+      showToast(t("err_del_server"), "error");
+    } finally {
+      $btn.prop("disabled", false);
+    }
+  });
+}
+
 function bindWorkflowEvents() {
+  // Edit Server
+  elements.btnEditServer.on("click", openServerEditPanel);
+  elements.btnCancelEditServer.on("click", closeServerEditPanel);
+
+  // New Workflow
+  elements.addWorkflowBtn.on("click", () => {
+    if (!getCurrentServerId()) {
+      showToast("Please add/select a server to register a workflow.", "error");
+      return;
+    }
+    enterEditor({ workflowData: null, schemaParams: {} });
+  });
+
+  elements.editorBackBtn.on("click", () => {
+    exitEditor();
+  });
+
   elements.workflowList.on("click", "button[data-action='delete-workflow']", function () {
     const $button = $(this);
-    const workflowId = $button.closest("[data-workflow-id]").data("workflowId");
-    deleteWorkflow(workflowId, $button);
+    const $item = $button.closest("[data-workflow-id]");
+    const workflowId = $item.data("workflowId");
+    const serverId = $item.data("serverId");
+    deleteWorkflow(serverId, workflowId, $button);
   });
 
   elements.workflowList.on("click", "button[data-action='edit-workflow']", function () {
     const $button = $(this);
-    const workflowId = $button.closest("[data-workflow-id]").data("workflowId");
-    loadWorkflowForEditing(workflowId, $button);
+    const $item = $button.closest("[data-workflow-id]");
+    const workflowId = $item.data("workflowId");
+    const serverId = $item.data("serverId");
+    loadWorkflowForEditing(serverId, workflowId, $button);
   });
 
   elements.workflowList.on("change", "input[data-action='toggle-workflow']", function () {
     const $checkbox = $(this);
-    const workflowId = $checkbox.closest("[data-workflow-id]").data("workflowId");
-    toggleWorkflowStatus(workflowId, $checkbox);
+    const $item = $checkbox.closest("[data-workflow-id]");
+    const workflowId = $item.data("workflowId");
+    const serverId = $item.data("serverId");
+    toggleWorkflowStatus(serverId, workflowId, $checkbox);
   });
 }
 
@@ -401,12 +641,15 @@ function bindEvents() {
   elements.langToggle.on("click", () => {
     toggleLanguage();
     applyTranslations();
+    refreshServerSelector();
     refreshWorkflowPanel();
     refreshEditorPanel();
   });
 
-  elements.saveConfigButton.on("click", saveConfig);
+  elements.saveConfigButton.on("click", saveCurrentServerConfig);
   elements.saveWorkflowButton.on("click", saveWorkflow);
+
+  bindServerEvents();
   bindWorkflowEvents();
   bindNodeFieldUpdates();
   bindUploadInteractions();
@@ -427,8 +670,14 @@ async function init() {
   elements = getElements();
   syncLanguage();
   bindEvents();
+
+  // Show Main View initially
+  showView("main");
   renderEmptyNodes(elements.nodesContainer);
-  await Promise.all([loadConfig(), loadWorkflows()]);
+
+  // Load servers first, then workflows
+  await loadServers();
+  await loadWorkflows();
 }
 
 init();
