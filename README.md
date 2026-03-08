@@ -140,6 +140,8 @@ Then open:
 
 Use it to configure ComfyUI server URL and manage workflow/schema mapping.
 
+Implementation is split for easier maintenance across `ui/app.py`, `ui/services.py`, `ui/static/styles.css`, and `ui/static/js/`.
+
 ---
 
 ## OpenClaw Integration Notes

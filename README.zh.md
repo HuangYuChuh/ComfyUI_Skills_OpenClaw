@@ -134,6 +134,8 @@ python scripts/comfyui_client.py \
 
 可用于配置 ComfyUI 地址，以及管理 workflow/schema 映射。
 
+当前 UI 代码已按职责拆分，便于维护：`ui/app.py`、`ui/services.py`、`ui/static/styles.css`、`ui/static/js/`。
+
 ---
 
 ## OpenClaw 集成说明

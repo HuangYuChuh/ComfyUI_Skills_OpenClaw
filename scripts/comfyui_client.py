@@ -7,22 +7,14 @@ import urllib.request
 import urllib.parse
 from logging import getLogger
 
+from shared.json_utils import load_json
+from shared.runtime_config import get_runtime_config
+
 logger = getLogger(__name__)
 
-# Base directory setup
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
 WORKFLOWS_DIR = os.path.join(BASE_DIR, "data", "workflows")
 SCHEMAS_DIR = os.path.join(BASE_DIR, "data", "schemas")
-
-def load_json(filepath):
-    with open(filepath, 'r', encoding='utf-8') as f:
-        return json.load(f)
-
-def get_config():
-    if not os.path.exists(CONFIG_PATH):
-        return {"comfyui_server_url": "http://127.0.0.1:8188", "output_dir": os.path.join(BASE_DIR, "outputs")}
-    return load_json(CONFIG_PATH)
 
 def queue_prompt(server_url, prompt_workflow):
     data = json.dumps({"prompt": prompt_workflow, "client_id": str(uuid.uuid4())}).encode('utf-8')
@@ -60,7 +52,7 @@ def main():
     args = parser.parse_args()
     
     # 1. Load config
-    config = get_config()
+    config = get_runtime_config()
     server_url = config.get("comfyui_server_url", "http://127.0.0.1:8188")
     output_dir = config.get("output_dir", os.path.join(BASE_DIR, "outputs"))
     
