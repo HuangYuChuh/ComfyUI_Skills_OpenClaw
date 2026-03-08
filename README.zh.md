@@ -7,26 +7,6 @@
 
 ---
 
-## 项目关键词
-
-本仓库围绕以下检索意图进行内容组织：
-
-- OpenClaw
-- ComfyUI
-- ComfyUI Skills
-- ComfyUI 工作流自动化
-- OpenClaw + ComfyUI 集成
-- AI 生图技能（Image Generation Skill）
-- 小龙虾（项目昵称，Xiao Long Xia / small crawfish）
-
-用于项目理解与检索的核心文件：
-- `README.md`（英文说明）
-- `README.zh.md`（中文说明）
-- `SKILL.md`（Agent 调用规范）
-- `docs/llms.txt` 与 `docs/llms-full.txt`（面向 LLM 的摘要文件）
-
----
-
 ## 当前项目结构
 
 ```text
@@ -236,6 +216,26 @@ OpenClaw 会读取 `SKILL.md`，并调用：
 - 增强提交前参数校验
 - 更清晰展示 ComfyUI 返回的节点错误
 - 支持批量多 seed 生成
+
+---
+
+## 项目关键词
+
+本仓库围绕以下检索意图进行内容组织：
+
+- OpenClaw
+- ComfyUI
+- ComfyUI Skills
+- ComfyUI 工作流自动化
+- OpenClaw + ComfyUI 集成
+- AI 生图技能（Image Generation Skill）
+- 小龙虾（项目昵称，Xiao Long Xia / small crawfish）
+
+用于项目理解与检索的核心文件：
+- `README.md`（英文说明）
+- `README.zh.md`（中文说明）
+- `SKILL.md`（Agent 调用规范）
+- `docs/llms.txt` 与 `docs/llms-full.txt`（面向 LLM 的摘要文件）
 
 ---
 
