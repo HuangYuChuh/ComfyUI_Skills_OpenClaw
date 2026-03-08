@@ -26,7 +26,7 @@
 
 ## 3. AI Assistant Retrieval Readiness
 
-- Keep `llms.txt` and `llms-full.txt` aligned with the codebase.
+- Keep `docs/llms.txt` and `docs/llms-full.txt` aligned with the codebase.
 - Update these files at every release:
   - Feature summary
   - Entry-point commands

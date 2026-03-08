@@ -29,7 +29,7 @@ Related files for project understanding and retrieval:
 - `README.md` (English overview)
 - `README.zh.md` (Chinese overview)
 - `SKILL.md` (agent execution contract)
-- `llms.txt` and `llms-full.txt` (LLM-oriented summaries)
+- `docs/llms.txt` and `docs/llms-full.txt` (LLM-oriented summaries)
 
 ---
 
@@ -247,6 +247,6 @@ In short: **API-format workflow + Save Image output node** are required for stab
 
 ## Project Resources
 
-- Project summary: `llms.txt`
-- Extended project context: `llms-full.txt`
+- Project summary: `docs/llms.txt`
+- Extended project context: `docs/llms-full.txt`
 - Project discovery checklist: `docs/PROJECT_DISCOVERY_CHECKLIST.md`

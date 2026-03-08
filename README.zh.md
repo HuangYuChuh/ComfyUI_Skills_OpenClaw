@@ -23,7 +23,7 @@
 - `README.md`（英文说明）
 - `README.zh.md`（中文说明）
 - `SKILL.md`（Agent 调用规范）
-- `llms.txt` 与 `llms-full.txt`（面向 LLM 的摘要文件）
+- `docs/llms.txt` 与 `docs/llms-full.txt`（面向 LLM 的摘要文件）
 
 ---
 
@@ -241,6 +241,6 @@ OpenClaw 会读取 `SKILL.md`，并调用：
 
 ## 项目资料
 
-- 项目摘要：`llms.txt`
-- 项目扩展上下文：`llms-full.txt`
+- 项目摘要：`docs/llms.txt`
+- 项目扩展上下文：`docs/llms-full.txt`
 - 项目传播清单：`docs/PROJECT_DISCOVERY_CHECKLIST.md`
