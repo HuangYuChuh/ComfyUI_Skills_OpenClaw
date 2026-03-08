@@ -28,11 +28,13 @@ ComfyUI_Skills_OpenClaw/
 ├── asset/
 │   └── banner.jpg
 ├── data/
-│   ├── workflows/
-│   │   └── <workflow_id>.json  # ComfyUI workflow API export
-│   └── schemas/
-│       └── <workflow_id>.json  # Exposed parameter mapping
+│   ├── <server_id>/
+│   │   ├── workflows/
+│   │   │   └── <workflow_id>.json  # ComfyUI workflow API export
+│   │   └── schemas/
+│   │       └── <workflow_id>.json  # Exposed parameter mapping
 ├── scripts/
+│   ├── server_manager.py       # CLI tool for managing servers
 │   ├── registry.py             # List workflows + exposed parameters for agent
 │   ├── comfyui_client.py       # Inject args, queue prompt, poll history, download images
 │   └── shared/                 # Shared config & JSON utils (reused across scripts)
@@ -85,8 +87,16 @@ pip install -r requirements.txt
 
 ```json
 {
-  "comfyui_server_url": "http://127.0.0.1:8188",
-  "output_dir": "./outputs"
+  "servers": [
+    {
+      "id": "local",
+      "name": "Local Mac",
+      "url": "http://127.0.0.1:8188",
+      "enabled": true,
+      "output_dir": "./outputs"
+    }
+  ],
+  "default_server": "local"
 }
 ```
 
@@ -113,7 +123,7 @@ Exposed params:
 
 ```bash
 python scripts/comfyui_client.py \
-  --workflow test \
+  --workflow local/test \
   --args '{"prompt":"A premium product photo on aged driftwood, warm cinematic light","size":"3:4,1728x2304","seed":20260307}'
 ```
 
@@ -147,9 +157,26 @@ Then open:
 
 - `http://localhost:8189`
 
-Use it to configure ComfyUI server URL and manage workflow/schema mapping.
+Use it to configure ComfyUI server URLs, outputs, and manage workflow/schema mapping.
 
-Implementation is split for easier maintenance across `ui/app.py`, `ui/services.py`, `ui/static/styles.css`, and `ui/static/js/`.
+---
+
+## Multi-Server Management
+
+You can now configure multiple ComfyUI servers, enabling your agent to dispatch workflows across different hardware (e.g., local machines, cloud A100s).
+
+### Concept
+- **Dual-Layer Toggles**: Both *servers* and *individual workflows* can be enabled or disabled. A workflow is only visible to the AI agent if **both** the server and the workflow itself are enabled.
+- **Namespacing**: Workflows are identified with a composite ID: `<server_id>/<workflow_id>` (e.g., `local/sdxl-base` vs. `cloud-a100/sdxl-base`).
+
+### Configuration via CLI
+A built-in CLI tool (`scripts/server_manager.py`) allows server management on headless Linux machines:
+```bash
+python scripts/server_manager.py list
+python scripts/server_manager.py add --id cloud --name "Cloud Node" --url http://10.0.0.1:8188
+python scripts/server_manager.py disable cloud
+```
+*You can also manage servers fully via the Web UI.*
 
 ---
 

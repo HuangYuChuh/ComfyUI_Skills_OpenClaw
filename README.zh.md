@@ -22,11 +22,13 @@ ComfyUI_Skills_OpenClaw/
 ├── asset/
 │   └── banner.jpg
 ├── data/
-│   ├── workflows/
-│   │   └── <workflow_id>.json  # ComfyUI API 格式工作流
-│   └── schemas/
-│       └── <workflow_id>.json  # 对外参数映射
+│   ├── <server_id>/
+│   │   ├── workflows/
+│   │   │   └── <workflow_id>.json  # ComfyUI API 格式工作流
+│   │   └── schemas/
+│   │       └── <workflow_id>.json  # 对外参数映射
 ├── scripts/
+│   ├── server_manager.py       # 管理多服务器配置的 CLI 工具
 │   ├── registry.py             # 列出可用工作流及参数
 │   ├── comfyui_client.py       # 注入参数、提交任务、轮询完成、下载图片
 │   └── shared/                 # 跨脚本共用的配置与 JSON 工具
@@ -79,8 +81,16 @@ pip install -r requirements.txt
 
 ```json
 {
-  "comfyui_server_url": "http://127.0.0.1:8188",
-  "output_dir": "./outputs"
+  "servers": [
+    {
+      "id": "local",
+      "name": "Local Mac",
+      "url": "http://127.0.0.1:8188",
+      "enabled": true,
+      "output_dir": "./outputs"
+    }
+  ],
+  "default_server": "local"
 }
 ```
 
@@ -107,7 +117,7 @@ python scripts/registry.py list
 
 ```bash
 python scripts/comfyui_client.py \
-  --workflow test \
+  --workflow local/test \
   --args '{"prompt":"一张高质感产品摄影图，温暖电影级光影","size":"3:4,1728x2304","seed":20260307}'
 ```
 
@@ -141,9 +151,26 @@ python scripts/comfyui_client.py \
 
 - `http://localhost:8189`
 
-可用于配置 ComfyUI 地址，以及管理 workflow/schema 映射。
+可用于配置多个 ComfyUI 服务器地址、输出目录，以及管理工作流及 Schema 映射。
 
-当前 UI 代码已按职责拆分，便于维护：`ui/app.py`、`ui/services.py`、`ui/static/styles.css`、`ui/static/js/`。
+---
+
+## 多服务器管理 (Multi-Server)
+
+你现在可以配置多个不同的 ComfyUI 服务器，方便 Agent 将生图任务分发到不同算力节点（例如本机 GPU、云端 A100 实例等）。
+
+### 核心概念
+- **双层控制开关**：`服务器` 和 `独立工作流` 均有各自的开启/关闭状态。Agent 只能发现**两者均开启**的工作流。
+- **命名空间组合**：Agent 识别工作流的唯一标识变更为 `<server_id>/<workflow_id>` 的复合格式（例如：`local/test` 与 `cloud-a100/test`）。
+
+### 命令行工具配置
+在无 GUI 的 Linux 机器部署时，可使用内置的 CLI 工具（`scripts/server_manager.py`）进行管理：
+```bash
+python scripts/server_manager.py list
+python scripts/server_manager.py add --id cloud --name "Cloud Node" --url http://10.0.0.1:8188
+python scripts/server_manager.py disable cloud
+```
+*所有服务器配置依然可以通过前端 Web UI 界面来进行图形化无缝管理。*
 
 ---
 

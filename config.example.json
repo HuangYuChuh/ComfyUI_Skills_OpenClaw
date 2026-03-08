@@ -1,4 +1,12 @@
 {
-    "comfyui_server_url": "http://127.0.0.1:8188",
-    "output_dir": "./outputs"
+    "servers": [
+        {
+            "id": "local",
+            "name": "Local",
+            "url": "http://127.0.0.1:8188",
+            "enabled": true,
+            "output_dir": "./outputs"
+        }
+    ],
+    "default_server": "local"
 }
