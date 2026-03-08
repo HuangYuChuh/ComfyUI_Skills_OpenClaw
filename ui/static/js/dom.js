@@ -18,6 +18,7 @@ export function getElements() {
     btnEditServer: $("#btn-edit-server"),
     serverModalOverlay: $("#server-modal-overlay"),
     serverModalTitle: $("#server-modal-title"),
+    serverModalIdGroup: $("#modal-server-id-group"),
     serverModalId: $("#modal-server-id"),
     serverModalName: $("#modal-server-name"),
     serverModalUrl: $("#modal-server-url"),

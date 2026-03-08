@@ -87,8 +87,12 @@ function refreshServerSelector() {
   elements.serverSelector.empty();
   servers.forEach(s => {
     const selected = s.id === currentId ? "selected" : "";
-    const statusIcon = s.enabled ? "🟢" : "⚫";
-    elements.serverSelector.append(`<option value="${escapeHtml(s.id)}" ${selected}>${statusIcon} ${escapeHtml(s.name)}</option>`);
+    const displayName = s.name && s.name !== s.id
+      ? `${s.name} (${s.id})`
+      : s.id;
+    elements.serverSelector.append(
+      `<option value="${escapeHtml(s.id)}" ${selected}>${escapeHtml(displayName)}</option>`,
+    );
   });
   elements.serverSelector.prop("disabled", false);
 
@@ -123,11 +127,13 @@ function openServerModal(mode = "add") {
   const currentServer = getCurrentServer();
 
   if (mode === "edit" && currentServer) {
+    elements.serverModalIdGroup.removeClass("hidden");
     elements.serverModalId.val(currentServer.id || "").prop("disabled", true);
     elements.serverModalName.val(currentServer.name || currentServer.id || "");
     elements.serverModalUrl.val(currentServer.url || "");
     elements.serverModalOutput.val(currentServer.output_dir || "./outputs");
   } else {
+    elements.serverModalIdGroup.addClass("hidden");
     elements.serverModalId.val("").prop("disabled", false);
     elements.serverModalName.val("");
     elements.serverModalUrl.val("");
@@ -142,7 +148,7 @@ function openServerModal(mode = "add") {
       elements.serverModalName.trigger("focus");
       return;
     }
-    elements.serverModalId.trigger("focus");
+    elements.serverModalName.trigger("focus");
   }, 0);
 }
 
@@ -421,9 +427,14 @@ async function saveServerFromModal() {
   const name = elements.serverModalName.val().trim() || id;
   const url = elements.serverModalUrl.val().trim();
   const output_dir = elements.serverModalOutput.val().trim() || "./outputs";
+  let createdServerId = null;
 
-  if (!id || !name || !url) {
+  if (serverModalMode === "edit" && (!id || !name || !url)) {
     showToast(t("err_server_name_id_url_required"), "error");
+    return;
+  }
+  if (serverModalMode === "add" && (!name || !url)) {
+    showToast(t("err_server_name_url_required"), "error");
     return;
   }
 
@@ -449,22 +460,26 @@ async function saveServerFromModal() {
       setCurrentServerId(currentServer.id);
       showToast(t("ok_save_cfg"), "success");
     } else {
-      await fetchJSON("/api/servers", {
+      const created = await fetchJSON("/api/servers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id,
           name,
           url,
           enabled: true,
           output_dir,
         }),
       });
-      setCurrentServerId(id);
-      showToast(t("ok_add_server"), "success");
+      createdServerId = created?.server?.id || null;
     }
 
     await loadServers();
+    if (serverModalMode === "add") {
+      if (createdServerId) {
+        setCurrentServerId(createdServerId);
+      }
+      showToast(t("ok_add_server"), "success");
+    }
     refreshServerSelector();
     refreshWorkflowPanel();
     closeServerModal();

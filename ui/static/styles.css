@@ -114,7 +114,7 @@ label {
 .shell {
   width: min(100%, 1080px);
   margin: 0 auto;
-  padding: calc(var(--space-6) + var(--space-3)) var(--space-4) 56px;
+  padding: calc(var(--space-6) + var(--space-5)) var(--space-4) 56px;
 }
 
 .page {
@@ -593,6 +593,14 @@ body.modal-open {
 
 .form-group.no-margin {
   margin-bottom: 0;
+}
+
+.form-help {
+  margin-top: 6px;
+  margin-bottom: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.35;
 }
 
 .btn,
@@ -1259,7 +1267,7 @@ button:disabled,
 
 @media (max-width: 768px) {
   .shell {
-    padding: 40px 16px 40px;
+    padding: 52px 16px 40px;
   }
 
   .page-header,

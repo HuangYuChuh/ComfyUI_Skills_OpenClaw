@@ -222,15 +222,17 @@
         <h3 id="server-modal-title" class="card-title">Add Server</h3>
       </div>
       <div class="modal-body modal-grid">
-        <div class="form-group form-group-half">
+        <div id="modal-server-id-group" class="form-group form-group-half">
           <label for="modal-server-id" data-i18n="server_id_label">Server ID</label>
           <input type="text" id="modal-server-id" class="input-field" data-i18n-placeholder="new_server_id_placeholder"
             placeholder="new-server-id" autocomplete="off">
+          <p class="form-help" data-i18n="server_id_help">ID is auto-generated and cannot be changed later.</p>
         </div>
         <div class="form-group form-group-half">
           <label for="modal-server-name" data-i18n="server_name">Server Name</label>
           <input type="text" id="modal-server-name" class="input-field" data-i18n-placeholder="new_server_name_placeholder"
             placeholder="Local" autocomplete="off">
+          <p class="form-help" data-i18n="server_name_help">Name is display-only and can be changed later.</p>
         </div>
         <div class="form-group form-group-full">
           <label for="modal-server-url" data-i18n="server_url_label">Server URL</label>
