@@ -37,13 +37,18 @@ export function renderWorkflowList($container) {
                 <span class="workflow-name">${escapeHtml(workflow.id)}</span>
                 <span class="workflow-server-tag">${escapeHtml(workflow.server_name || workflow.server_id)}</span>
               </div>
-              <p class="workflow-desc">${desc ? escapeHtml(desc) : `<em>${escapeHtml(stateText)}</em>`}</p>
+              ${desc ? `<p class="workflow-desc">${escapeHtml(desc)}</p>` : ""}
             </div>
             <div class="workflow-actions">
-              <label class="toggle-switch" aria-label="${escapeHtml(t("toggle_workflow", { id: workflow.id }))}">
-                <input type="checkbox" data-action="toggle-workflow" ${workflow.enabled ? "checked" : ""}>
-                <span class="slider"></span>
-              </label>
+              <div class="workflow-status-toggle">
+                <label class="toggle-inline" aria-label="${escapeHtml(t("toggle_workflow", { id: workflow.id }))}">
+                  <span class="workflow-enabled-label${workflow.enabled ? " status-on" : " status-off"}">${escapeHtml(stateText)}</span>
+                  <div class="toggle-switch">
+                    <input type="checkbox" data-action="toggle-workflow" ${workflow.enabled ? "checked" : ""}>
+                    <span class="slider"></span>
+                  </div>
+                </label>
+              </div>
               <button type="button" class="btn btn-secondary btn-icon workflow-action-btn" data-action="edit-workflow" aria-label="${escapeHtml(t("edit_workflow", { id: workflow.id }))}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
