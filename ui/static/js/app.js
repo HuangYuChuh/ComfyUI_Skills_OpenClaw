@@ -29,8 +29,8 @@ import { scrollToElement, setBusy } from "./ui-utils.js";
 
 let elements;
 
-function $() {
-  return window.jQuery;
+function $(...args) {
+  return window.jQuery(...args);
 }
 
 function refreshWorkflowPanel() {
