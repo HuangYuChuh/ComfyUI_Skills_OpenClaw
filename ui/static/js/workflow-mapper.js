@@ -18,10 +18,10 @@ export function parseWorkflowUpload(fileContent) {
 function isEditorWorkflow(workflowData) {
   return Boolean(
     workflowData &&
-      typeof workflowData === "object" &&
-      !Array.isArray(workflowData) &&
-      Array.isArray(workflowData.nodes) &&
-      Array.isArray(workflowData.links),
+    typeof workflowData === "object" &&
+    !Array.isArray(workflowData) &&
+    Array.isArray(workflowData.nodes) &&
+    Array.isArray(workflowData.links),
   );
 }
 
@@ -46,16 +46,69 @@ export function extractSchemaParams(workflowData) {
         typeGuess = "boolean";
       }
 
+      // --- AI NATIVE: Heuristic Auto-Configuration ---
+      let shouldExpose = false;
+      let autoName = field;
+      let autoDesc = "";
+      let isRequired = false;
+      const cType = nodeObject.class_type || "";
+
+      if (cType.includes("KSampler")) {
+        if (field === "seed") {
+          shouldExpose = true;
+          autoDesc = "Random seed (for reproducibility)";
+        }
+        if (field === "steps") {
+          shouldExpose = true;
+          autoDesc = "Generation steps";
+        }
+      } else if (cType.includes("CLIPTextEncode") || cType.includes("Text") || cType.includes("Prompt")) {
+        if (field === "text" || field === "prompt") {
+          shouldExpose = true;
+          isRequired = true;
+          autoName = `prompt_${nodeId}`;
+          autoDesc = "Text prompt description";
+        }
+      } else if (cType === "EmptyLatentImage") {
+        if (field === "width" || field === "height" || field === "batch_size") {
+          shouldExpose = true;
+          autoDesc = `Image ${field}`;
+        }
+      } else if (cType === "SaveImage") {
+        if (field === "filename_prefix") {
+          shouldExpose = true;
+          autoDesc = "Output file prefix";
+        }
+      } else if (cType === "LightCCDoubaoImageNode") {
+        if (field === "prompt") {
+          shouldExpose = true;
+          isRequired = true;
+          autoDesc = "Positive image prompt";
+        }
+        if (field === "size") {
+          shouldExpose = true;
+          autoDesc = "e.g., 1:1,2048x2048";
+        }
+        if (field === "seed") {
+          shouldExpose = true;
+          autoDesc = "Random seed";
+        }
+        if (field === "num") {
+          shouldExpose = true;
+          autoDesc = "Number of images to generate";
+        }
+      }
+
       schemaParams[paramKey] = {
-        exposed: false,
+        exposed: shouldExpose,
         node_id: Number.parseInt(nodeId, 10),
         field,
-        name: field,
+        name: autoName,
         type: typeGuess,
-        required: false,
-        description: "",
+        required: isRequired,
+        description: autoDesc,
         currentVal: value,
-        nodeClass: nodeObject.class_type || "UnknownNode",
+        nodeClass: cType || "UnknownNode",
       };
     });
   });
