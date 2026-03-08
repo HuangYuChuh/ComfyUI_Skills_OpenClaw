@@ -40,7 +40,7 @@
         <div class="server-config-header">
           <h3 class="section-title" data-i18n="current_server_config">Server Config</h3>
           <!-- Current Server Summary & Controls -->
-          <div class="server-header-controls">
+          <div id="current-server-actions" class="server-header-controls">
             <div class="server-status-toggle">
               <label class="toggle-inline" title="Enable/Disable Server" style="margin: 0;">
                 <span id="server-enabled-label" data-i18n="server_enabled">Enabled</span>
@@ -58,7 +58,7 @@
                   <path d="m15 5 4 4" />
                 </svg>
               </button>
-              <button id="delete-server-btn" class="btn-icon danger" aria-label="Delete Server">
+              <button id="delete-server-btn" class="btn-danger btn-icon" aria-label="Delete Server">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M3 6h18"></path>
@@ -86,22 +86,22 @@
           <div class="actions">
             <button id="save-config-btn" type="button" class="btn btn-primary" data-i18n="save_config">Save
               Config</button>
-            <button id="btn-cancel-edit-server" type="button" class="btn btn-secondary">Cancel</button>
+            <button id="btn-cancel-edit-server" type="button" class="btn btn-secondary"
+              data-i18n="cancel">Cancel</button>
           </div>
         </div>
       </div>
 
       <!-- Add New Server Section -->
-      <div class="add-server-panel"
-        style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--card-border);">
-        <h4 style="font-size: 14px; color: var(--text-muted); margin-bottom: 12px; margin-top: 0;">添加新服务器</h4>
-        <div class="add-server-inline" style="display: flex; gap: 12px; max-width: 100%; align-items: center;">
-          <input type="text" id="new-server-id" class="input-field" placeholder="new-server-id" autocomplete="off"
-            style="flex: 1;">
-          <input type="text" id="new-server-url" class="input-field" placeholder="http://10.0.0.1:8188"
-            autocomplete="off" style="flex: 2;">
+      <div class="add-server-panel">
+        <h4 class="add-server-title" data-i18n="add_server_panel_title">Add New Server</h4>
+        <div class="add-server-inline">
+          <input type="text" id="new-server-id" class="input-field" data-i18n-placeholder="new_server_id_placeholder"
+            placeholder="new-server-id" autocomplete="off">
+          <input type="text" id="new-server-url" class="input-field" data-i18n-placeholder="new_server_url_placeholder"
+            placeholder="http://10.0.0.1:8188" autocomplete="off">
           <button id="add-server-btn" type="button" class="btn btn-secondary"
-            style="flex-shrink: 0; white-space: nowrap;" data-i18n="add_server">Add Server</button>
+            data-i18n="add_server">Add Server</button>
         </div>
       </div>
     </section>
