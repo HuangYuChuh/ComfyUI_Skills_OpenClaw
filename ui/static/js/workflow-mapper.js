@@ -15,6 +15,32 @@ export function parseWorkflowUpload(fileContent) {
   };
 }
 
+export function suggestWorkflowId(workflowData, fileName = "") {
+  const candidates = [
+    workflowData?.workflow_name,
+    workflowData?.name,
+    workflowData?.title,
+    workflowData?._meta?.title,
+    workflowData?.extra?.workflow_name,
+    workflowData?.extra?.name,
+    workflowData?.extra?.title,
+    workflowData?.metadata?.workflow_name,
+    workflowData?.metadata?.name,
+    workflowData?.metadata?.title,
+    getBaseFileName(fileName),
+    getFirstNodeTitle(workflowData),
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = normalizeWorkflowIdCandidate(candidate);
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  return "workflow";
+}
+
 function isEditorWorkflow(workflowData) {
   return Boolean(
     workflowData &&
@@ -114,6 +140,44 @@ export function extractSchemaParams(workflowData) {
   });
 
   return schemaParams;
+}
+
+function getBaseFileName(fileName) {
+  if (!fileName || typeof fileName !== "string") {
+    return "";
+  }
+
+  return fileName.replace(/\.[^.]+$/, "").trim();
+}
+
+function getFirstNodeTitle(workflowData) {
+  if (!workflowData || typeof workflowData !== "object" || Array.isArray(workflowData)) {
+    return "";
+  }
+
+  for (const nodeObject of Object.values(workflowData)) {
+    const title = nodeObject?._meta?.title;
+    if (typeof title === "string" && title.trim()) {
+      return title.trim();
+    }
+  }
+
+  return "";
+}
+
+function normalizeWorkflowIdCandidate(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  const normalized = value
+    .trim()
+    .replace(/[./\\]+/g, "-")
+    .replace(/[^\p{L}\p{N}_-]+/gu, "-")
+    .replace(/-+/g, "-")
+    .replace(/^[-_]+|[-_]+$/g, "");
+
+  return normalized;
 }
 
 export function groupSchemaParams(schemaParams) {

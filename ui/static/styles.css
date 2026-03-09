@@ -1056,7 +1056,7 @@ button:disabled,
 }
 
 .workflow-list {
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .workflow-item,

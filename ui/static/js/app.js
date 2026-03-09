@@ -30,7 +30,7 @@ import {
   renderWorkflowSummary,
 } from "./workflow-list-view.js";
 import { initPixelBlastBackground } from "./pixel-blast-bg.js";
-import { buildFinalSchema, extractSchemaParams, parseWorkflowUpload } from "./workflow-mapper.js";
+import { buildFinalSchema, extractSchemaParams, parseWorkflowUpload, suggestWorkflowId } from "./workflow-mapper.js";
 import { scrollToElement, setBusy, escapeHtml } from "./ui-utils.js";
 
 let elements;
@@ -48,6 +48,7 @@ let hasEditorUnsavedChanges = false;
 let serverModalMode = "add";
 let confirmModalResolver = null;
 let confirmModalPayloadBuilder = null;
+let lastAutoWorkflowId = "";
 
 function $(...args) {
   return window.jQuery(...args);
@@ -438,6 +439,7 @@ function clearEditorFields() {
   elements.workflowId.val("");
   elements.workflowDescription.val("");
   elements.fileUpload.val("");
+  lastAutoWorkflowId = "";
 }
 
 async function exitEditor() {
@@ -464,6 +466,7 @@ function enterEditor({ workflowData, schemaParams, workflowId = "", description 
   elements.fileUpload.val("");
   elements.workflowId.val(workflowId);
   elements.workflowDescription.val(description);
+  lastAutoWorkflowId = "";
   resetEditorFilters();
   resetCollapsedNodes();
   resetExpandedParamConfigs();
@@ -853,6 +856,15 @@ async function handleWorkflowFile(file) {
     const fileContents = await readFile(file);
     const parsed = parseWorkflowUpload(fileContents);
     const newSchema = { ...parsed.schemaParams };
+    const suggestedWorkflowId = suggestWorkflowId(parsed.workflowData, file.name);
+    const currentWorkflowId = elements.workflowId.val().trim();
+    const shouldAutofillWorkflowId = !getState().editingWorkflowId
+      && (!currentWorkflowId || currentWorkflowId === lastAutoWorkflowId);
+
+    if (shouldAutofillWorkflowId) {
+      elements.workflowId.val(suggestedWorkflowId);
+      lastAutoWorkflowId = suggestedWorkflowId;
+    }
 
     setUploadData(parsed.workflowData);
     setSchemaParams(newSchema);
@@ -1117,6 +1129,9 @@ function bindMappingToolbarEvents() {
   });
 
   elements.workflowId.on("input", () => {
+    if (elements.workflowId.val().trim() !== lastAutoWorkflowId) {
+      lastAutoWorkflowId = "";
+    }
     markEditorDirty(true);
     refreshEditorProgress();
   });
