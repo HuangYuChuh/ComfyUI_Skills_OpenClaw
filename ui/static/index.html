@@ -115,6 +115,7 @@
           <option value="enabled_first" data-i18n="workflow_sort_enabled">Enabled first</option>
         </select>
       </div>
+      <input id="workflow-version-upload" type="file" accept=".json" class="sr-only">
       <div id="workflow-list" class="workflow-list" aria-live="polite"></div>
     </section>
   </main>
@@ -182,6 +183,7 @@
     <!-- Parameter Mapping -->
     <section id="mapping-section" class="card hidden" aria-labelledby="mapping-title">
       <h2 id="mapping-title" class="card-title" data-i18n="parsed_input">Parsed Input Node List</h2>
+      <div id="upgrade-summary-banner" class="upgrade-summary-banner hidden" aria-live="polite"></div>
       <div class="mapping-toolbar">
         <div class="mapping-toolbar-top">
           <input id="mapping-search" type="text" class="input-field" data-i18n-placeholder="mapping_search_placeholder"

@@ -38,6 +38,7 @@ export function getElements() {
     workflowSummary: $("#workflow-summary"),
     workflowSearch: $("#workflow-search"),
     workflowSort: $("#workflow-sort"),
+    workflowVersionUpload: $("#workflow-version-upload"),
     addWorkflowBtn: $("#add-workflow-btn"),
     // ── Editor (View 2) ──
     editorBackBtn: $("#editor-back-btn"),
@@ -60,6 +61,7 @@ export function getElements() {
     mappingCollapseAllButton: $("#mapping-collapse-all"),
     mappingExpandAllButton: $("#mapping-expand-all"),
     mappingResetFiltersButton: $("#mapping-reset-filters"),
+    upgradeSummaryBanner: $("#upgrade-summary-banner"),
     mappingSummary: $("#mapping-summary"),
     workflowId: $("#wf-id"),
     workflowDescription: $("#wf-desc"),

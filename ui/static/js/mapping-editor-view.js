@@ -52,6 +52,17 @@ function renderParamRow(parameter, expandedParamKeys = new Set()) {
   const rowClass = parameter.exposed ? "param-row active" : "param-row";
   const titleClass = parameter.exposed ? "param-title active" : "param-title";
   const isConfigExpanded = parameter.exposed && expandedParamKeys.has(parameter.key);
+  const migrationStatus = String(parameter.migrationStatus || "");
+  const migrationBadge = migrationStatus
+    ? `
+        <span class="param-status-badge is-${escapeHtml(migrationStatus)}">
+          ${escapeHtml(t(`migration_status_${migrationStatus}`))}
+        </span>
+      `
+    : "";
+  const migrationHint = migrationStatus === "review"
+    ? `<div class="param-meta param-meta-emphasis">${escapeHtml(t("migration_review_hint"))}</div>`
+    : "";
   const configToggle = parameter.exposed
     ? `
         <button type="button" class="btn btn-secondary btn-icon small param-config-toggle"
@@ -70,8 +81,12 @@ function renderParamRow(parameter, expandedParamKeys = new Set()) {
           <span class="slider"></span>
         </label>
         <div class="param-main-copy">
-          <div class="${titleClass}">${escapeHtml(parameter.field)}</div>
+          <div class="${titleClass}">
+            <span>${escapeHtml(parameter.field)}</span>
+            ${migrationBadge}
+          </div>
           <div class="param-meta">${escapeHtml(t("curr_val"))}: ${escapeHtml(parameter.currentVal)}</div>
+          ${migrationHint}
         </div>
         ${configToggle}
       </div>

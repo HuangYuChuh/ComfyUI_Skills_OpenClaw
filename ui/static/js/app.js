@@ -30,7 +30,13 @@ import {
   renderWorkflowSummary,
 } from "./workflow-list-view.js";
 import { initPixelBlastBackground } from "./pixel-blast-bg.js";
-import { buildFinalSchema, extractSchemaParams, parseWorkflowUpload, suggestWorkflowId } from "./workflow-mapper.js";
+import {
+  buildFinalSchema,
+  extractSchemaParams,
+  migrateSchemaParams,
+  parseWorkflowUpload,
+  suggestWorkflowId,
+} from "./workflow-mapper.js";
 import { scrollToElement, setBusy, escapeHtml } from "./ui-utils.js";
 
 let elements;
@@ -54,6 +60,8 @@ let confirmModalResolver = null;
 let confirmModalPayloadBuilder = null;
 let lastAutoWorkflowId = "";
 let draggedWorkflowId = null;
+let currentUpgradeSummary = null;
+let pendingWorkflowVersionTarget = null;
 
 function $(...args) {
   return window.jQuery(...args);
@@ -383,6 +391,7 @@ function refreshMappingSummary(stats) {
 
 function refreshEditorPanel() {
   renderEditorMode(elements.editorModeBadge, elements.saveWorkflowButton);
+  renderUpgradeSummaryBanner();
   const stats = renderNodes(elements.nodesContainer, { ...editorFilters, collapsedNodeIds, expandedParamKeys });
   latestEditorStats = stats;
   enhanceCustomSelects(elements.viewEditor[0]);
@@ -535,6 +544,8 @@ function clearEditorFields() {
   elements.workflowDescription.val("");
   elements.fileUpload.val("");
   lastAutoWorkflowId = "";
+  currentUpgradeSummary = null;
+  renderUpgradeSummaryBanner();
 }
 
 async function exitEditor() {
@@ -554,10 +565,18 @@ async function exitEditor() {
   return true;
 }
 
-function enterEditor({ workflowData, schemaParams, workflowId = "", description = "", editingWorkflowId = null }) {
+function enterEditor({
+  workflowData,
+  schemaParams,
+  workflowId = "",
+  description = "",
+  editingWorkflowId = null,
+  upgradeSummary = null,
+}) {
   setUploadData(workflowData);
   setSchemaParams(schemaParams);
   setEditingWorkflowId(editingWorkflowId);
+  currentUpgradeSummary = upgradeSummary;
   elements.fileUpload.val("");
   elements.workflowId.val(workflowId);
   elements.workflowDescription.val(description);
@@ -569,6 +588,24 @@ function enterEditor({ workflowData, schemaParams, workflowId = "", description 
   setEditorVisibility(elements, !!workflowData);
   refreshEditorPanel();
   showView("editor");
+}
+
+function renderUpgradeSummaryBanner() {
+  if (!elements?.upgradeSummaryBanner?.length) {
+    return;
+  }
+
+  if (!currentUpgradeSummary) {
+    elements.upgradeSummaryBanner.addClass("hidden").empty();
+    return;
+  }
+
+  elements.upgradeSummaryBanner
+    .removeClass("hidden")
+    .html(`
+      <div class="upgrade-summary-title">${escapeHtml(t("workflow_upgrade_ready"))}</div>
+      <div class="upgrade-summary-meta">${escapeHtml(t("workflow_upgrade_summary", currentUpgradeSummary))}</div>
+    `);
 }
 
 // ── Data Hydration ────────────────────────────────────────────────
@@ -617,6 +654,41 @@ function hydrateSchemaParams(workflowData, savedSchemaParams) {
   });
 
   return extractedParams;
+}
+
+async function getWorkflowDetail(serverId, workflowId) {
+  return fetchJSON(`/api/servers/${encodeURIComponent(serverId)}/workflow/${encodeURIComponent(workflowId)}`);
+}
+
+function closeWorkflowMoreMenus() {
+  elements.workflowList.find(".workflow-more").removeClass("is-open");
+  elements.workflowList.find(".workflow-more-menu").addClass("hidden");
+  elements.workflowList.find("[data-action='toggle-workflow-menu']").attr("aria-expanded", "false");
+}
+
+function openWorkflowVersionPicker(target) {
+  pendingWorkflowVersionTarget = target;
+  elements.workflowVersionUpload.val("");
+  elements.workflowVersionUpload.trigger("click");
+}
+
+async function applyWorkflowUpgrade(target, file) {
+  const fileContents = await readFile(file);
+  const parsed = parseWorkflowUpload(fileContents);
+  const previousSchemaParams = hydrateSchemaParams(target.workflow_data, target.schema_params);
+  const migration = migrateSchemaParams(previousSchemaParams, parsed.schemaParams);
+
+  currentUpgradeSummary = migration.summary;
+  enterEditor({
+    workflowData: parsed.workflowData,
+    schemaParams: migration.schemaParams,
+    workflowId: target.workflow_id || "",
+    description: target.description || "",
+    editingWorkflowId: target.workflow_id || "",
+    upgradeSummary: migration.summary,
+  });
+  markEditorDirty(true);
+  showToast(t("workflow_upgrade_summary", migration.summary), "success", 4200);
 }
 
 // ── Server API Calls ──────────────────────────────────────────────
@@ -731,7 +803,8 @@ async function loadWorkflowForEditing(serverId, workflowId, $button) {
   }
 
   try {
-    const data = await fetchJSON(`/api/servers/${encodeURIComponent(serverId)}/workflow/${encodeURIComponent(workflowId)}`);
+    const data = await getWorkflowDetail(serverId, workflowId);
+    currentUpgradeSummary = null;
     enterEditor({
       workflowData: data.workflow_data,
       schemaParams: hydrateSchemaParams(data.workflow_data, data.schema_params),
@@ -950,11 +1023,22 @@ async function handleWorkflowFile(file) {
   try {
     const fileContents = await readFile(file);
     const parsed = parseWorkflowUpload(fileContents);
-    const newSchema = { ...parsed.schemaParams };
+    let newSchema = { ...parsed.schemaParams };
     const suggestedWorkflowId = suggestWorkflowId(parsed.workflowData, file.name);
     const currentWorkflowId = elements.workflowId.val().trim();
     const shouldAutofillWorkflowId = !getState().editingWorkflowId
       && (!currentWorkflowId || currentWorkflowId === lastAutoWorkflowId);
+
+    if (getState().editingWorkflowId) {
+      const migration = migrateSchemaParams(getState().schemaParams, parsed.schemaParams);
+      newSchema = migration.schemaParams;
+      currentUpgradeSummary = migration.summary;
+      renderUpgradeSummaryBanner();
+      showToast(t("workflow_upgrade_summary", migration.summary), "success", 4200);
+    } else {
+      currentUpgradeSummary = null;
+      renderUpgradeSummaryBanner();
+    }
 
     if (shouldAutofillWorkflowId) {
       elements.workflowId.val(suggestedWorkflowId);
@@ -1026,6 +1110,7 @@ function bindServerEvents() {
     if (event.key !== "Escape") {
       return;
     }
+    closeWorkflowMoreMenus();
     if (!elements.confirmModalOverlay.hasClass("hidden")) {
       closeConfirmModal(false);
       return;
@@ -1120,6 +1205,7 @@ function bindWorkflowEvents() {
   });
 
   elements.workflowList.on("click", "button[data-action='delete-workflow']", function () {
+    closeWorkflowMoreMenus();
     const $button = $(this);
     const $item = $button.closest("[data-workflow-id]");
     const workflowId = $item.data("workflowId");
@@ -1128,6 +1214,7 @@ function bindWorkflowEvents() {
   });
 
   elements.workflowList.on("click", "button[data-action='edit-workflow']", function () {
+    closeWorkflowMoreMenus();
     const $button = $(this);
     const $item = $button.closest("[data-workflow-id]");
     const workflowId = $item.data("workflowId");
@@ -1135,12 +1222,50 @@ function bindWorkflowEvents() {
     loadWorkflowForEditing(serverId, workflowId, $button);
   });
 
+  elements.workflowList.on("click", "button[data-action='toggle-workflow-menu']", function (event) {
+    event.stopPropagation();
+    const $more = $(this).closest(".workflow-more");
+    const isOpen = $more.hasClass("is-open");
+    closeWorkflowMoreMenus();
+    if (!isOpen) {
+      $more.addClass("is-open");
+      $more.find(".workflow-more-menu").removeClass("hidden");
+      $(this).attr("aria-expanded", "true");
+    }
+  });
+
+  elements.workflowList.on("click", "button[data-action='upload-workflow-version']", async function () {
+    closeWorkflowMoreMenus();
+    if (!(await confirmLeaveEditorIfDirty())) {
+      return;
+    }
+
+    const $item = $(this).closest("[data-workflow-id]");
+    const workflowId = String($item.data("workflowId"));
+    const serverId = String($item.data("serverId"));
+
+    try {
+      const target = await getWorkflowDetail(serverId, workflowId);
+      openWorkflowVersionPicker(target);
+    } catch (error) {
+      showToast(error.message || t("err_load_saved_wf"), "error");
+    }
+  });
+
   elements.workflowList.on("change", "input[data-action='toggle-workflow']", function () {
+    closeWorkflowMoreMenus();
     const $checkbox = $(this);
     const $item = $checkbox.closest("[data-workflow-id]");
     const workflowId = $item.data("workflowId");
     const serverId = $item.data("serverId");
     toggleWorkflowStatus(serverId, workflowId, $checkbox);
+  });
+
+  $(document).on("click", (event) => {
+    if ($(event.target).closest(".workflow-more").length) {
+      return;
+    }
+    closeWorkflowMoreMenus();
   });
 
   elements.workflowList.on("dragstart", ".workflow-drag-handle[draggable='true']", function (event) {
@@ -1363,6 +1488,24 @@ function bindEditorShortcuts() {
 function bindUploadInteractions() {
   elements.fileUpload.on("change", async function () {
     await handleWorkflowFile(this.files?.[0]);
+  });
+
+  elements.workflowVersionUpload.on("change", async function () {
+    const file = this.files?.[0];
+    const target = pendingWorkflowVersionTarget;
+    pendingWorkflowVersionTarget = null;
+    elements.workflowVersionUpload.val("");
+
+    if (!file || !target) {
+      return;
+    }
+
+    try {
+      await applyWorkflowUpgrade(target, file);
+    } catch (error) {
+      const uploadError = getUploadErrorMessage(error);
+      showToast(uploadError.message, "error", uploadError.duration);
+    }
   });
 
   elements.uploadZone.on("keydown", (event) => {
