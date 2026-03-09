@@ -1046,8 +1046,8 @@ button:disabled,
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  margin-left: auto;
+  justify-content: flex-start;
+  margin-left: 0;
 }
 
 .mapping-exposed-only-label {

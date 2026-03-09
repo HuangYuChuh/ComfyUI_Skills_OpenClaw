@@ -1108,14 +1108,6 @@ function bindMappingToolbarEvents() {
     applyExposeToVisible(false);
   });
 
-  elements.mappingCollapseConfigsButton.on("click", () => {
-    setAllVisibleParamConfigsExpanded(false);
-  });
-
-  elements.mappingExpandConfigsButton.on("click", () => {
-    setAllVisibleParamConfigsExpanded(true);
-  });
-
   elements.mappingCollapseAllButton.on("click", () => {
     setAllVisibleNodesCollapsed(true);
   });
