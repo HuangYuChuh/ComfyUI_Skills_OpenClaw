@@ -48,3 +48,8 @@ yarn-error.log
 # Project specific
 ui/frontend/dist/
 ui/frontend/node_modules/
+
+# AI Planning Files
+task_plan.md
+findings.md
+progress.md

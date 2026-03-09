@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 import re
+import shutil
 from dataclasses import dataclass, field
 from json import JSONDecodeError
 from pathlib import Path
@@ -115,7 +116,7 @@ class UIStorageService:
     def toggle_server(self, server_id: str, enabled: bool) -> dict[str, Any]:
         return self.update_server(server_id, {"enabled": enabled})
 
-    def delete_server(self, server_id: str) -> None:
+    def delete_server(self, server_id: str, delete_data: bool = False) -> None:
         config = self.get_config()
         servers = config.get("servers", [])
         new_servers = [s for s in servers if s.get("id") != server_id]
@@ -123,6 +124,11 @@ class UIStorageService:
             raise FileNotFoundError(f"Server '{server_id}' not found")
         config["servers"] = new_servers
         self.save_config(config)
+
+        if delete_data:
+            server_dir = get_server_workflows_dir(server_id).parent
+            if server_dir.exists():
+                shutil.rmtree(server_dir, ignore_errors=False)
 
     # ── Workflow CRUD ─────────────────────────────────────────────
 

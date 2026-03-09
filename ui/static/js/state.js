@@ -13,8 +13,30 @@ function normalizeLanguage(language) {
   return "en";
 }
 
+function readCookie(name) {
+  const cookie = document.cookie
+    .split("; ")
+    .find((item) => item.startsWith(`${name}=`));
+  return cookie ? decodeURIComponent(cookie.split("=").slice(1).join("=")) : null;
+}
+
+function writeCookie(name, value) {
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=31536000; SameSite=Lax`;
+}
+
+function getPersistedLanguage() {
+  let stored = null;
+  try {
+    stored = localStorage.getItem("ui-lang");
+  } catch {
+    stored = null;
+  }
+  stored = stored || readCookie("ui-lang");
+  return normalizeLanguage(stored);
+}
+
 const state = {
-  currentLang: normalizeLanguage(localStorage.getItem("ui-lang")),
+  currentLang: getPersistedLanguage(),
   currentUploadData: null,
   schemaParams: {},
   workflows: [],
@@ -32,7 +54,12 @@ export function getState() {
 export function setLanguage(language) {
   const normalized = normalizeLanguage(language);
   state.currentLang = normalized;
-  localStorage.setItem("ui-lang", normalized);
+  try {
+    localStorage.setItem("ui-lang", normalized);
+  } catch {
+    // Fallback to cookie-only persistence if storage is unavailable.
+  }
+  writeCookie("ui-lang", normalized);
 }
 
 export function toggleLanguage() {

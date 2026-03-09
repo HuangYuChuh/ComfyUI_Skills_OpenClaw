@@ -765,6 +765,11 @@ body.modal-open {
   line-height: 1.7;
 }
 
+.confirm-modal-checkbox {
+  margin-top: 14px;
+  color: var(--text-muted);
+}
+
 .btn.btn-danger {
   border-color: rgba(244, 63, 94, 0.6);
   background: linear-gradient(180deg, rgba(225, 29, 72, 0.96) 0%, rgba(190, 24, 93, 0.96) 100%);

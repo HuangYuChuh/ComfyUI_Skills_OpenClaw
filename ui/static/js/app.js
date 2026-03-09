@@ -47,6 +47,7 @@ let latestEditorStats = null;
 let hasEditorUnsavedChanges = false;
 let serverModalMode = "add";
 let confirmModalResolver = null;
+let confirmModalPayloadBuilder = null;
 
 function $(...args) {
   return window.jQuery(...args);
@@ -172,12 +173,17 @@ function closeConfirmModal(confirmed = false) {
 
   const resolve = confirmModalResolver;
   confirmModalResolver = null;
+  const payloadBuilder = confirmModalPayloadBuilder;
+  confirmModalPayloadBuilder = null;
+  const result = payloadBuilder ? payloadBuilder(confirmed) : confirmed;
   elements.confirmModalOverlay.addClass("hidden").attr("aria-hidden", "true");
   elements.confirmModalConfirmBtn.removeClass("btn-danger").addClass("btn-primary");
+  elements.confirmModalCheckboxWrap.addClass("hidden");
+  elements.confirmModalCheckbox.prop("checked", false);
   if (elements.serverModalOverlay.hasClass("hidden")) {
     $("body").removeClass("modal-open");
   }
-  resolve(confirmed);
+  resolve(result);
 }
 
 function openConfirmModal({
@@ -186,6 +192,7 @@ function openConfirmModal({
   confirmLabel = t("confirm"),
   cancelLabel = t("cancel"),
   tone = "primary",
+  checkbox = null,
 }) {
   if (confirmModalResolver) {
     closeConfirmModal(false);
@@ -193,11 +200,25 @@ function openConfirmModal({
 
   elements.confirmModalTitle.text(title);
   elements.confirmModalMessage.text(message || "");
+  elements.confirmModalCheckboxWrap.addClass("hidden");
+  elements.confirmModalCheckbox.prop("checked", false);
   elements.confirmModalCancelBtn.text(cancelLabel);
   elements.confirmModalConfirmBtn
     .text(confirmLabel)
     .toggleClass("btn-danger", tone === "danger")
     .toggleClass("btn-primary", tone !== "danger");
+
+  if (checkbox) {
+    elements.confirmModalCheckboxLabel.text(checkbox.label || "");
+    elements.confirmModalCheckbox.prop("checked", Boolean(checkbox.checked));
+    elements.confirmModalCheckboxWrap.toggleClass("hidden", false);
+    confirmModalPayloadBuilder = (confirmed) => ({
+      confirmed,
+      checked: elements.confirmModalCheckbox.prop("checked"),
+    });
+  } else {
+    confirmModalPayloadBuilder = null;
+  }
 
   elements.confirmModalOverlay.removeClass("hidden").attr("aria-hidden", "false");
   $("body").addClass("modal-open");
@@ -910,22 +931,30 @@ function bindServerEvents() {
     const currentServer = getCurrentServer();
     if (!currentServer) return;
 
-    const confirmed = await openConfirmModal({
+    const result = await openConfirmModal({
       message: t("del_server_confirm", { id: currentServer.id }),
       confirmLabel: t("delete"),
       tone: "danger",
+      checkbox: {
+        label: t("delete_server_data_checkbox"),
+        checked: false,
+      },
     });
-    if (!confirmed) {
+    if (!result.confirmed) {
       return;
     }
 
     const $btn = $(this);
     $btn.prop("disabled", true);
     try {
-      await fetchJSON(`/api/servers/${encodeURIComponent(currentServer.id)}`, { method: "DELETE" });
+      await fetchJSON(`/api/servers/${encodeURIComponent(currentServer.id)}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ delete_data: result.checked }),
+      });
       await loadServers();
       refreshWorkflowPanel();
-      showToast(t("ok_del_server"), "success");
+      showToast(t(result.checked ? "ok_del_server_with_data" : "ok_del_server_keep_data"), "success");
     } catch (e) {
       showToast(t("err_del_server"), "error");
     } finally {

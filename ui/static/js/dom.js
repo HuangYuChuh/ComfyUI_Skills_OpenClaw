@@ -28,6 +28,9 @@ export function getElements() {
     confirmModalOverlay: $("#confirm-modal-overlay"),
     confirmModalTitle: $("#confirm-modal-title"),
     confirmModalMessage: $("#confirm-modal-message"),
+    confirmModalCheckboxWrap: $("#confirm-modal-checkbox-wrap"),
+    confirmModalCheckbox: $("#confirm-modal-checkbox"),
+    confirmModalCheckboxLabel: $("#confirm-modal-checkbox-label"),
     confirmModalCancelBtn: $("#btn-cancel-confirm-modal"),
     confirmModalConfirmBtn: $("#btn-confirm-confirm-modal"),
     // ── Workflow list ──

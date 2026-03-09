@@ -133,3 +133,7 @@ class SchemaModel(BaseModel):
 
 class ToggleModel(BaseModel):
     enabled: bool
+
+
+class DeleteServerModel(BaseModel):
+    delete_data: bool = False

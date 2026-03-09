@@ -16,11 +16,11 @@ _project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_project_root / "scripts"))
 
 try:
-    from .models import ConfigModel, CreateServerModel, SchemaModel, ServerModel, ToggleModel
+    from .models import ConfigModel, CreateServerModel, DeleteServerModel, SchemaModel, ServerModel, ToggleModel
     from .services import UIStorageService
     from .settings import DEFAULT_HOST, DEFAULT_PORT, STATIC_DIR, ensure_runtime_dirs
 except ImportError:
-    from models import ConfigModel, CreateServerModel, SchemaModel, ServerModel, ToggleModel
+    from models import ConfigModel, CreateServerModel, DeleteServerModel, SchemaModel, ServerModel, ToggleModel
     from services import UIStorageService
     from settings import DEFAULT_HOST, DEFAULT_PORT, STATIC_DIR, ensure_runtime_dirs
 
@@ -95,9 +95,10 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=404, detail=str(e)) from e
 
     @app.delete("/api/servers/{server_id}")
-    async def delete_server(server_id: str) -> dict:
+    async def delete_server(server_id: str, data: DeleteServerModel | None = None) -> dict:
         try:
-            service.delete_server(server_id)
+            delete_data = bool(data.delete_data) if data else False
+            service.delete_server(server_id, delete_data=delete_data)
             return {"status": "success"}
         except FileNotFoundError as e:
             raise HTTPException(status_code=404, detail=str(e)) from e
