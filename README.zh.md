@@ -27,7 +27,7 @@
 ### 2）克隆项目并安装依赖
 
 ```bash
-git clone <你的仓库地址> comfyui-skill-openclaw
+git clone https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw.git comfyui-skill-openclaw
 cd comfyui-skill-openclaw
 pip install -r requirements.txt
 ```

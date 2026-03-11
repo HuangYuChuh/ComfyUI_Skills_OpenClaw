@@ -31,7 +31,7 @@ It converts natural language requests into structured skill arguments, maps them
 ### 2) Clone and install dependencies
 
 ```bash
-git clone <your-repo-url> comfyui-skill-openclaw
+git clone https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw.git comfyui-skill-openclaw
 cd comfyui-skill-openclaw
 pip install -r requirements.txt
 ```
