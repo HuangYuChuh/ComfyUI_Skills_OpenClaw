@@ -14,6 +14,19 @@ description: |
 
 As an OpenClaw Agent equipped with the ComfyUI skill, your objective is to translate the user's conversational requests into strict, structured parameters and hand them over to the underlying Python scripts to execute workflows across multi-server environments.
 
+### UI Management Shortcut
+
+If the user asks you to open, launch, or bring up the local Web UI for this skill, run:
+
+```bash
+python3 ./ui/open_ui.py
+```
+
+This command will:
+- reuse the UI if it is already running
+- start it in the background if it is not running
+- try to open the browser to the local dashboard automatically
+
 ### Step 0: AI-Native Workflow Auto-Configuration (Optional)
 
 If the user provides you with a new ComfyUI workflow JSON (API format) and asks you to "configure it" or "add it":
@@ -78,6 +91,6 @@ python ./scripts/comfyui_client.py --workflow <server_id>/<workflow_id> --args '
 Once you obtain the absolute local path to the generated image, use your native capabilities to present the file to the user (e.g., in an OpenClaw environment, returning the path allows the client to intercept it and convert it into rich text or an image preview).
 
 ## Common Troubleshooting & Notices
-1. **ComfyUI Offline**: If the script returns "Error connecting to ComfyUI", remind the user to check if the ComfyUI service is running on the specific server, or go to the Web UI panel (start with `python3 ui/app.py` or `./run_ui.sh`) to adjust the server configuration URLs.
+1. **ComfyUI Offline**: If the script returns "Error connecting to ComfyUI", remind the user to check if the ComfyUI service is running on the specific server, or go to the Web UI panel (start with `python3 ./ui/open_ui.py`, `python3 ui/app.py`, or `./run_ui.sh`) to adjust the server configuration URLs.
 2. **Schema Not Found**: If you directly called a workflow the user mentioned verbally, but the script reports a missing Schema, perform Step 1 `registry.py` and tell the user they need to first go to the Web UI panel to upload and configure the mapping for that workflow on the desired server.
 3. **Parameter Format Error**: Ensure that the JSON passed via `--args` is a valid JSON string wrapped in single quotes.

@@ -166,6 +166,10 @@ Requirements:
 
 Start dashboard:
 
+- Via OpenClaw or any agent that can run local commands:
+  ```bash
+  python3 ./ui/open_ui.py
+  ```
 - macOS/Linux:
   ```bash
   ./ui/run_ui.sh
@@ -275,6 +279,7 @@ ComfyUI_Skills_OpenClaw/
 │       └── runtime_config.py
 ├── ui/
 │   ├── app.py                  # FastAPI app – routes only
+│   ├── open_ui.py              # Agent-friendly UI launcher
 │   ├── services.py             # Business logic (workflow CRUD)
 │   ├── models.py               # Pydantic request/response models
 │   ├── json_store.py           # Low-level JSON file read/write helpers

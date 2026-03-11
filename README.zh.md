@@ -160,6 +160,10 @@ OpenClaw 会读取 `SKILL.md`，并调用：
 
 启动方式：
 
+- 通过 OpenClaw 或其他可执行本地命令的 Agent：
+  ```bash
+  python3 ./ui/open_ui.py
+  ```
 - macOS/Linux：
   ```bash
   ./ui/run_ui.sh
@@ -269,6 +273,7 @@ ComfyUI_Skills_OpenClaw/
 │       └── runtime_config.py
 ├── ui/
 │   ├── app.py                  # FastAPI 路由层
+│   ├── open_ui.py              # 供 Agent 调用的 UI 启动入口
 │   ├── services.py             # 业务逻辑（工作流增删改查）
 │   ├── models.py               # Pydantic 请求/响应模型
 │   ├── json_store.py           # JSON 文件读写封装
