@@ -41,9 +41,7 @@ Current automated coverage includes:
 - workflow more-menu behavior
 - drag reorder behavior
 - server delete confirm branches
-- Cloud template import / overwrite / try-run branches
-- Cloud-only action visibility
-- server-type specific modal rendering
+- server modal rendering and focus behavior
 
 ## Browser-Level Validation
 
@@ -118,16 +116,6 @@ Follow-up parity fixes applied after the initial browser pass:
   - modal autofocus now matches the historical static frontend flow
   - modal stacking now renders above page cards instead of inside page-level stacking contexts
 
-### Intentional Divergence
-
-These are not regressions, but they mean the new frontend is not literally `1:1` with the last static frontend snapshot:
-
-- The React frontend includes `Comfy Cloud` server type support in the server modal.
-- The React frontend includes `Cloud Examples` and related cloud-template modal flows.
-- The server modal now supports Cloud API key / env-var fields and partner-node forwarding options.
-
-These capabilities do not exist in the reviewed static frontend snapshot, so they should be treated as product extensions layered on top of parity work.
-
 ### Remaining Non-1:1 Differences
 
 #### 1. Visual parity is not yet proven by baseline regression evidence
@@ -161,7 +149,4 @@ Impact:
 
 The current frontend is now close to historical parity for the core local workflow UI, and the previously confirmed functional mismatches have been fixed.
 
-It is still not accurate to call the frontend strict `1:1` parity because:
-
-- Cloud-related UI is an intentional extension beyond the historical static frontend
-- visual parity has not yet been proven with baseline regression checks
+It is still not accurate to call the frontend strict `1:1` parity because visual parity has not yet been proven with baseline regression checks.
