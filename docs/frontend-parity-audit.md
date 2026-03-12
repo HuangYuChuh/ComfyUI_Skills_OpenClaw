@@ -47,13 +47,6 @@ Current automated coverage includes:
 
 An actual local browser pass was completed against the running FastAPI-served UI at `http://127.0.0.1:8189`.
 
-Captured screenshots:
-
-- [main-dashboard.png](/Users/lgldl/Desktop/work/ComfyUI_Skills_OpenClaw/docs/parity-screenshots/main-dashboard.png)
-- [add-server-modal.png](/Users/lgldl/Desktop/work/ComfyUI_Skills_OpenClaw/docs/parity-screenshots/add-server-modal.png)
-- [editor-mapped.png](/Users/lgldl/Desktop/work/ComfyUI_Skills_OpenClaw/docs/parity-screenshots/editor-mapped.png)
-- [confirm-leave-modal.png](/Users/lgldl/Desktop/work/ComfyUI_Skills_OpenClaw/docs/parity-screenshots/confirm-leave-modal.png)
-
 Verified in-browser:
 
 - main dashboard visual structure matches the historical layout direction:
