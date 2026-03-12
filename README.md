@@ -119,6 +119,9 @@ Choose one of these two approaches:
 
 For Comfy Cloud, prefer `api_key_env` over `api_key` so the real key stays out of `config.json`.
 
+Here `Comfy Cloud` means Comfy's official hosted remote/cloud runtime.
+If you are connecting to your own self-hosted remote ComfyUI instance, even on a cloud VM, it should usually be configured as a regular `comfyui` server rather than `comfy_cloud`.
+
 
 ### 4) Start the local UI
 
