@@ -3,7 +3,7 @@
 
 Usage:
     python scripts/server_manager.py list
-    python scripts/server_manager.py add --id cloud-gpu --name "Cloud GPU" --url http://10.0.0.5:8188
+    python scripts/server_manager.py add --id remote-gpu --name "Remote GPU" --url http://10.0.0.5:8188
     python scripts/server_manager.py enable <server_id>
     python scripts/server_manager.py disable <server_id>
     python scripts/server_manager.py remove <server_id>
