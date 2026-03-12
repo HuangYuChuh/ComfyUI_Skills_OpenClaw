@@ -23,6 +23,20 @@ def build_check(level: str, code: str, message: str, **context: Any) -> dict[str
     return payload
 
 
+def extract_response_detail(response: requests.Response) -> str:
+    try:
+        payload = response.json()
+    except ValueError:
+        payload = None
+
+    if isinstance(payload, dict):
+        detail = payload.get("detail") or payload.get("message") or payload.get("error")
+        if detail:
+            return str(detail).strip()
+
+    return response.text.strip()
+
+
 def resolve_cloud_api_key(server: dict[str, Any]) -> tuple[str, str | None]:
     direct_key = str(server.get("api_key") or "").strip()
     if direct_key:
@@ -82,10 +96,25 @@ def probe_cloud_server(server: dict[str, Any]) -> dict[str, Any]:
         return build_check("error", "cloud_unreachable", f"Failed to connect to '{server_url}': {exc}", server_id=server.get("id"))
 
     if not response.ok:
+        detail = extract_response_detail(response)
+        if response.status_code == 403 and "free tier" in detail.lower() and "api key authentication" in detail.lower():
+            return build_check(
+                "error",
+                "cloud_api_key_free_tier_unsupported",
+                (
+                    f"Cloud server '{server.get('id')}' rejected API authentication: {detail}. "
+                    "Comfy Cloud API key auth requires a paid plan; free tier accounts cannot use the Cloud API."
+                ),
+                server_id=server.get("id"),
+                status_code=response.status_code,
+            )
         return build_check(
             "error",
             "cloud_http_error",
-            f"Cloud server '{server.get('id')}' responded with HTTP {response.status_code}",
+            (
+                f"Cloud server '{server.get('id')}' responded with HTTP {response.status_code}"
+                + (f": {detail}" if detail else "")
+            ),
             server_id=server.get("id"),
             status_code=response.status_code,
         )
