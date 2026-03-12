@@ -16,6 +16,8 @@ const messages: Record<string, string> = {
   workflow_sort_enabled: "Enabled first",
   workflow_search_placeholder: "Search workflows",
   register_new_short: "+ New Workflow",
+  drag_upload: "Drag or click to upload ComfyUI workflow_api.json",
+  after_upload: "After upload, you can remap parameters by node.",
   workflow_more_actions: "More actions for workflow {id}",
   upload_new_version: "Upload New Version",
   delete: "Delete",
@@ -58,6 +60,7 @@ function renderWorkflowManager(overrides: Partial<ComponentProps<typeof Workflow
     onSearchChange: vi.fn(),
     onSortChange: vi.fn(),
     onCreateWorkflow: vi.fn(),
+    onCreateWorkflowFromFile: vi.fn(),
     onEditWorkflow: vi.fn(),
     onDeleteWorkflow: vi.fn(),
     onToggleWorkflow: vi.fn(),
@@ -158,5 +161,25 @@ describe("WorkflowManager", () => {
     });
 
     expect(document.querySelector(".panel-meta")).toBeNull();
+  });
+
+  it("uploads a workflow file from the empty state dropzone", async () => {
+    const { props } = renderWorkflowManager({
+      workflows: [],
+      allWorkflowsForCurrentServer: 0,
+    });
+
+    const dropzone = screen.getByText("Drag or click to upload ComfyUI workflow_api.json").closest("label") as HTMLElement;
+    const file = new File(['{"1":{"class_type":"CLIPTextEncode","inputs":{"text":"hello"}}}'], "workflow_api.json", {
+      type: "application/json",
+    });
+
+    fireEvent.drop(dropzone, {
+      dataTransfer: {
+        files: [file],
+      },
+    });
+
+    expect(props.onCreateWorkflowFromFile).toHaveBeenCalledWith(file);
   });
 });

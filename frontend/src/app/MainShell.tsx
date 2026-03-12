@@ -28,6 +28,7 @@ interface MainShellProps {
   onWorkflowSearchChange: (value: string) => void;
   onWorkflowSortChange: (value: string) => void;
   onCreateWorkflow: () => void;
+  onCreateWorkflowFromFile: (file: File | null) => void;
   onEditWorkflow: (workflow: WorkflowSummaryDto) => void;
   onDeleteWorkflow: (workflow: WorkflowSummaryDto) => void;
   onToggleWorkflow: (workflow: WorkflowSummaryDto, enabled: boolean) => void;
@@ -85,6 +86,7 @@ export function MainShell(props: MainShellProps) {
         onSearchChange={props.onWorkflowSearchChange}
         onSortChange={props.onWorkflowSortChange}
         onCreateWorkflow={props.onCreateWorkflow}
+        onCreateWorkflowFromFile={props.onCreateWorkflowFromFile}
         onEditWorkflow={props.onEditWorkflow}
         onDeleteWorkflow={props.onDeleteWorkflow}
         onToggleWorkflow={props.onToggleWorkflow}

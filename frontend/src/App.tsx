@@ -34,6 +34,7 @@ export default function App() {
           onWorkflowSearchChange={controller.setWorkflowSearch}
           onWorkflowSortChange={controller.setWorkflowSort}
           onCreateWorkflow={controller.createWorkflow}
+          onCreateWorkflowFromFile={controller.createWorkflowFromFile}
           onEditWorkflow={controller.handleEditWorkflow}
           onDeleteWorkflow={controller.handleDeleteWorkflow}
           onToggleWorkflow={controller.handleToggleWorkflow}

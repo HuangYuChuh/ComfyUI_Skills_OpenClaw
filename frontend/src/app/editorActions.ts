@@ -5,6 +5,7 @@ import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import type { WorkflowDetailDto } from "../types/api";
 import { applyRecommendedExposureSet } from "./editorUtils";
 import { persistWorkflow } from "./workflowPersistence";
+import { defaultEditorState } from "./state";
 import type { TranslateFn, ViewMode } from "./state";
 import type { MappingNodeGroup } from "../features/editor/types";
 
@@ -114,6 +115,40 @@ export function createEditorActions(args: CreateEditorActionsArgs) {
     }
   }
 
+  async function createWorkflowFromFile(file: File | null) {
+    if (!file) {
+      return;
+    }
+    if (args.currentServer?.unsupported) {
+      args.pushToast("info", args.t("server_unsupported_reason", { type: args.currentServer.server_type || "unknown" }));
+      return;
+    }
+    if (!args.effectiveServerId) {
+      args.pushToast("error", args.t("err_select_server_before_register"));
+      return;
+    }
+
+    try {
+      const parsed = parseWorkflowUpload(await file.text());
+      const suggestedWorkflowId = suggestWorkflowId(parsed.workflowData, file.name);
+
+      args.resetEditorUiState();
+      args.setEditorState({
+        ...defaultEditorState(),
+        workflowData: parsed.workflowData,
+        schemaParams: parsed.schemaParams as SchemaParamMap,
+        workflowId: suggestedWorkflowId,
+        hasUnsavedChanges: true,
+      });
+      args.setLastAutoWorkflowId(suggestedWorkflowId);
+      args.setViewMode("editor");
+      args.pushToast("success", args.t("ok_wf_load"));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : args.t("err_invalid_json");
+      args.pushToast("error", message.includes("editor workflow") ? args.t("err_ui_workflow_format") : message);
+    }
+  }
+
   function handleWorkflowIdChange(value: string) {
     args.setEditorState((current) => ({ ...current, workflowId: value, hasUnsavedChanges: true }));
     if (value.trim() !== args.lastAutoWorkflowId) {
@@ -215,6 +250,7 @@ export function createEditorActions(args: CreateEditorActionsArgs) {
     handleBackFromEditor,
     handleVersionFileChange,
     handleEditorUpload,
+    createWorkflowFromFile,
     handleWorkflowIdChange,
     updateEditorParam,
     applyRecommendedExposures,

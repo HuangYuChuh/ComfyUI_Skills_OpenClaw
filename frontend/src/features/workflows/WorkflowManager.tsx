@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { CustomSelect } from "../../components/ui/CustomSelect";
 import type { WorkflowSummaryDto } from "../../types/api";
 
@@ -10,6 +10,7 @@ interface WorkflowManagerProps {
   onSearchChange: (value: string) => void;
   onSortChange: (value: string) => void;
   onCreateWorkflow: () => void;
+  onCreateWorkflowFromFile: (file: File | null) => void;
   onEditWorkflow: (workflow: WorkflowSummaryDto) => void;
   onDeleteWorkflow: (workflow: WorkflowSummaryDto) => void;
   onToggleWorkflow: (workflow: WorkflowSummaryDto, enabled: boolean) => void;
@@ -78,7 +79,13 @@ function TrashIcon() {
 
 export function WorkflowManager(props: WorkflowManagerProps) {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [emptyUploadDragActive, setEmptyUploadDragActive] = useState(false);
   const dragEnabled = props.sort === "custom" && !props.search.trim();
+
+  function onEmptyUploadInputChange(event: ChangeEvent<HTMLInputElement>) {
+    props.onCreateWorkflowFromFile(event.target.files?.[0] || null);
+    event.target.value = "";
+  }
 
   useEffect(() => {
     function handleDocumentClick(event: MouseEvent) {
@@ -147,7 +154,45 @@ export function WorkflowManager(props: WorkflowManagerProps) {
 
       <div className="workflow-list" aria-live="polite">
         {props.workflows.length === 0 ? (
-          <div className="empty-state">{props.allWorkflowsForCurrentServer ? props.t("no_workflows_match") : props.t("no_workflows")}</div>
+          props.allWorkflowsForCurrentServer ? (
+            <div className="empty-state">{props.t("no_workflows_match")}</div>
+          ) : (
+            <label
+              className={`upload-zone workflow-empty-upload${emptyUploadDragActive ? " is-dragging" : ""}`}
+              htmlFor="workflow-empty-upload"
+              tabIndex={0}
+              onDragEnter={(event) => {
+                event.preventDefault();
+                setEmptyUploadDragActive(true);
+              }}
+              onDragOver={(event) => {
+                event.preventDefault();
+                setEmptyUploadDragActive(true);
+              }}
+              onDragLeave={(event) => {
+                event.preventDefault();
+                setEmptyUploadDragActive(false);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                setEmptyUploadDragActive(false);
+                props.onCreateWorkflowFromFile(event.dataTransfer.files?.[0] || null);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  const input = document.getElementById("workflow-empty-upload");
+                  if (input instanceof HTMLInputElement) {
+                    input.click();
+                  }
+                }
+              }}
+            >
+              <input id="workflow-empty-upload" type="file" accept=".json" onChange={onEmptyUploadInputChange} />
+              <span className="upload-title">{props.t("drag_upload")}</span>
+              <span className="upload-subtitle">{props.t("after_upload")}</span>
+            </label>
+          )
         ) : props.workflows.map((workflow) => (
           <article
             key={`${workflow.server_id}-${workflow.id}`}

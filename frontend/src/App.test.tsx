@@ -193,6 +193,29 @@ describe("App", () => {
     expect(document.getElementById("mapping-section")).not.toHaveClass("hidden");
   });
 
+  it("opens the editor when a workflow file is dropped onto the empty workflow state", async () => {
+    const user = userEvent.setup();
+    listWorkflowsMock.mockResolvedValue({ workflows: [] });
+    render(<App />);
+
+    await screen.findByText("Drag or click to upload ComfyUI workflow_api.json");
+    const dropzone = screen.getByText("Drag or click to upload ComfyUI workflow_api.json").closest("label") as HTMLElement;
+    const file = new File([workflowApiJson], "workflow_api.json", { type: "application/json" });
+    Object.defineProperty(file, "text", {
+      value: async () => workflowApiJson,
+    });
+
+    fireEvent.drop(dropzone, {
+      dataTransfer: {
+        files: [file],
+      },
+    });
+
+    await screen.findByText("Parsed Input Node List");
+    expect(screen.getByDisplayValue("workflow_api")).toBeInTheDocument();
+    expect(screen.queryByText("No workflow mappings configured yet.")).not.toBeInTheDocument();
+  });
+
   it("opens workflow actions and triggers upload new version", async () => {
     const user = userEvent.setup();
     render(<App />);

@@ -163,6 +163,7 @@ export function useAppController() {
     requestDeleteServer: serverManagement.requestDeleteServer,
     handleBackFromEditor: editorActions.handleBackFromEditor,
     handleEditorUpload: editorActions.handleEditorUpload,
+    createWorkflowFromFile: editorActions.createWorkflowFromFile,
     handleSaveWorkflow: editorActions.handleSaveWorkflow,
     handleWorkflowIdChange: editorActions.handleWorkflowIdChange,
     updateEditorParam: editorActions.updateEditorParam,
