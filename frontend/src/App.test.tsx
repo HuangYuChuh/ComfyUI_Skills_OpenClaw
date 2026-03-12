@@ -282,4 +282,35 @@ describe("App", () => {
       expect(screen.queryByText("Local")).not.toBeInTheDocument();
     });
   });
+
+  it("edits the visible fallback server instead of a stale deleted server id", async () => {
+    const user = userEvent.setup();
+    window.localStorage.setItem("ui-server", "cloud");
+    listServersMock.mockResolvedValue({
+      servers: [serverFixture],
+      default_server: serverFixture.id,
+    });
+    listWorkflowsMock.mockResolvedValue({ workflows: [] });
+
+    render(<App />);
+
+    await screen.findByText("Local");
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await screen.findByDisplayValue("Local");
+
+    const nameInput = screen.getByLabelText("Server Name");
+    await user.clear(nameInput);
+    await user.type(nameInput, "Local Updated");
+    await user.click(screen.getByRole("button", { name: "Save Changes" }));
+
+    await waitFor(() => {
+      expect(updateServerMock).toHaveBeenCalledWith("local", {
+        id: "local",
+        name: "Local Updated",
+        url: "http://127.0.0.1:8188",
+        enabled: true,
+        output_dir: "./outputs",
+      });
+    });
+  });
 });

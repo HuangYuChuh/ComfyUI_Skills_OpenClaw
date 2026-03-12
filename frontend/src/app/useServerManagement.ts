@@ -75,6 +75,7 @@ export function useServerManagement(args: UseServerManagementArgs) {
     }
 
     const normalizedPayload = getNormalizedServerPayload(serverForm, currentServerId || "");
+    const targetServerId = String(serverForm.id || currentServerId || "").trim();
     try {
       if (serverModalMode === "add") {
         const created = await addServer(normalizedPayload);
@@ -82,8 +83,8 @@ export function useServerManagement(args: UseServerManagementArgs) {
         await args.refreshWorkflows();
         setCurrentServerId(created.server.id);
         args.pushToast("success", args.t("ok_add_server"));
-      } else if (currentServerId) {
-        await updateServer(currentServerId, normalizedPayload);
+      } else if (targetServerId) {
+        await updateServer(targetServerId, normalizedPayload);
         await loadInitialServers();
         await args.refreshWorkflows();
         args.pushToast("success", args.t("ok_save_cfg"));
