@@ -20,6 +20,27 @@ function readCookie(name) {
   return cookie ? decodeURIComponent(cookie.split("=").slice(1).join("=")) : null;
 }
 
+function detectBrowserLanguage() {
+  if (typeof navigator === "undefined") {
+    return "en";
+  }
+
+  const candidates = [
+    ...(Array.isArray(navigator.languages) ? navigator.languages : []),
+    navigator.language,
+    navigator.userLanguage,
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = normalizeLanguage(candidate);
+    if (normalized !== "en" || String(candidate || "").toLowerCase().startsWith("en")) {
+      return normalized;
+    }
+  }
+
+  return "en";
+}
+
 function writeCookie(name, value) {
   document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=31536000; SameSite=Lax`;
 }
@@ -32,7 +53,10 @@ function getPersistedLanguage() {
     stored = null;
   }
   stored = stored || readCookie("ui-lang");
-  return normalizeLanguage(stored);
+  if (stored) {
+    return normalizeLanguage(stored);
+  }
+  return detectBrowserLanguage();
 }
 
 const state = {

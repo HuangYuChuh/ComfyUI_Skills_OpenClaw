@@ -27,6 +27,12 @@
         <p class="subtitle" data-i18n="subtitle">Dynamically parse workflow graphs and build visual parameter mappings
           for agents.</p>
       </div>
+      <div class="page-header-actions">
+        <button id="export-bundle-btn" type="button" class="btn btn-secondary panel-action-btn"
+          data-i18n="export_bundle">Export Config</button>
+        <button id="import-bundle-btn" type="button" class="btn btn-secondary panel-action-btn"
+          data-i18n="import_bundle">Import Config</button>
+      </div>
       <label for="lang-select" class="sr-only">Language</label>
       <select id="lang-select" class="lang-select" aria-label="Language selector">
         <option value="en">English</option>
@@ -116,6 +122,7 @@
         </select>
       </div>
       <input id="workflow-version-upload" type="file" accept=".json" class="sr-only">
+      <input id="transfer-import-file" type="file" accept=".json" class="sr-only">
       <div id="workflow-list" class="workflow-list" aria-live="polite"></div>
     </section>
   </main>
@@ -286,6 +293,35 @@
       <div class="modal-actions">
         <button id="btn-cancel-confirm-modal" type="button" class="btn btn-secondary" data-i18n="cancel">Cancel</button>
         <button id="btn-confirm-confirm-modal" type="button" class="btn btn-primary" data-i18n="confirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="transfer-modal-overlay" class="modal-overlay hidden" aria-hidden="true">
+    <div class="modal-card transfer-modal-card" role="dialog" aria-modal="true" aria-labelledby="transfer-modal-title">
+      <div class="modal-header">
+        <h3 id="transfer-modal-title" class="card-title">Transfer</h3>
+      </div>
+      <div class="modal-body transfer-modal-body">
+        <section id="transfer-export-panel" class="transfer-panel hidden">
+          <p id="transfer-export-hint" class="transfer-hint">Choose which servers and workflows to export. Everything is selected by default.</p>
+          <p id="transfer-export-summary" class="confirm-modal-message"></p>
+          <div id="transfer-export-tree" class="transfer-export-tree"></div>
+          <div id="transfer-export-warning-list" class="transfer-warning-list hidden"></div>
+        </section>
+
+        <section id="transfer-import-panel" class="transfer-panel hidden">
+          <p id="transfer-import-summary" class="confirm-modal-message"></p>
+          <div id="transfer-import-sections" class="transfer-sections"></div>
+          <label class="checkbox-inline confirm-modal-checkbox" for="transfer-import-apply-environment">
+            <input id="transfer-import-apply-environment" type="checkbox">
+            <span id="transfer-import-apply-environment-label">Also apply environment config</span>
+          </label>
+        </section>
+      </div>
+      <div class="modal-actions">
+        <button id="btn-cancel-transfer-modal" type="button" class="btn btn-secondary" data-i18n="cancel">Cancel</button>
+        <button id="btn-confirm-transfer-modal" type="button" class="btn btn-primary">Confirm</button>
       </div>
     </div>
   </div>

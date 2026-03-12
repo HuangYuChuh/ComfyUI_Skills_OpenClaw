@@ -58,6 +58,12 @@ let hasEditorUnsavedChanges = false;
 let serverModalMode = "add";
 let confirmModalResolver = null;
 let confirmModalPayloadBuilder = null;
+let transferModalResolver = null;
+let transferModalPayloadBuilder = null;
+let transferModalMode = null;
+let transferPreviewRequestId = 0;
+let lastTransferExportPreview = null;
+let lastTransferImportPreview = null;
 let lastAutoWorkflowId = "";
 let draggedWorkflowId = null;
 let currentUpgradeSummary = null;
@@ -141,6 +147,13 @@ function refreshServerModalText() {
   }
 }
 
+function syncModalBodyState() {
+  const hasOpenModal = !elements.serverModalOverlay.hasClass("hidden")
+    || !elements.confirmModalOverlay.hasClass("hidden")
+    || !elements.transferModalOverlay.hasClass("hidden");
+  $("body").toggleClass("modal-open", hasOpenModal);
+}
+
 function openServerModal(mode = "add") {
   serverModalMode = mode;
   const currentServer = getCurrentServer();
@@ -161,7 +174,7 @@ function openServerModal(mode = "add") {
 
   refreshServerModalText();
   elements.serverModalOverlay.removeClass("hidden").attr("aria-hidden", "false");
-  $("body").addClass("modal-open");
+  syncModalBodyState();
   window.setTimeout(() => {
     if (mode === "edit") {
       elements.serverModalName.trigger("focus");
@@ -173,7 +186,7 @@ function openServerModal(mode = "add") {
 
 function closeServerModal() {
   elements.serverModalOverlay.addClass("hidden").attr("aria-hidden", "true");
-  $("body").removeClass("modal-open");
+  syncModalBodyState();
 }
 
 function closeConfirmModal(confirmed = false) {
@@ -194,9 +207,7 @@ function closeConfirmModal(confirmed = false) {
   elements.confirmModalConfirmBtn.removeClass("btn-danger").addClass("btn-primary");
   elements.confirmModalCheckboxWrap.addClass("hidden");
   elements.confirmModalCheckbox.prop("checked", false);
-  if (elements.serverModalOverlay.hasClass("hidden")) {
-    $("body").removeClass("modal-open");
-  }
+  syncModalBodyState();
   resolve(result);
 }
 
@@ -235,7 +246,7 @@ function openConfirmModal({
   }
 
   elements.confirmModalOverlay.removeClass("hidden").attr("aria-hidden", "false");
-  $("body").addClass("modal-open");
+  syncModalBodyState();
 
   return new Promise((resolve) => {
     confirmModalResolver = resolve;
@@ -243,6 +254,323 @@ function openConfirmModal({
       elements.confirmModalConfirmBtn.trigger("focus");
     }, 0);
   });
+}
+
+function closeTransferModal(confirmed = false) {
+  if (!transferModalResolver) {
+    elements.transferModalOverlay.addClass("hidden").attr("aria-hidden", "true");
+    syncModalBodyState();
+    return;
+  }
+
+  const resolve = transferModalResolver;
+  transferModalResolver = null;
+  const payloadBuilder = transferModalPayloadBuilder;
+  transferModalPayloadBuilder = null;
+  transferModalMode = null;
+  const result = payloadBuilder ? payloadBuilder(confirmed) : confirmed;
+  elements.transferModalOverlay.addClass("hidden").attr("aria-hidden", "true");
+  elements.transferExportPanel.addClass("hidden");
+  elements.transferImportPanel.addClass("hidden");
+  elements.transferModalConfirmBtn.removeClass("btn-danger").addClass("btn-primary").prop("disabled", false);
+  syncModalBodyState();
+  resolve(result);
+}
+
+function openTransferModal({
+  title,
+  confirmLabel,
+  mode,
+  payloadBuilder,
+}) {
+  if (transferModalResolver) {
+    closeTransferModal(false);
+  }
+
+  transferModalMode = mode;
+  transferModalPayloadBuilder = payloadBuilder || null;
+  elements.transferModalTitle.text(title);
+  elements.transferModalConfirmBtn.text(confirmLabel).removeClass("btn-danger").addClass("btn-primary");
+  elements.transferModalCancelBtn.text(t("cancel"));
+  elements.transferExportPanel.toggleClass("hidden", mode !== "export");
+  elements.transferImportPanel.toggleClass("hidden", mode !== "import");
+  elements.transferModalOverlay.removeClass("hidden").attr("aria-hidden", "false");
+  syncModalBodyState();
+
+  return new Promise((resolve) => {
+    transferModalResolver = resolve;
+    window.setTimeout(() => {
+      elements.transferModalConfirmBtn.trigger("focus");
+    }, 0);
+  });
+}
+
+function renderTransferWarningBox($target, warnings = []) {
+  if (!warnings.length) {
+    $target.addClass("hidden").empty();
+    return;
+  }
+
+  $target
+    .removeClass("hidden")
+    .html(`
+      <p class="transfer-warning-title">${escapeHtml(t("transfer_warning_title"))}</p>
+      ${warnings
+        .map((warning) => `<p class="transfer-warning-item">${escapeHtml(warning?.message || "")}</p>`)
+        .join("")}
+    `);
+}
+
+function refreshExportPanelCopy() {
+  elements.transferExportHint.text(t("export_panel_hint"));
+  elements.transferImportApplyEnvironmentLabel.text(t("transfer_apply_environment"));
+}
+
+function buildTransferSectionMarkup(title, items) {
+  if (!items.length) {
+    return `
+      <section class="transfer-section">
+        <h4 class="transfer-section-title">${escapeHtml(title)}</h4>
+        <p class="transfer-empty">${escapeHtml(t("transfer_section_empty"))}</p>
+      </section>
+    `;
+  }
+
+  return `
+    <section class="transfer-section">
+      <h4 class="transfer-section-title">${escapeHtml(title)}</h4>
+      <ul class="transfer-list">
+        ${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
+      </ul>
+    </section>
+  `;
+}
+
+function formatPlanItems(items = []) {
+  return items.map((item) => {
+    if (item?.workflow_id) {
+      return `${item.server_id}/${item.workflow_id}`;
+    }
+    return String(item?.server_id || "");
+  }).filter(Boolean);
+}
+
+function renderImportPreviewModal(preview) {
+  lastTransferImportPreview = preview;
+  const plan = preview?.plan || {};
+  const warnings = Array.isArray(plan.warnings) ? plan.warnings : [];
+
+  elements.transferImportSummary.text(buildTransferPreviewMessage(plan));
+  elements.transferImportApplyEnvironment.prop("checked", false);
+  elements.transferImportSections.html([
+    buildTransferSectionMarkup(t("transfer_section_created_servers"), formatPlanItems(plan.created_servers || [])),
+    buildTransferSectionMarkup(t("transfer_section_updated_servers"), formatPlanItems(plan.updated_servers || [])),
+    buildTransferSectionMarkup(t("transfer_section_created_workflows"), formatPlanItems(plan.created_workflows || [])),
+    buildTransferSectionMarkup(t("transfer_section_overwritten_workflows"), formatPlanItems(plan.overwritten_workflows || [])),
+    buildTransferSectionMarkup(t("transfer_section_skipped_items"), formatPlanItems(plan.skipped_items || [])),
+    warnings.length
+      ? buildTransferSectionMarkup(
+        t("transfer_warning_title"),
+        warnings.map((warning) => warning?.message || "").filter(Boolean),
+      )
+      : "",
+  ].join(""));
+}
+
+function buildExportSelectionMap() {
+  const selection = {};
+  elements.transferExportTree.find("[data-export-workflow-checkbox]").each(function () {
+    const $checkbox = $(this);
+    if (!$checkbox.prop("checked")) {
+      return;
+    }
+    const serverId = String($checkbox.data("serverId") || "");
+    const workflowId = String($checkbox.data("workflowId") || "");
+    if (!serverId || !workflowId) {
+      return;
+    }
+    selection[serverId] = selection[serverId] || new Set();
+    selection[serverId].add(workflowId);
+  });
+  return selection;
+}
+
+function buildExportAccordionState() {
+  const state = {};
+  elements.transferExportTree.find("[data-export-server]").each(function () {
+    const $server = $(this);
+    state[String($server.data("exportServer") || "")] = $server.hasClass("is-open");
+  });
+  return state;
+}
+
+function setExportAccordionOpen(serverId, shouldOpen) {
+  const $server = elements.transferExportTree.find(`[data-export-server="${serverId}"]`);
+  const $body = elements.transferExportTree.find(`[data-export-accordion-body="${serverId}"]`);
+  const $toggle = elements.transferExportTree.find(`[data-export-toggle="${serverId}"]`);
+
+  if (!$server.length || !$body.length || !$toggle.length) {
+    return;
+  }
+
+  $server.toggleClass("is-open", shouldOpen);
+  $toggle.attr("aria-expanded", shouldOpen ? "true" : "false");
+  $body.css("max-height", shouldOpen ? `${$body[0].scrollHeight}px` : "0px");
+}
+
+function buildExportSelectionPayload() {
+  const selectionMap = buildExportSelectionMap();
+  return {
+    servers: Object.entries(selectionMap)
+      .map(([serverId, workflowIds]) => ({
+        server_id: serverId,
+        workflow_ids: [...workflowIds].sort((a, b) => a.localeCompare(b)),
+      }))
+      .filter((server) => server.workflow_ids.length > 0),
+  };
+}
+
+function syncExportServerCheckboxState(serverId) {
+  const $serverCheckbox = elements.transferExportTree.find(`[data-export-server-checkbox][data-server-id="${serverId}"]`);
+  const $workflowCheckboxes = elements.transferExportTree.find(`[data-export-workflow-checkbox][data-server-id="${serverId}"]`);
+  const $selectionChip = elements.transferExportTree.find(`[data-export-selection-chip][data-server-id="${serverId}"]`);
+  const selectedCount = $workflowCheckboxes.filter(":checked").length;
+  const totalCount = $workflowCheckboxes.length;
+  $serverCheckbox.prop("checked", totalCount > 0 && selectedCount === totalCount);
+  $serverCheckbox.prop("indeterminate", selectedCount > 0 && selectedCount < totalCount);
+  $selectionChip.text(t("export_selected_count", { selected: selectedCount, total: totalCount }));
+}
+
+function updateExportSummaryFromSelection() {
+  const selectionPayload = buildExportSelectionPayload();
+  const selectedServers = selectionPayload.servers.length;
+  const selectedWorkflows = selectionPayload.servers.reduce((count, server) => count + server.workflow_ids.length, 0);
+  const warnings = lastTransferExportPreview?.summary?.warnings || 0;
+  elements.transferExportSummary.text(t("export_preview_summary", {
+    servers: selectedServers,
+    workflows: selectedWorkflows,
+    warnings,
+  }));
+  elements.transferModalConfirmBtn.prop("disabled", selectedWorkflows === 0);
+}
+
+function renderExportSelectionTree(preview, selectionMap = null, accordionState = null) {
+  const serverMarkup = (preview?.servers || []).map((server) => {
+    const serverId = String(server.server_id || "");
+    const workflows = Array.isArray(server.workflows) ? server.workflows : [];
+    const selectedWorkflows = selectionMap?.[serverId] || new Set(workflows.map((workflow) => workflow.workflow_id));
+    const selectedCount = workflows.filter((workflow) => selectedWorkflows.has(workflow.workflow_id)).length;
+    const isOpen = Boolean(accordionState?.[serverId]);
+
+    return `
+      <section class="transfer-export-server ${isOpen ? "is-open" : ""}" data-export-server="${escapeHtml(serverId)}">
+        <div class="transfer-export-server-head">
+          <label class="transfer-export-item" for="export-server-${escapeHtml(serverId)}">
+            <input
+              id="export-server-${escapeHtml(serverId)}"
+              type="checkbox"
+              data-export-server-checkbox
+              data-server-id="${escapeHtml(serverId)}"
+              ${selectedCount > 0 ? "checked" : ""}
+            >
+            <span class="transfer-export-server-copy">
+              <span class="transfer-export-server-title-row">
+                <span class="transfer-option-title">${escapeHtml(server.name || serverId)}</span>
+                <span class="transfer-export-server-pills">
+                  <span
+                    class="transfer-chip transfer-chip-accent"
+                    data-export-selection-chip
+                    data-server-id="${escapeHtml(serverId)}"
+                  >
+                    ${escapeHtml(t("export_selected_count", { selected: selectedCount, total: workflows.length }))}
+                  </span>
+                  ${!server.enabled
+                    ? `<span class="transfer-chip transfer-chip-muted">${escapeHtml(t("export_server_disabled"))}</span>`
+                    : ""}
+                </span>
+              </span>
+              <span class="transfer-export-server-meta">${escapeHtml(serverId)} · ${escapeHtml(t("export_server_workflow_count", { count: workflows.length }))}</span>
+            </span>
+          </label>
+          <button
+            type="button"
+            class="transfer-export-toggle"
+            data-export-toggle="${escapeHtml(serverId)}"
+            aria-expanded="${isOpen ? "true" : "false"}"
+            aria-controls="export-workflows-${escapeHtml(serverId)}"
+            aria-label="${escapeHtml(t("export_toggle_server", { server: server.name || serverId }))}"
+          >
+            <span class="transfer-export-chevron" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div
+          id="export-workflows-${escapeHtml(serverId)}"
+          class="transfer-export-workflows-wrap"
+          data-export-accordion-body="${escapeHtml(serverId)}"
+          style="max-height:${isOpen ? "999px" : "0px"}"
+        >
+          <div class="transfer-export-workflows">
+          ${workflows.map((workflow) => `
+            <label class="transfer-export-item" for="export-workflow-${escapeHtml(serverId)}-${escapeHtml(workflow.workflow_id)}">
+              <input
+                id="export-workflow-${escapeHtml(serverId)}-${escapeHtml(workflow.workflow_id)}"
+                type="checkbox"
+                data-export-workflow-checkbox
+                data-server-id="${escapeHtml(serverId)}"
+                data-workflow-id="${escapeHtml(workflow.workflow_id)}"
+                ${selectedWorkflows.has(workflow.workflow_id) ? "checked" : ""}
+              >
+              <span class="transfer-export-item-copy">
+                <span class="transfer-export-workflow-title-row">
+                  <span class="transfer-option-title">${escapeHtml(workflow.workflow_id)}</span>
+                  ${!workflow.enabled
+                    ? `<span class="transfer-chip transfer-chip-muted">${escapeHtml(t("export_workflow_disabled"))}</span>`
+                    : ""}
+                </span>
+                ${workflow.description || !workflow.enabled
+                  ? `<span class="transfer-export-item-meta">${escapeHtml(workflow.description || t("export_workflow_disabled"))}</span>`
+                  : ""}
+              </span>
+            </label>
+          `).join("")}
+          </div>
+        </div>
+      </section>
+    `;
+  }).join("");
+
+  elements.transferExportTree.html(serverMarkup || `<p class="transfer-empty">${escapeHtml(t("transfer_section_empty"))}</p>`);
+  (preview?.servers || []).forEach((server) => {
+    const serverId = String(server.server_id || "");
+    syncExportServerCheckboxState(serverId);
+    setExportAccordionOpen(serverId, Boolean(accordionState?.[serverId]));
+  });
+  updateExportSummaryFromSelection();
+}
+
+function refreshTransferModalLanguage() {
+  refreshExportPanelCopy();
+
+  if (transferModalMode === "export") {
+    elements.transferModalTitle.text(t("export_bundle_title"));
+    elements.transferModalConfirmBtn.text(t("export_bundle_confirm"));
+    if (lastTransferExportPreview) {
+      renderExportPreview(
+        lastTransferExportPreview,
+        buildExportSelectionMap(),
+        buildExportAccordionState(),
+      );
+    }
+    return;
+  }
+
+  if (transferModalMode === "import") {
+    elements.transferModalTitle.text(t("import_bundle_preview_title"));
+    elements.transferModalConfirmBtn.text(t("import_bundle_confirm"));
+    if (lastTransferImportPreview) {
+      renderImportPreviewModal(lastTransferImportPreview);
+    }
+  }
 }
 
 function refreshWorkflowPanel() {
@@ -797,6 +1125,166 @@ async function loadWorkflows() {
   }
 }
 
+function getTransferErrorMessage(error, fallbackKey) {
+  const issues = error?.detail?.errors || error?.detail?.validation?.errors;
+  if (Array.isArray(issues) && issues.length > 0) {
+    return issues
+      .map((issue) => issue?.message)
+      .filter(Boolean)
+      .join("; ");
+  }
+  return error?.message || t(fallbackKey);
+}
+
+function buildTransferPreviewMessage(plan) {
+  const summary = plan?.summary || {};
+  return t("transfer_preview_summary", {
+    servers: summary.created_servers || 0,
+    updated_servers: summary.updated_servers || 0,
+    created: summary.created_workflows || 0,
+    overwritten: summary.overwritten_workflows || 0,
+    skipped: summary.skipped_items || 0,
+    warnings: summary.warnings || 0,
+  });
+}
+
+async function fetchExportPreview() {
+  return fetchJSON("/api/transfer/export/preview");
+}
+
+function renderExportPreview(preview, selectionMap = null, accordionState = null) {
+  lastTransferExportPreview = preview;
+  const baseSelection = selectionMap || Object.fromEntries(
+    (preview?.servers || []).map((server) => [
+      String(server.server_id || ""),
+      new Set((server.workflows || []).map((workflow) => workflow.workflow_id)),
+    ]),
+  );
+  renderExportSelectionTree(preview, baseSelection, accordionState);
+  renderTransferWarningBox(elements.transferExportWarnings, preview?.warnings || []);
+}
+
+async function refreshExportPreview() {
+  const requestId = ++transferPreviewRequestId;
+  let loaded = false;
+  elements.transferModalConfirmBtn.prop("disabled", true);
+  elements.transferExportSummary.text(t("loading"));
+  renderTransferWarningBox(elements.transferExportWarnings, []);
+
+  try {
+    const preview = await fetchExportPreview();
+    if (requestId !== transferPreviewRequestId || transferModalMode !== "export") {
+      return;
+    }
+    renderExportPreview(preview);
+    loaded = true;
+  } catch (error) {
+    if (requestId !== transferPreviewRequestId || transferModalMode !== "export") {
+      return;
+    }
+    elements.transferExportSummary.text(getTransferErrorMessage(error, "err_transfer_import"));
+    elements.transferModalConfirmBtn.prop("disabled", true);
+  } finally {
+    if (requestId === transferPreviewRequestId && transferModalMode === "export") {
+      elements.transferModalConfirmBtn.prop("disabled", !loaded);
+    }
+  }
+}
+
+function downloadTransferBundle() {
+  const selection = buildExportSelectionPayload();
+  return fetchJSON("/api/transfer/export/build", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      selection,
+    }),
+  }).then((response) => {
+    const bundle = response?.bundle || {};
+    const payload = `${JSON.stringify(bundle, null, 2)}\n`;
+    const blob = new Blob([payload], { type: "application/json" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "openclaw-skill-export.json";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  }).then(() => {
+    showToast(t("ok_transfer_export_started"), "success");
+  });
+}
+
+async function handleTransferImportFile(file) {
+  if (!file) {
+    return;
+  }
+
+  setBusy(elements.importBundleBtn, true);
+  try {
+    const fileContents = await readFile(file);
+    const bundle = JSON.parse(fileContents);
+    if (!bundle || typeof bundle !== "object" || Array.isArray(bundle)) {
+      throw new Error(t("err_transfer_invalid_bundle"));
+    }
+
+    const preview = await fetchJSON("/api/transfer/import/preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        bundle,
+        apply_environment: false,
+        overwrite_workflows: true,
+      }),
+    });
+
+    renderImportPreviewModal(preview);
+    const confirmation = await openTransferModal({
+      title: t("import_bundle_preview_title"),
+      confirmLabel: t("import_bundle_confirm"),
+      mode: "import",
+      payloadBuilder: (confirmed) => ({
+        confirmed,
+        checked: elements.transferImportApplyEnvironment.prop("checked"),
+      }),
+    });
+    if (!confirmation.confirmed) {
+      return;
+    }
+
+    const report = await fetchJSON("/api/transfer/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        bundle,
+        apply_environment: confirmation.checked,
+        overwrite_workflows: true,
+      }),
+    });
+
+    await loadServers();
+    await loadWorkflows();
+    refreshServerSelector();
+    refreshWorkflowPanel();
+    showToast(t("ok_transfer_import", {
+      servers: report?.plan?.summary?.created_servers || 0,
+      created: report?.plan?.summary?.created_workflows || 0,
+      overwritten: report?.plan?.summary?.overwritten_workflows || 0,
+    }), "success", 4200);
+  } catch (error) {
+    const fallbackKey = error?.message === t("err_transfer_invalid_bundle")
+      ? "err_transfer_invalid_bundle"
+      : error?.detail?.errors || error?.detail?.validation?.errors
+        ? "err_transfer_preview"
+        : "err_transfer_import";
+    showToast(getTransferErrorMessage(error, fallbackKey), "error", 4800);
+  } finally {
+    elements.transferImportFile.val("");
+    setBusy(elements.importBundleBtn, false);
+  }
+}
+
 async function loadWorkflowForEditing(serverId, workflowId, $button) {
   if ($button?.length) {
     $button.prop("disabled", true);
@@ -1067,6 +1555,9 @@ function syncLanguage() {
   setLanguage(currentLanguage);
   elements.langSelect.val(currentLanguage);
   applyTranslations();
+  elements.exportBundleBtn.text(t("export_bundle"));
+  elements.importBundleBtn.text(t("import_bundle"));
+  refreshTransferModalLanguage();
   enhanceCustomSelects(document);
   refreshServerModalText();
   refreshServerSelector();
@@ -1111,6 +1602,10 @@ function bindServerEvents() {
       return;
     }
     closeWorkflowMoreMenus();
+    if (!elements.transferModalOverlay.hasClass("hidden")) {
+      closeTransferModal(false);
+      return;
+    }
     if (!elements.confirmModalOverlay.hasClass("hidden")) {
       closeConfirmModal(false);
       return;
@@ -1531,6 +2026,73 @@ function bindUploadInteractions() {
   });
 }
 
+function bindTransferEvents() {
+  elements.exportBundleBtn.on("click", async () => {
+    const resultPromise = openTransferModal({
+      title: t("export_bundle_title"),
+      confirmLabel: t("export_bundle_confirm"),
+      mode: "export",
+      payloadBuilder: (confirmed) => ({ confirmed }),
+    });
+    await refreshExportPreview();
+    const result = await resultPromise;
+    if (!result.confirmed) {
+      return;
+    }
+    setBusy(elements.transferModalConfirmBtn, true);
+    try {
+      await downloadTransferBundle();
+    } catch (error) {
+      showToast(getTransferErrorMessage(error, "err_transfer_import"), "error", 4800);
+    } finally {
+      setBusy(elements.transferModalConfirmBtn, false);
+    }
+  });
+
+  elements.importBundleBtn.on("click", async () => {
+    if (isEditorVisible() && !(await exitEditor())) {
+      return;
+    }
+    elements.transferImportFile.val("");
+    elements.transferImportFile.trigger("click");
+  });
+
+  elements.transferImportFile.on("change", async function () {
+    await handleTransferImportFile(this.files?.[0]);
+  });
+
+  elements.transferModalCancelBtn.on("click", () => closeTransferModal(false));
+  elements.transferModalConfirmBtn.on("click", () => closeTransferModal(true));
+  elements.transferModalOverlay.on("click", (event) => {
+    if (event.target === elements.transferModalOverlay[0]) {
+      closeTransferModal(false);
+    }
+  });
+
+  elements.transferExportTree.on("change", "[data-export-server-checkbox]", function () {
+    const $checkbox = $(this);
+    const serverId = String($checkbox.data("serverId") || "");
+    const checked = $checkbox.prop("checked");
+    elements.transferExportTree
+      .find(`[data-export-workflow-checkbox][data-server-id="${serverId}"]`)
+      .prop("checked", checked);
+    $checkbox.prop("indeterminate", false);
+    updateExportSummaryFromSelection();
+  });
+
+  elements.transferExportTree.on("change", "[data-export-workflow-checkbox]", function () {
+    const serverId = String($(this).data("serverId") || "");
+    syncExportServerCheckboxState(serverId);
+    updateExportSummaryFromSelection();
+  });
+
+  elements.transferExportTree.on("click", "[data-export-toggle]", function () {
+    const serverId = String($(this).data("exportToggle") || "");
+    const isOpen = elements.transferExportTree.find(`[data-export-server="${serverId}"]`).hasClass("is-open");
+    setExportAccordionOpen(serverId, !isOpen);
+  });
+}
+
 function bindEvents() {
   elements.langSelect.on("change", function () {
     const nextLanguage = $(this).val();
@@ -1539,6 +2101,9 @@ function bindEvents() {
     }
     setLanguage(nextLanguage);
     applyTranslations();
+    elements.exportBundleBtn.text(t("export_bundle"));
+    elements.importBundleBtn.text(t("import_bundle"));
+    refreshTransferModalLanguage();
     enhanceCustomSelects(document);
     refreshServerModalText();
     refreshServerSelector();
@@ -1558,6 +2123,7 @@ function bindEvents() {
   bindMappingToolbarEvents();
   bindEditorShortcuts();
   bindUploadInteractions();
+  bindTransferEvents();
 
   window.addEventListener("beforeunload", (event) => {
     if (!isEditorVisible() || !hasEditorUnsavedChanges) {

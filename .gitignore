@@ -49,7 +49,7 @@ yarn-error.log
 ui/frontend/dist/
 ui/frontend/node_modules/
 
-# AI Planning Files
+# Manus Files
 task_plan.md
 findings.md
 progress.md

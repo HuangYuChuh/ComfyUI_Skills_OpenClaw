@@ -169,3 +169,19 @@ class WorkflowOrderModel(BaseModel):
             raise ValueError("At least one workflow ID is required")
 
         return normalized
+
+
+class TransferPreviewModel(BaseModel):
+    bundle: dict[str, Any]
+    apply_environment: bool = False
+    overwrite_workflows: bool = True
+
+
+class TransferImportModel(BaseModel):
+    bundle: dict[str, Any]
+    apply_environment: bool = False
+    overwrite_workflows: bool = True
+
+
+class TransferExportModel(BaseModel):
+    selection: dict[str, Any] | None = None

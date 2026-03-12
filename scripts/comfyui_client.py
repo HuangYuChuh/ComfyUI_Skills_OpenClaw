@@ -10,7 +10,7 @@ from logging import getLogger
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from shared.config import get_server_workflows_dir, get_server_schemas_dir
+from shared.config import get_server_schema_path, get_server_workflow_path
 from shared.json_utils import load_json
 from shared.runtime_config import get_runtime_config, get_server_by_id, get_default_server_id
 
@@ -119,18 +119,15 @@ def main():
         return
 
     # 4. Load Workflow and Schema from server-specific directory
-    workflows_dir = str(get_server_workflows_dir(server_id))
-    schemas_dir = str(get_server_schemas_dir(server_id))
-
-    wf_path = os.path.join(workflows_dir, f"{workflow_id}.json")
-    schema_path = os.path.join(schemas_dir, f"{workflow_id}.json")
+    wf_path = str(get_server_workflow_path(server_id, workflow_id))
+    schema_path = str(get_server_schema_path(server_id, workflow_id))
 
     if not os.path.exists(wf_path):
-        print(json.dumps({"error": f"Workflow {workflow_id}.json not found in {workflows_dir}"}))
+        print(json.dumps({"error": f"Workflow file not found for '{server_id}/{workflow_id}'"}))
         return
 
     if not os.path.exists(schema_path):
-        print(json.dumps({"error": f"Schema {workflow_id}.json not found in {schemas_dir}"}))
+        print(json.dumps({"error": f"Schema file not found for '{server_id}/{workflow_id}'"}))
         return
 
     workflow_data = load_json(wf_path)

@@ -32,6 +32,18 @@ export async function fetchJSON(url, options = {}) {
       },
       error(jqXHR, textStatus) {
         const payload = parsePayload(jqXHR.responseJSON ?? jqXHR.responseText);
+        const bundleValidationMessage = Array.isArray(payload?.validation?.errors)
+          ? payload.validation.errors
+            .map((item) => item?.message)
+            .filter(Boolean)
+            .join("; ")
+          : null;
+        const detailValidationMessage = Array.isArray(payload?.detail?.errors)
+          ? payload.detail.errors
+            .map((item) => item?.message)
+            .filter(Boolean)
+            .join("; ")
+          : null;
         const validationMessage = Array.isArray(payload?.detail)
           ? payload.detail
             .map((item) => item?.msg || item?.message)
@@ -39,6 +51,8 @@ export async function fetchJSON(url, options = {}) {
             .join("; ")
           : null;
         const message =
+          bundleValidationMessage ||
+          detailValidationMessage ||
           validationMessage ||
           (payload && typeof payload === "object" && (payload.detail || payload.message)) ||
           (typeof payload === "string" && payload) ||

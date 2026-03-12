@@ -19,72 +19,130 @@
 
 ## 安装
 
-### 1）环境要求
+<details>
+<summary><strong>ComfyUI Skills for OpenClaw</strong></summary>
 
-- Python 3.10+
-- 正在运行的 ComfyUI 服务（默认：`http://127.0.0.1:8188`）
-
-### 2）克隆项目并安装依赖
+手动安装：
 
 ```bash
-git clone <你的仓库地址> comfyui-skill-openclaw
+cd ~/.openclaw/workspace/skills
+git clone https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw.git comfyui-skill-openclaw
 cd comfyui-skill-openclaw
 pip install -r requirements.txt
+cp config.example.json config.json
 ```
 
-### 3）准备运行配置
+让 OpenClaw 帮你安装：
 
-`config.json` 是这个项目的运行时配置。CLI、UI 和 OpenClaw 调用脚本都会读取它。
+把下面这段话发给 OpenClaw 即可：
 
-你可以二选一：
+```text
+请帮我把这个 ComfyUI skill 安装到我的 OpenClaw workspace 里。
 
-- 手动方式：根据 `config.example.json` 创建 `config.json`，并自己填好第一个服务器
-- UI 方式（推荐）：先启动 UI，再在界面里添加第一个服务器，UI 会自动把配置写回 `config.json`
+目标路径：
+~/.openclaw/workspace/skills/comfyui-skill-openclaw/
 
-`config.json` 示例：
+要求：
+1. 先执行 `cd ~/.openclaw/workspace/skills`。
+2. 将这个仓库克隆为 `comfyui-skill-openclaw` 目录。
+3. 保留根目录下的 SKILL.md。
+4. 安装 requirements.txt 里的 Python 依赖。
+5. 执行 `cp config.example.json config.json`。
+6. 如果我没有额外指定，就默认把 ComfyUI 地址设置为 http://127.0.0.1:8188。
+7. 安装完成后，确保 OpenClaw 可以发现并调用这个 skill。
+```
 
-```json
+</details>
+
+## 如何配置 ComfyUI 工作流
+
+开始配置前，请先确保 ComfyUI 服务已经运行，本地 ComfyUI 默认地址是 `http://127.0.0.1:8188`。
+
+### I. 通过 UI 配置（推荐）
+
+- macOS/Linux：`./ui/run_ui.sh`，或双击 `ui/run_ui.command`
+- Windows：`ui\run_ui.bat`
+- 访问：`http://localhost:18189`
+- 上传从 ComfyUI 导出的工作流 JSON，格式必须是 **Save (API Format)**
+- 在 UI 中添加第一个 ComfyUI 服务器
+- 选择要暴露给 OpenClaw 的参数并保存映射
+
+### II. 通过配置文件配置
+
+#### 1）编辑 `config.json`
+
+先配置服务器信息。最小示例如下：
+
+```jsonc
 {
   "servers": [
     {
-      "id": "local",
-      "name": "Local Mac",
-      "url": "http://127.0.0.1:8188",
-      "enabled": true,
-      "output_dir": "./outputs"
+      "id": "local",                  // 服务器 ID，后面会作为目录名和工作流调用前缀
+      "name": "Local",                // 服务器显示名称
+      "url": "http://127.0.0.1:8188", // ComfyUI 服务地址
+      "enabled": true,                // 是否启用这个服务器
+      "output_dir": "./outputs"       // 图片输出目录
     }
   ],
-  "default_server": "local"
+  "default_server": "local"           // 默认服务器 ID
 }
 ```
 
+#### 2）放置工作流文件
 
-### 4）启动本地 UI
+每个工作流使用一个独立目录，例如：
 
-- macOS/Linux：
-  ```bash
-  ./ui/run_ui.sh
-  ```
-  或双击 `ui/run_ui.command`
-- Windows：
-  ```bat
-  ui\run_ui.bat
-  ```
+```bash
+data/local/Default/
+  workflow.json  # 从 ComfyUI 导出的 API 格式工作流
+  schema.json    # 对外暴露给 OpenClaw/Agent 的参数映射
+```
 
-打开：
+#### 3）编写 `schema.json`
 
-- `http://localhost:8189`
+`schema.json` 至少需要包含：
 
-### 5）添加第一个服务器和工作流
+- `description`
+- `enabled`
+- `parameters`
 
-在 UI 里完成这几步：
+最小示例如下：
 
-1. 如果你还没有在 `config.json` 里配置服务器，就先添加一个 ComfyUI 服务器。
-2. 上传从 ComfyUI 导出的工作流 JSON，格式必须是 **Save (API Format)**。
-3. 选择需要暴露给 OpenClaw 的参数。
-4. 保存工作流映射。
+```jsonc
+{
+  "description": "默认测试工作流", // 给 OpenClaw/Agent 看的工作流说明
+  "enabled": true,               // 是否启用这个工作流
+  "parameters": {
+    "prompt": {                  // 暴露给 OpenClaw/Agent 的参数名
+      "node_id": 10,             // workflow.json 里的节点 ID
+      "field": "prompt",         // 该节点 inputs 里的字段名
+      "required": true,          // 是否必填
+      "type": "string",          // 参数类型
+      "description": "提示词"     // 参数说明
+    },
+    "seed": {
+      "node_id": 10,
+      "field": "seed",
+      "required": false,
+      "type": "int",
+      "description": "随机种子"
+    }
+  }
+}
+```
 
-### 6）验证是否安装成功
+说明：
+
+- 工作流 ID 直接由目录名决定；例如目录是 `data/local/Default/`，工作流 ID 就是 `Default`
+- `parameters` 里的每个字段，表示一个要暴露给 OpenClaw/Agent 的输入参数
+- `node_id` 和 `field` 需要对应到 `workflow.json` 里实际的节点和输入字段
+
+如果你想看完整示例，可以直接参考仓库里的现成文件：
+
+- `data/local/Default/workflow.json`
+- `data/local/Default/schema.json`
+
+#### 4）验证配置是否成功
 
 查看工作流列表：
 
@@ -96,8 +154,16 @@ python scripts/registry.py list
 
 ```bash
 python scripts/comfyui_client.py \
-  --workflow local/test \
-  --args '{"prompt":"一张高质感产品摄影图，温暖电影级光影","size":"3:4,1728x2304","seed":20260307}'
+  --workflow <server_id>/<workflow_id> \
+  --args '{"prompt":"test"}'
+```
+
+例如：
+
+```bash
+python scripts/comfyui_client.py \
+  --workflow local/Default \
+  --args '{"prompt":"一张高质感产品摄影图"}'
 ```
 
 成功后会返回类似：
@@ -110,88 +176,30 @@ python scripts/comfyui_client.py \
 }
 ```
 
----
+### III. 通过 OpenClaw/Agent 帮你配置
 
-## 作为 OpenClaw Skill 安装
+- 让 OpenClaw 或其他 Agent 帮你编辑 `config.json`
+- 让 Agent 将 workflow JSON 和 schema JSON 写入对应目录
+- 写入完成后，再让 Agent 帮你执行一次验证
 
-把这个项目放到 OpenClaw 工作区的 skill 目录下面：
+### 工作流要求（重要）
 
-- `~/.openclaw/workspace/skills/<skill_name>/`
+**API 格式工作流 + Save Image 输出节点** 是稳定可用的基础要求。为了稳定执行，请确保：
 
-例如：
+1. **工作流必须导出为 ComfyUI API 格式**
+   - 在 ComfyUI 中点击 **Save (API Format)**
+   - 将导出的 JSON 放到 `data/<server_id>/<workflow_id>/workflow.json`
 
-- `~/.openclaw/workspace/skills/comfyui-agent/`
+2. **工作流末端必须包含 `Save Image` 节点**
+   - 当前客户端是从 ComfyUI 的输出图像中下载结果
+   - 如果没有 `Save Image`（或等价的图像输出），可能会“执行成功但拿不到图片”
 
-OpenClaw 会读取 `SKILL.md`，并调用：
-
-- `scripts/registry.py list --agent`
-- `scripts/comfyui_client.py --workflow ... --args '...json...'`
-
-最小检查清单：
-
-1. 项目放在 `~/.openclaw/workspace/skills/` 下面
-2. 根目录存在 `SKILL.md`
-3. Python 依赖已经安装
-4. `config.json` 指向可访问的 ComfyUI 服务
-5. 至少已经配置了一个工作流和对应参数映射
-
-### 让 OpenClaw 帮你安装
-
-把下面这段话发给 OpenClaw 即可：
-
-```text
-请帮我把这个 ComfyUI skill 安装到我的 OpenClaw workspace 里。
-
-目标路径：
-~/.openclaw/workspace/skills/comfyui-agent/
-
-要求：
-1. 把完整项目复制或克隆到这个目录。
-2. 保留根目录下的 SKILL.md。
-3. 安装 requirements.txt 里的 Python 依赖。
-4. 如果没有 config.json，就根据 config.example.json 创建一份。
-5. 如果我没有额外指定，就默认把 ComfyUI 地址设置为 http://127.0.0.1:8188。
-6. 安装完成后，确保 OpenClaw 可以发现并调用这个 skill。
-```
-
----
-
-## 本地 UI 管理面板
-
-启动方式：
-
-- 通过 OpenClaw 或其他可执行本地命令的 Agent：
-  ```bash
-  python3 ./ui/open_ui.py
-  ```
-- macOS/Linux：
-  ```bash
-  ./ui/run_ui.sh
-  ```
-  或双击 `ui/run_ui.command`
-- Windows：
-  ```bat
-  ui\run_ui.bat
-  ```
-
-访问地址：
-
-- `http://localhost:8189`
-
-可用于配置多个 ComfyUI 服务器地址、输出目录，以及管理工作流及 Schema 映射。
-
-当前已经支持：
-
-- 多服务器管理，以及服务器和工作流的双层开关
-- 工作流搜索、排序和拖动排序
-- 上传工作流 JSON 时自动填充 Workflow ID
-- 自定义弹窗、自定义下拉和语言切换
 
 ---
 
 ## 多服务器管理
 
-你现在可以配置多个不同的 ComfyUI 服务器，方便 OpenClaw 将生图任务分发到不同算力节点（例如本机 GPU、云端实例等）。
+可以配置多个不同的 ComfyUI 服务器，方便 OpenClaw/Agent 将生图任务分发到不同算力节点（例如本机 GPU、云端实例等）。
 
 ### 核心概念
 - **双层控制开关**：`服务器` 和 `独立工作流` 均有各自的开启/关闭状态。OpenClaw 只能发现**两者均开启**的工作流。
@@ -206,21 +214,36 @@ python scripts/server_manager.py disable cloud
 ```
 *所有服务器配置依然可以通过前端 Web UI 界面来进行图形化无缝管理。*
 
----
+### 配置迁移（导出 / 导入）
 
-## 工作流要求（重要）
+如果你更换了部署路径，或者想把当前 Skill 的工作流映射迁移到另一台机器，可以直接使用内置的 bundle 机制。
 
-为了稳定执行，请确保：
+UI 方式：
 
-1. **工作流必须导出为 ComfyUI API 格式**
-   - 在 ComfyUI 中点击 **Save (API Format)**
-   - 将导出的 JSON 放到 `data/<server_id>/workflows/<workflow_id>.json`
+- 在主界面点击 `导出配置`，浏览器会下载一个 `openclaw-skill-export.json`
+- 导出前可以按服务器展开，并取消勾选不想导出的 workflow；默认全部选中，服务器默认折叠
+- 在目标机器打开 UI，点击 `导入配置`
+- 选择刚才导出的 JSON 文件
+- 系统会先显示预检结果，再确认是否同时应用源机器的默认服务器、URL 和输出目录
 
-2. **工作流末端必须包含 `Save Image` 节点**
-   - 当前客户端是从 ComfyUI 的输出图像中下载结果
-   - 如果没有 `Save Image`（或等价的图像输出），可能会“执行成功但拿不到图片”
+CLI 方式：
 
-一句话：**API 格式工作流 + Save Image 输出节点** 是稳定可用的基础要求。
+```bash
+python scripts/transfer_manager.py export --output ./openclaw-skill-export.json
+python scripts/transfer_manager.py import --input ./openclaw-skill-export.json --dry-run
+python scripts/transfer_manager.py import --input ./openclaw-skill-export.json
+```
+
+可选参数：
+
+- `--apply-environment`：导入时同时应用 bundle 中的环境配置
+- `--no-overwrite`：导入时如果工作流已存在，则跳过而不是覆盖
+
+默认导入策略：
+
+- 同名工作流默认覆盖
+- 已存在服务器会做合并导入
+- 默认保留目标机器当前的 `url`、`output_dir` 和 `default_server`
 
 ---
 
@@ -259,10 +282,9 @@ ComfyUI_Skills_OpenClaw/
 │   └── banner-ui-20250309.jpg
 ├── data/
 │   ├── <server_id>/
-│   │   ├── workflows/
-│   │   │   └── <workflow_id>.json  # ComfyUI API 格式工作流
-│   │   └── schemas/
-│   │       └── <workflow_id>.json  # 对外参数映射
+│   │   └── <workflow_id>/
+│   │       ├── workflow.json       # ComfyUI API 格式工作流
+│   │       └── schema.json         # 对外参数映射
 ├── scripts/
 │   ├── server_manager.py       # 管理多服务器配置的 CLI 工具
 │   ├── registry.py             # 列出可用工作流及参数

@@ -5,7 +5,7 @@ import argparse
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from shared.config import get_server_schemas_dir
+from shared.config import get_server_schema_path, list_server_workflow_dirs
 from shared.runtime_config import get_runtime_config
 
 
@@ -19,9 +19,9 @@ def get_workflows(is_agent=False):
         server_name = server.get("name", server_id)
         server_enabled = server.get("enabled", True)
 
-        schemas_dir = str(get_server_schemas_dir(server_id))
+        workflow_dirs = list_server_workflow_dirs(server_id)
 
-        if not os.path.exists(schemas_dir):
+        if not workflow_dirs:
             if not is_agent and server_enabled:
                 all_workflows.append({
                     "_server_id": server_id,
@@ -31,17 +31,16 @@ def get_workflows(is_agent=False):
                 })
             continue
 
-        for filename in sorted(os.listdir(schemas_dir)):
-            if not filename.endswith(".json"):
+        for workflow_dir in workflow_dirs:
+            workflow_id = workflow_dir.name
+            filepath = get_server_schema_path(server_id, workflow_id)
+            if not filepath.exists():
                 continue
-
-            filepath = os.path.join(schemas_dir, filename)
             try:
                 with open(filepath, 'r', encoding='utf-8') as f:
                     schema_data = json.load(f)
 
                 workflow_enabled = schema_data.get("enabled", True)
-                workflow_id = schema_data.get("workflow_id", filename.replace('.json', ''))
                 desc = schema_data.get("description", "")
 
                 # Apply dual-layer switch logic
