@@ -200,18 +200,18 @@ python scripts/comfyui_client.py \
 
 ## 多服务器管理
 
-可以配置多个不同的 ComfyUI 服务器，方便 OpenClaw/Agent 将生图任务分发到不同算力节点（例如本机 GPU、云端实例等）。
+可以配置多个不同的 ComfyUI 服务器，方便 OpenClaw/Agent 将生图任务分发到不同算力节点（例如本机 GPU、远程实例等）。
 
 ### 核心概念
 - **双层控制开关**：`服务器` 和 `独立工作流` 均有各自的开启/关闭状态。OpenClaw 只能发现**两者均开启**的工作流。
-- **命名空间组合**：OpenClaw 识别工作流的唯一标识为 `<server_id>/<workflow_id>` 的复合格式（例如：`local/test` 与 `cloud/test`）。
+- **命名空间组合**：OpenClaw 识别工作流的唯一标识为 `<server_id>/<workflow_id>` 的复合格式（例如：`local/test` 与 `remote/test`）。
 
 ### 命令行工具配置
 在无 GUI 的 Linux 机器部署时，可使用内置的 CLI 工具（`scripts/server_manager.py`）进行管理：
 ```bash
 python scripts/server_manager.py list
-python scripts/server_manager.py add --id cloud --name "Cloud Node" --url http://10.0.0.1:8188
-python scripts/server_manager.py disable cloud
+python scripts/server_manager.py add --id remote --name "Remote Node" --url http://10.0.0.1:8188
+python scripts/server_manager.py disable remote
 ```
 *所有服务器配置依然可以通过前端 Web UI 界面来进行图形化无缝管理。*
 

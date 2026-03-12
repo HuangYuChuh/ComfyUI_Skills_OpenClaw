@@ -203,18 +203,18 @@ On success, the output looks like this:
 
 ## Multi-Server Management
 
-You can configure multiple ComfyUI servers so OpenClaw can route jobs across different hardware targets such as a local GPU or a cloud instance.
+You can configure multiple ComfyUI servers so OpenClaw can route jobs across different hardware targets such as a local GPU or a remote instance.
 
 ### Core Concepts
 - **Dual-Layer Toggles**: Both *servers* and *individual workflows* can be enabled or disabled. A workflow is only visible to the AI agent if **both** the server and the workflow itself are enabled.
-- **Namespacing**: Workflows are identified with a composite ID: `<server_id>/<workflow_id>` (e.g., `local/sdxl-base` vs. `cloud-a100/sdxl-base`).
+- **Namespacing**: Workflows are identified with a composite ID: `<server_id>/<workflow_id>` (e.g., `local/sdxl-base` vs. `remote-a100/sdxl-base`).
 
 ### CLI Configuration
 On headless machines, you can use the built-in CLI tool `scripts/server_manager.py`:
 ```bash
 python scripts/server_manager.py list
-python scripts/server_manager.py add --id cloud --name "Cloud Node" --url http://10.0.0.1:8188
-python scripts/server_manager.py disable cloud
+python scripts/server_manager.py add --id remote --name "Remote Node" --url http://10.0.0.1:8188
+python scripts/server_manager.py disable remote
 ```
 *You can still manage all server settings through the web UI.*
 
