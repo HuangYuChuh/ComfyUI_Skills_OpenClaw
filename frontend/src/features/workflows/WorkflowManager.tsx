@@ -7,11 +7,9 @@ interface WorkflowManagerProps {
   allWorkflowsForCurrentServer: number;
   search: string;
   sort: string;
-  showCloudExamples?: boolean;
   onSearchChange: (value: string) => void;
   onSortChange: (value: string) => void;
   onCreateWorkflow: () => void;
-  onOpenCloudExamples: () => void;
   onEditWorkflow: (workflow: WorkflowSummaryDto) => void;
   onDeleteWorkflow: (workflow: WorkflowSummaryDto) => void;
   onToggleWorkflow: (workflow: WorkflowSummaryDto, enabled: boolean) => void;
@@ -124,11 +122,6 @@ export function WorkflowManager(props: WorkflowManagerProps) {
         </div>
         <div className="panel-actions">
           {props.allWorkflowsForCurrentServer ? <p className="section-meta panel-meta">{summary}</p> : null}
-          {props.showCloudExamples ? (
-            <button type="button" className="btn btn-secondary panel-action-btn" onClick={props.onOpenCloudExamples}>
-              {props.t("cloud_templates_btn")}
-            </button>
-          ) : null}
           <button type="button" className="btn btn-secondary panel-action-btn" onClick={props.onCreateWorkflow}>
             {props.t("register_new_short")}
           </button>
