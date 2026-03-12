@@ -1,0 +1,322 @@
+.workflow-more-item svg,
+.workflow-action-edit svg,
+.workflow-more-trigger svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.workflow-more-item:hover,
+.workflow-more-item:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.workflow-more-item-danger {
+  color: #fda4af;
+}
+
+.workflow-more-item-danger:hover,
+.workflow-more-item-danger:focus-visible {
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.workflow-drag-handle {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 10px;
+  color: rgba(226, 232, 240, 0.78);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: grab;
+}
+
+.workflow-drag-handle.is-disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+.upgrade-summary-banner {
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(251, 113, 133, 0.24);
+  border-radius: 14px;
+  background: rgba(225, 29, 72, 0.08);
+}
+
+.upgrade-summary-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #fecdd3;
+}
+
+.upgrade-summary-meta {
+  margin-top: 4px;
+  font-size: 0.84rem;
+  color: var(--text-muted);
+}
+
+.param-status-badge.is-retained {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.32);
+  color: #6ee7b7;
+}
+
+.param-status-badge.is-review {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.32);
+  color: #fcd34d;
+}
+
+.param-status-badge.is-new {
+  background: rgba(59, 130, 246, 0.14);
+  border-color: rgba(96, 165, 250, 0.32);
+  color: #93c5fd;
+}
+
+.param-meta-emphasis {
+  color: #fcd34d;
+}
+
+.empty-state {
+  padding: 20px;
+  text-align: center;
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+.status-dot {
+  color: var(--success);
+  font-size: 0.75rem;
+}
+
+.status-dot.is-disabled {
+  color: #6b7280;
+}
+
+.upload-zone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 180px;
+  padding: 28px 20px;
+  border: 2px dashed var(--card-border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-soft);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.upload-zone:hover,
+.upload-zone.is-dragging {
+  border-color: var(--primary);
+  background: rgba(225, 29, 72, 0.08);
+}
+
+.upload-zone input[type="file"] {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.upload-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.upload-reminder {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  border-radius: var(--radius-md);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.upload-reminder-title {
+  margin-bottom: 10px;
+  color: #fde68a;
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.upload-reminder-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.upload-reminder-list li + li {
+  margin-top: 8px;
+}
+
+.node-card {
+  overflow: hidden;
+}
+
+.node-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--card-border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.node-header-right,
+.node-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.node-title {
+  font-weight: 600;
+}
+
+.node-body {
+  padding: 16px;
+}
+
+.node-card.is-collapsed .node-body {
+  display: none;
+}
+
+.mapping-savebar {
+  position: sticky;
+  bottom: 10px;
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  background: rgba(13, 16, 22, 0.94);
+  backdrop-filter: blur(10px);
+}
+
+.param-row {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.param-row + .param-row {
+  margin-top: 12px;
+}
+
+.param-row.active {
+  border-color: rgba(225, 29, 72, 0.55);
+  background: rgba(225, 29, 72, 0.09);
+}
+
+.param-main {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  min-width: 0;
+}
+
+.param-main-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.param-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.94rem;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.param-title.active {
+  color: #fda4af;
+}
+
+.param-config {
+  display: none;
+  gap: 14px;
+  width: 100%;
+  padding-top: 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.param-config.is-expanded {
+  display: grid;
+}
+
+.param-config-toggle {
+  flex-shrink: 0;
+  min-width: 22px;
+  min-height: 22px;
+  margin-left: auto;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.checkbox-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  cursor: pointer;
+}
+
+.toggle-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  margin: 0;
+  color: var(--text-main);
+}
+
+.checkbox-inline input {
+  margin: 0;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: #374151;
+  transition: background-color 0.25s ease;
+}
+
+.slider::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  bottom: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.25s ease;
+}
