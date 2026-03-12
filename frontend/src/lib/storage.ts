@@ -13,3 +13,11 @@ export function safeWriteLocalStorage(key: string, value: string) {
     // Ignore private-mode / embedded storage failures.
   }
 }
+
+export function safeRemoveLocalStorage(key: string) {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Ignore private-mode / embedded storage failures.
+  }
+}

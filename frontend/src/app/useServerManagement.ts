@@ -1,5 +1,5 @@
 import { useRef, useState, type Dispatch, type SetStateAction } from "react";
-import { safeReadLocalStorage, safeWriteLocalStorage } from "../lib/storage";
+import { safeReadLocalStorage, safeRemoveLocalStorage, safeWriteLocalStorage } from "../lib/storage";
 import { addServer, deleteServer, listServers, toggleServer, updateServer } from "../services/servers";
 import type { SaveServerPayload, ServerDto } from "../types/api";
 import type { ConfirmState, ServerModalMode, TranslateFn } from "./state";
@@ -50,6 +50,8 @@ export function useServerManagement(args: UseServerManagementArgs) {
     setCurrentServerIdState(nextServerId);
     if (nextServerId) {
       safeWriteLocalStorage("ui-server", nextServerId);
+    } else {
+      safeRemoveLocalStorage("ui-server");
     }
   }
 

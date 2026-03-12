@@ -129,6 +129,18 @@ class UIStorageService:
         if len(new_servers) == len(servers):
             raise FileNotFoundError(f"Server '{server_id}' not found")
         config["servers"] = new_servers
+        current_default_server = str(config.get("default_server") or "").strip()
+        remaining_server_ids = {
+            str(server.get("id") or "").strip()
+            for server in new_servers
+            if str(server.get("id") or "").strip()
+        }
+        if current_default_server == server_id or current_default_server not in remaining_server_ids:
+            config["default_server"] = (
+                str(new_servers[0].get("id") or "").strip()
+                if new_servers
+                else ""
+            )
         self.save_config(config)
 
         if delete_data:

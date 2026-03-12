@@ -62,6 +62,14 @@ const serverFixture = {
   output_dir: "./outputs",
 };
 
+const remoteServerFixture = {
+  id: "remote",
+  name: "Remote",
+  url: "http://10.0.0.1:8188",
+  enabled: true,
+  output_dir: "./outputs",
+};
+
 const unsupportedServerFixture = {
   id: "legacy-remote-v2",
   name: "Legacy Remote",
@@ -241,5 +249,37 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "+ New Workflow" }));
 
     expect(screen.getAllByText(/Server type "legacy_remote_v2" is not supported in this branch/).length).toBeGreaterThan(0);
+  });
+
+  it("falls back to another server after deleting the currently selected one", async () => {
+    const user = userEvent.setup();
+    listServersMock
+      .mockResolvedValueOnce({
+        servers: [serverFixture, remoteServerFixture],
+        default_server: serverFixture.id,
+      })
+      .mockResolvedValueOnce({
+        servers: [remoteServerFixture],
+        default_server: remoteServerFixture.id,
+      });
+    listWorkflowsMock.mockResolvedValue({ workflows: [] });
+
+    render(<App />);
+
+    await screen.findByText("Local");
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    await screen.findByText("Delete server local? Data files will NOT be removed.");
+
+    const deleteButtons = screen.getAllByRole("button", { name: "Delete" });
+    await user.click(deleteButtons[deleteButtons.length - 1]);
+
+    await waitFor(() => {
+      expect(deleteServerMock).toHaveBeenCalledWith("local", false);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Remote")).toBeInTheDocument();
+      expect(screen.queryByText("Local")).not.toBeInTheDocument();
+    });
   });
 });

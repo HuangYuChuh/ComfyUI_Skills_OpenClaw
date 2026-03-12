@@ -17,10 +17,19 @@ interface UseAppDerivedStateArgs {
 }
 
 export function useAppDerivedState(args: UseAppDerivedStateArgs) {
-  const currentServer = useMemo(() => {
-    const resolvedId = args.currentServerId || args.defaultServerId || args.servers[0]?.id || null;
-    return args.servers.find((server) => server.id === resolvedId) || null;
+  const resolvedCurrentServerId = useMemo(() => {
+    if (args.currentServerId && args.servers.some((server) => server.id === args.currentServerId)) {
+      return args.currentServerId;
+    }
+    if (args.defaultServerId && args.servers.some((server) => server.id === args.defaultServerId)) {
+      return args.defaultServerId;
+    }
+    return args.servers[0]?.id || null;
   }, [args.currentServerId, args.defaultServerId, args.servers]);
+
+  const currentServer = useMemo(() => {
+    return args.servers.find((server) => server.id === resolvedCurrentServerId) || null;
+  }, [resolvedCurrentServerId, args.servers]);
 
   const effectiveServerId = currentServer && !currentServer.unsupported ? currentServer.id : null;
 
