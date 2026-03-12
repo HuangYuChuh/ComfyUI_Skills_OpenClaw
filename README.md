@@ -7,17 +7,17 @@
   </a>
 </p>
 
-This project is a ComfyUI skill integration layer for OpenClaw and other LLM agents. It turns the workflows you build and export from ComfyUI (API format) into callable skills that agents can trigger with natural language.
+This project is a ComfyUI skill integration layer for OpenClaw. It turns the workflows you build and export from ComfyUI in API format into callable skills that OpenClaw can trigger with natural language.
 
 It converts natural language requests into structured skill arguments, maps them to ComfyUI workflow inputs, submits jobs to ComfyUI, waits for completion, then pulls generated images back to local disk.
 
 ## What This Skill Can Do
 
-- Turn your existing ComfyUI workflows into skills that OpenClaw or other agents can call directly
-- Let OpenClaw or another agent call workflows deployed across different ComfyUI servers instead of being tied to a single machine
-- Reuse the parameters you already exposed, so the agent can understand what each workflow expects
-- Upload a workflow once, manage it from the UI, and use it again without rebuilding the whole setup
-- Send jobs to ComfyUI, wait for completion, and pull the generated images back to local storage
+- Turn your existing ComfyUI workflows into skills that OpenClaw can call directly
+- Let OpenClaw call workflows deployed across different ComfyUI servers instead of being tied to a single machine
+- Reuse the parameters you already exposed so OpenClaw can understand what each workflow expects
+- Upload a workflow once, manage it in the UI, and reuse it without rebuilding the setup
+- Submit jobs to ComfyUI, wait for completion, and pull generated images back to local storage
 
 ---
 
@@ -58,24 +58,24 @@ Requirements:
 
 </details>
 
-## How To Configure ComfyUI Workflows
+## How to Configure ComfyUI Workflows
 
 Before you start, make sure your ComfyUI server is already running. The default local address is `http://127.0.0.1:8188`.
 
-### I. Configure Through The UI (Recommended)
+### I. Configure Through the UI (Recommended)
 
 - macOS/Linux: `./ui/run_ui.sh`, or double-click `ui/run_ui.command`
 - Windows: `ui\run_ui.bat`
-- Open: `http://localhost:18189`
-- Upload a workflow JSON exported from ComfyUI in **Save (API Format)**
+- Visit: `http://localhost:18189`
+- Upload a workflow JSON exported from ComfyUI with **Save (API Format)**
 - Add your first ComfyUI server in the UI
 - Select which parameters should be exposed to OpenClaw and save the mapping
 
-### II. Configure Through Files
+### II. Configure Through Config Files
 
 #### 1) Edit `config.json`
 
-Configure your server first. Minimal example:
+Configure the server first. Minimal example:
 
 ```jsonc
 {
@@ -137,7 +137,7 @@ Minimal example:
 
 Notes:
 
-- The workflow ID comes directly from the directory name. For example, `data/local/Default/` means the workflow ID is `Default`
+- The workflow ID comes directly from the directory name. For example, if the directory is `data/local/Default/`, the workflow ID is `Default`
 - Each entry in `parameters` defines one input exposed to OpenClaw/Agent
 - `node_id` and `field` must match the actual node and input field in `workflow.json`
 
@@ -145,10 +145,11 @@ If you want a full example, refer to:
 
 - `data/local/Default/workflow.json`
 - `data/local/Default/schema.json`
+- These two files are generic examples. Before running them, replace node `4`'s `ckpt_name` in `workflow.json` with a checkpoint name that exists on your ComfyUI server.
 
-#### 4) Verify The Configuration
+#### 4) Verify the Configuration
 
-List installed workflows:
+List the available workflows:
 
 ```bash
 python scripts/registry.py list
@@ -170,7 +171,7 @@ python scripts/comfyui_client.py \
   --args '{"prompt":"A premium product photo"}'
 ```
 
-If it succeeds, the output will look like:
+On success, the output looks like this:
 
 ```json
 {
@@ -184,11 +185,11 @@ If it succeeds, the output will look like:
 
 - Let OpenClaw or another agent edit `config.json`
 - Let the agent write `workflow.json` and `schema.json` into the target workflow directory
-- After writing the files, let the agent run one verification step
+- After writing the files, let the agent run a verification step
 
 ### Workflow Requirements (Important)
 
-**API-format workflows + a `Save Image` output node** are the baseline requirements for stable use. To avoid failed or empty runs:
+**An API-format workflow plus a `Save Image` output node** is the baseline requirement for stable use. To avoid failed or empty runs:
 
 1. **The workflow must be exported in ComfyUI API format**
    - In ComfyUI, click **Save (API Format)**
@@ -202,7 +203,7 @@ If it succeeds, the output will look like:
 
 ## Multi-Server Management
 
-You can configure multiple ComfyUI servers, so OpenClaw or another agent can dispatch jobs across different hardware targets such as a local GPU or a cloud instance.
+You can configure multiple ComfyUI servers so OpenClaw can route jobs across different hardware targets such as a local GPU or a cloud instance.
 
 ### Core Concepts
 - **Dual-Layer Toggles**: Both *servers* and *individual workflows* can be enabled or disabled. A workflow is only visible to the AI agent if **both** the server and the workflow itself are enabled.
@@ -215,11 +216,11 @@ python scripts/server_manager.py list
 python scripts/server_manager.py add --id cloud --name "Cloud Node" --url http://10.0.0.1:8188
 python scripts/server_manager.py disable cloud
 ```
-*You can still manage all server settings through the Web UI.*
+*You can still manage all server settings through the web UI.*
 
 ### Configuration Migration (Export / Import)
 
-If you move this skill to another path or another machine, use the built-in bundle flow to transfer your current config and workflow mappings.
+If you move this skill to another path or another machine, use the built-in bundle flow to transfer the current configuration and workflow mappings.
 
 UI flow:
 
@@ -250,22 +251,22 @@ Default import behavior:
 
 ---
 
-## Known Caveats
+## Common Issues
 
-- If ComfyUI returns HTTP 400 on `/prompt`, the workflow payload or parameter value is usually invalid.
+- If ComfyUI returns HTTP 400 on `/prompt`, the workflow payload or one of the parameter values is usually invalid.
 - `size` must match values accepted by the underlying node (e.g. `3:4,1728x2304`).
 - If `config.json` points to the wrong server URL, job queueing will fail.
 
 ---
 
-## Roadmap (next)
+## Roadmap
 
-- Workflow version history and rollback
-- Upgrade preview before applying a new workflow version
-- Parameter migration support when upgrading a workflow
-- Better schema validation before queueing
-- Richer error reporting from ComfyUI node errors
-- Optional batch generation / multi-seed helpers
+- [ ] Workflow version history and rollback
+- [x] Upgrade preview before applying a new workflow version
+- [x] Parameter migration support when upgrading a workflow
+- [ ] Better schema validation before queueing
+- [ ] Richer error reporting from ComfyUI node errors
+- [ ] Optional batch generation / multi-seed helpers
 
 ---
 
@@ -318,7 +319,7 @@ ComfyUI_Skills_OpenClaw/
 
 ## Project Keywords
 
-This repository is optimized around these search intents:
+This repository is organized around the following search intents:
 
 - OpenClaw
 - ComfyUI
@@ -328,7 +329,7 @@ This repository is optimized around these search intents:
 - AI image generation skill
 - Xiao Long Xia (small crawfish / 小龙虾, project nickname)
 
-Related files for project understanding and retrieval:
+Core files for project understanding and retrieval:
 - `README.md` (English overview)
 - `README.zh.md` (Chinese overview)
 - `SKILL.md` (agent execution contract)

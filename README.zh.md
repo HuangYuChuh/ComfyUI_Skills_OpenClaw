@@ -141,6 +141,7 @@ data/local/Default/
 
 - `data/local/Default/workflow.json`
 - `data/local/Default/schema.json`
+- 这两个文件是通用示例；运行前请先把 `workflow.json` 里节点 `4` 的 `ckpt_name` 改成你本地 ComfyUI 可用的 checkpoint 名称
 
 #### 4）验证配置是否成功
 
@@ -255,14 +256,14 @@ python scripts/transfer_manager.py import --input ./openclaw-skill-export.json
 
 ---
 
-## 后续计划
+## Roadmap
 
-- 支持工作流版本历史和回滚
-- 上传新版本前先预览参数变化
-- 工作流升级时支持参数迁移
-- 增强提交前参数校验
-- 更清晰展示 ComfyUI 返回的节点错误
-- 支持批量多 seed 生成
+- [ ] 支持工作流版本历史和回滚
+- [x] 上传新版本前先预览参数变化
+- [x] 工作流升级时支持参数迁移
+- [ ] 增强提交前参数校验
+- [ ] 更清晰展示 ComfyUI 返回的节点错误
+- [ ] 支持批量多 seed 生成
 
 ---
 
