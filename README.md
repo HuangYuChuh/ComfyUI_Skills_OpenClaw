@@ -7,176 +7,171 @@
   </a>
 </p>
 
-This repository is an OpenClaw skill wrapper around ComfyUI workflows.
+This project is a ComfyUI skill integration layer for OpenClaw. It turns the workflows you build and export from ComfyUI in API format into callable skills that OpenClaw can trigger with natural language.
 
-Its job is not to replace ComfyUI. Its job is to make ComfyUI workflows discoverable and callable by an LLM agent through a stable skill contract:
+It converts natural language requests into structured skill arguments, maps them to ComfyUI workflow inputs, submits jobs to ComfyUI, waits for completion, then pulls generated images back to local disk.
 
-- OpenClaw discovers the skill through `SKILL.md`
-- The agent queries available workflows through `scripts/registry.py list --agent`
-- The agent executes a selected workflow through `scripts/comfyui_client.py`
-- This project maps agent-friendly arguments onto ComfyUI workflow inputs, submits the job, waits for completion, and downloads the result
+## What This Skill Can Do
 
-In practice, this means you can take a workflow you already built in ComfyUI, expose the few parameters an agent should control, and then let OpenClaw call it with natural language.
-
-## Skill Runtime Contract
-
-From the agent's perspective, this skill exposes two runtime surfaces:
-
-- `scripts/registry.py list --agent`
-  Returns the workflows that the agent is allowed to see and call.
-- `scripts/comfyui_client.py --workflow <server_id>/<workflow_id> --args '{...json...}'`
-  Executes one workflow and returns JSON with generated file paths.
-
-Everything else in this repository exists to support that contract:
-
-- `SKILL.md` tells OpenClaw how to use the skill
-- `config.json` defines which ComfyUI or Comfy Cloud servers exist
-- `data/<server_id>/<workflow_id>/workflow.json` stores workflow payloads
-- `data/<server_id>/<workflow_id>/schema.json` stores the agent-facing parameter mapping
-- `ui/` gives you a dashboard for configuring and maintaining those mappings
-- `scripts/doctor.py` diagnoses why the skill is not ready or why workflows are hidden
-
-## What This Skill Is Good For
-
-- Turning existing ComfyUI workflows into reusable agent tools
-- Letting one agent route image jobs across multiple ComfyUI servers
-- Giving the agent a small, explicit parameter surface instead of a full node graph
-- Reusing the same mapped workflow repeatedly without rebuilding prompt-to-node wiring
-- Running either local/self-hosted ComfyUI instances or Comfy Cloud from the same skill layer
-
-## Quick Start For Skill Usage
-
-If your goal is specifically "make this available to OpenClaw as a skill", the shortest path is:
-
-1. Put the repo under `~/.openclaw/workspace/skills/<skill_name>/`
-2. Install Python dependencies from `requirements.txt`
-3. Add at least one server to `config.json` or through the Web UI
-4. Upload one ComfyUI workflow in **Save (API Format)**
-5. Expose the parameters the agent should control
-6. Confirm `python scripts/registry.py list --agent` returns at least one workflow
-7. Run `python scripts/doctor.py`
-8. Confirm `python scripts/comfyui_client.py --workflow ... --args '{...}'` succeeds once
-
-Once those pass, OpenClaw has what it needs.
+- Turn your existing ComfyUI workflows into skills that OpenClaw can call directly
+- Let OpenClaw call workflows deployed across different ComfyUI servers instead of being tied to a single machine
+- Reuse the parameters you already exposed so OpenClaw can understand what each workflow expects
+- Upload a workflow once, manage it in the UI, and reuse it without rebuilding the setup
+- Submit jobs to ComfyUI, wait for completion, and pull generated images back to local storage
 
 ---
 
 ## Installation
 
-### 1) Requirements
+<details>
+<summary><strong>ComfyUI Skills for OpenClaw</strong></summary>
 
-- Python 3.10+
-- A running ComfyUI server (default: `http://127.0.0.1:8188`)
-
-### 2) Clone and install dependencies
+Manual install:
 
 ```bash
-git clone <your-repo-url> comfyui-skill-openclaw
+cd ~/.openclaw/workspace/skills
+git clone https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw.git comfyui-skill-openclaw
 cd comfyui-skill-openclaw
 pip install -r requirements.txt
+cp config.example.json config.json
 ```
 
-### 3) Prepare runtime config
+Let OpenClaw install it for you:
 
-`config.json` is the runtime config for this project. The CLI, UI, and OpenClaw-facing scripts all use it.
+Send this prompt to OpenClaw:
 
-Choose one of these two approaches:
+```text
+Please install this ComfyUI skill into my OpenClaw workspace.
 
-- Manual: create `config.json` from `config.example.json` and fill in your first server yourself
-- UI-based (recommended): start the UI first, then add your first server there, and the UI will write it back into `config.json`
+Target path:
+~/.openclaw/workspace/skills/comfyui-skill-openclaw/
 
-`config.json` example:
+Requirements:
+1. Run `cd ~/.openclaw/workspace/skills` first.
+2. Clone this repository into `comfyui-skill-openclaw`.
+3. Keep SKILL.md at the project root.
+4. Install Python dependencies from requirements.txt.
+5. Run `cp config.example.json config.json`.
+6. Set the default ComfyUI server URL to http://127.0.0.1:8188 unless I specify another one.
+7. Make sure OpenClaw can discover and call this skill after installation.
+```
 
-```json
+</details>
+
+## How to Configure ComfyUI Workflows
+
+Before you start, make sure your ComfyUI server is already running. The default local address is `http://127.0.0.1:8188`.
+
+### I. Configure Through the UI (Recommended)
+
+- macOS/Linux: `./ui/run_ui.sh`, or double-click `ui/run_ui.command`
+- Windows: `ui\run_ui.bat`
+- Visit: `http://localhost:18189`
+- Upload a workflow JSON exported from ComfyUI with **Save (API Format)**
+- Add your first ComfyUI server in the UI
+- Select which parameters should be exposed to OpenClaw and save the mapping
+
+### II. Configure Through Config Files
+
+#### 1) Edit `config.json`
+
+Configure the server first. Minimal example:
+
+```jsonc
 {
   "servers": [
     {
-      "id": "local",
-      "name": "Local Mac",
-      "server_type": "comfyui",
-      "url": "http://127.0.0.1:8188",
-      "enabled": true,
-      "output_dir": "./outputs",
-      "api_key": "",
-      "api_key_env": "",
-      "use_api_key_for_partner_nodes": false
-    },
-    {
-      "id": "comfy-cloud",
-      "name": "Comfy Cloud",
-      "server_type": "comfy_cloud",
-      "url": "https://cloud.comfy.org",
-      "enabled": false,
-      "output_dir": "./outputs",
-      "api_key": "",
-      "api_key_env": "COMFY_CLOUD_API_KEY",
-      "use_api_key_for_partner_nodes": true
+      "id": "local",                  // Server ID, also used as the directory name and workflow prefix
+      "name": "Local",                // Display name
+      "url": "http://127.0.0.1:8188", // ComfyUI server URL
+      "enabled": true,                // Whether this server is enabled
+      "output_dir": "./outputs"       // Image output directory
     }
   ],
-  "default_server": "local"
+  "default_server": "local"           // Default server ID
 }
 ```
 
-For Comfy Cloud, prefer `api_key_env` over `api_key` so the real key stays out of `config.json`.
+#### 2) Place Workflow Files
 
-
-### 4) Start the local UI
-
-- macOS/Linux:
-  ```bash
-  ./ui/run_ui.sh
-  ```
-  or double-click `ui/run_ui.command`
-- Windows:
-  ```bat
-  ui\run_ui.bat
-  ```
-
-Then open:
-
-- `http://localhost:18189`
-
-Frontend developer workflow:
-
-- users do not need Node or a frontend build step
-- committed build assets are served directly from `ui/static/`
-- frontend source lives in `frontend/`
+Each workflow uses its own directory, for example:
 
 ```bash
-cd frontend
-npm install
-npm test
-npm run build
+data/local/Default/
+  workflow.json  # ComfyUI API-format workflow export
+  schema.json    # Parameter mapping exposed to OpenClaw/Agent
 ```
 
-`npm run build` regenerates `ui/static/` for FastAPI to serve.
+#### 3) Write `schema.json`
 
-### 5) Add your first server and workflow
+`schema.json` should include at least:
 
-In the UI:
+- `description`
+- `enabled`
+- `parameters`
 
-1. If you have not already configured a server in `config.json`, add a ComfyUI server first.
-2. Upload a workflow exported from ComfyUI via **Save (API Format)**.
-3. Expose the parameters you want the agent to use.
-4. Save the workflow mapping.
+Minimal example:
 
-### 6) Verify the skill contract
+```jsonc
+{
+  "description": "Default test workflow", // Human-readable description for OpenClaw/Agent
+  "enabled": true,                        // Whether this workflow is enabled
+  "parameters": {
+    "prompt": {                           // Parameter name exposed to OpenClaw/Agent
+      "node_id": 10,                      // Node ID in workflow.json
+      "field": "prompt",                  // Input field name under that node
+      "required": true,                   // Whether this field is required
+      "type": "string",                   // Parameter type
+      "description": "Prompt text"        // Parameter description
+    },
+    "seed": {
+      "node_id": 10,
+      "field": "seed",
+      "required": false,
+      "type": "int",
+      "description": "Random seed"
+    }
+  }
+}
+```
 
-Check what the agent will see:
+Notes:
+
+- The workflow ID comes directly from the directory name. For example, if the directory is `data/local/Default/`, the workflow ID is `Default`
+- Each entry in `parameters` defines one input exposed to OpenClaw/Agent
+- `node_id` and `field` must match the actual node and input field in `workflow.json`
+
+If you want a full example, refer to:
+
+- `data/local/Default/workflow.json`
+- `data/local/Default/schema.json`
+- These two files are generic examples. Before running them, replace node `4`'s `ckpt_name` in `workflow.json` with a checkpoint name that exists on your ComfyUI server.
+
+#### 4) Verify the Configuration
+
+List the available workflows:
 
 ```bash
-python scripts/registry.py list --agent
+python scripts/registry.py list
 ```
 
-Run one test execution:
+Run a test generation:
 
 ```bash
 python scripts/comfyui_client.py \
-  --workflow local/test \
-  --args '{"prompt":"A premium product photo on aged driftwood, warm cinematic light","size":"3:4,1728x2304","seed":20260307}'
+  --workflow <server_id>/<workflow_id> \
+  --args '{"prompt":"test"}'
 ```
 
-If successful, output JSON includes local image path(s), for example:
+Example:
+
+```bash
+python scripts/comfyui_client.py \
+  --workflow local/Default \
+  --args '{"prompt":"A premium product photo"}'
+```
+
+On success, the output looks like this:
 
 ```json
 {
@@ -186,220 +181,92 @@ If successful, output JSON includes local image path(s), for example:
 }
 ```
 
-Run a readiness diagnosis:
+### III. Let OpenClaw/Agent Configure It For You
 
-```bash
-python scripts/doctor.py
-```
+- Let OpenClaw or another agent edit `config.json`
+- Let the agent write `workflow.json` and `schema.json` into the target workflow directory
+- After writing the files, let the agent run a verification step
 
----
+### Workflow Requirements (Important)
 
-## Install As An OpenClaw Skill
+**An API-format workflow plus a `Save Image` output node** is the baseline requirement for stable use. To avoid failed or empty runs:
 
-Put this repository under your OpenClaw workspace skill directory:
+1. **The workflow must be exported in ComfyUI API format**
+   - In ComfyUI, click **Save (API Format)**
+   - Place the exported JSON at `data/<server_id>/<workflow_id>/workflow.json`
 
-- `~/.openclaw/workspace/skills/<skill_name>/`
-
-For example:
-
-- `~/.openclaw/workspace/skills/comfyui-agent/`
-
-OpenClaw will read `SKILL.md` and call:
-
-- `scripts/registry.py list --agent`
-- `scripts/comfyui_client.py --workflow ... --args '...json...'`
-
-### Discovery checklist
-
-OpenClaw can only use the skill correctly if all of these are true:
-
-1. The project is placed under `~/.openclaw/workspace/skills/`.
-2. `SKILL.md` exists at the project root.
-3. Python dependencies are installed.
-4. `config.json` contains at least one reachable enabled server.
-5. At least one enabled workflow/schema pair exists under `data/<server_id>/`.
-6. `scripts/registry.py list --agent` returns the workflow you expect.
-7. `scripts/doctor.py` does not report blocking errors.
-
-### What OpenClaw actually calls
-
-The agent interaction loop is:
-
-1. Read `SKILL.md`
-2. Call `python ./scripts/registry.py list --agent`
-3. Pick a workflow based on user intent and exposed parameters
-4. Assemble JSON args
-5. Call `python ./scripts/comfyui_client.py --workflow <server_id>/<workflow_id> --args '{...}'`
-6. Read returned JSON and use the image path(s)
-
-If you are debugging "why the skill is not working in OpenClaw", those are the first places to inspect.
-
-For a stricter contract reference, see [docs/AGENT_CONTRACT.md](./docs/AGENT_CONTRACT.md).
-
-### AI-Native Install Via Agent
-
-You can also ask an OpenClaw Agent to install this skill for you.
-
-Use a prompt like this:
-
-```text
-Please install this ComfyUI skill into my OpenClaw workspace.
-
-Target path:
-~/.openclaw/workspace/skills/comfyui-agent/
-
-Requirements:
-1. Copy or clone the full project into that directory.
-2. Keep SKILL.md at the project root.
-3. Install Python dependencies from requirements.txt.
-4. Create config.json from config.example.json if missing.
-5. Set the default ComfyUI server URL to http://127.0.0.1:8188 unless I specify another one.
-6. Make sure the skill can be discovered by OpenClaw after installation.
-```
-
----
-
-## Local Dashboard (UI)
-
-Start dashboard:
-
-- Via OpenClaw or any agent that can run local commands:
-  ```bash
-  python3 ./ui/open_ui.py
-  ```
-- macOS/Linux:
-  ```bash
-  ./ui/run_ui.sh
-  ```
-  or double-click `ui/run_ui.command`
-- Windows:
-  ```bat
-  ui\run_ui.bat
-  ```
-
-Then open:
-
-- `http://localhost:18189`
-
-Use it to configure ComfyUI server URLs, outputs, and manage workflow/schema mapping.
-
-Current highlights:
-
-- Multi-server management with per-server and per-workflow enable/disable controls
-- Dedicated `Comfy Cloud` config tab with API key or env-var based auth
-- Workflow search, sort, and drag-to-reorder
-- Upload workflow JSON and auto-fill workflow ID
-- Custom dialogs, dropdowns, and language switching for daily editing
+2. **The workflow must end with a `Save Image` node**
+   - The current client downloads results from ComfyUI output images
+   - Without a `Save Image` node (or equivalent image output), the workflow may finish but return no downloadable image
 
 ---
 
 ## Multi-Server Management
 
-You can now configure multiple ComfyUI servers, enabling your agent to dispatch workflows across different hardware (e.g., local machines, cloud A100s).
+You can configure multiple ComfyUI servers so OpenClaw can route jobs across different hardware targets such as a local GPU or a cloud instance.
 
-### Concept
+### Core Concepts
 - **Dual-Layer Toggles**: Both *servers* and *individual workflows* can be enabled or disabled. A workflow is only visible to the AI agent if **both** the server and the workflow itself are enabled.
 - **Namespacing**: Workflows are identified with a composite ID: `<server_id>/<workflow_id>` (e.g., `local/sdxl-base` vs. `cloud-a100/sdxl-base`).
 
-### Configuration via CLI
-A built-in CLI tool (`scripts/server_manager.py`) allows server management on headless Linux machines:
+### CLI Configuration
+On headless machines, you can use the built-in CLI tool `scripts/server_manager.py`:
 ```bash
 python scripts/server_manager.py list
 python scripts/server_manager.py add --id cloud --name "Cloud Node" --url http://10.0.0.1:8188
-python scripts/server_manager.py add --id comfy-cloud --type comfy_cloud --api-key-env COMFY_CLOUD_API_KEY
 python scripts/server_manager.py disable cloud
 ```
-*You can also manage servers fully via the Web UI.*
+*You can still manage all server settings through the web UI.*
 
-### Comfy Cloud
-When adding or editing a server in the Web UI, switch to the `Comfy Cloud` tab. That tab stores the Cloud base URL plus one of:
+### Configuration Migration (Export / Import)
 
-- `api_key`: direct key in `config.json`
-- `api_key_env`: environment variable name such as `COMFY_CLOUD_API_KEY`
+If you move this skill to another path or another machine, use the built-in bundle flow to transfer the current configuration and workflow mappings.
 
-Optional:
+UI flow:
 
-- `use_api_key_for_partner_nodes: true` to forward the same key into `extra_data.api_key_comfy_org`
+- Click `Export Config` on the main page to download `openclaw-skill-export.json`
+- Before export, you can expand each server and uncheck workflows you do not want to include; all workflows are selected by default and servers are collapsed by default
+- Open the UI on the target machine and click `Import Config`
+- Select the exported JSON bundle
+- Review the preview summary, then decide whether to also apply the source machine's default server, URL, and output directory
 
-The runtime call flow is:
-
-1. `POST /api/prompt`
-2. `GET /api/job/{prompt_id}/status`
-3. `GET /api/history_v2/{prompt_id}` (with a collection fallback if needed)
-4. `GET /api/view` and follow the signed redirect for downloads
-
-Out-of-the-box Cloud workflow support:
-
-- When you add a new `comfy_cloud` server, OpenClaw now auto-installs the bundled starter workflow set for that server.
-- The bundled workflows are tagged as `Bundled Cloud` in the registry/UI metadata.
-- You can inspect or import templates manually with:
+CLI flow:
 
 ```bash
-python scripts/cloud_templates.py list --source bundled
-python scripts/cloud_templates.py list --source official
-python scripts/cloud_templates.py import --server comfy-cloud --source bundled --template text_to_image_square
-python scripts/cloud_templates.py import --server comfy-cloud --source official --template text_to_image --workflow-id official-text-to-image
+python scripts/transfer_manager.py export --output ./openclaw-skill-export.json
+python scripts/transfer_manager.py import --input ./openclaw-skill-export.json --dry-run
+python scripts/transfer_manager.py import --input ./openclaw-skill-export.json
 ```
 
-Notes:
+Optional flags:
 
-- Official Comfy Cloud `global_subgraphs` are blueprint/subgraph definitions, not directly executable API-format workflows.
-- OpenClaw currently exposes them for discovery and enables direct runnable import only for curated supported templates such as `text_to_image`.
+- `--apply-environment`: also apply bundle default server, URL, and output directory during import
+- `--no-overwrite`: skip existing workflows instead of overwriting them
 
----
+Default import behavior:
 
-## Workflow Requirements (Important)
-
-To ensure a workflow can be executed by this skill reliably:
-
-1. **Export ComfyUI workflow in API format**
-   - In ComfyUI, click **Save (API Format)**.
-   - Use that exported JSON in `data/<server_id>/<workflow_id>/workflow.json`.
-
-2. **Expose only parameters the agent should control**
-   - The schema mapping should present business-facing fields like `prompt`, `seed`, `size`, `style`, `negative_prompt`.
-   - Avoid exposing raw node implementation details unless they are truly useful to the agent.
-   - The registry now also supports optional `default`, `example`, and `choices` metadata for agent guidance.
-
-3. **The final output path should include a downloadable output node**
-   - For local ComfyUI this is typically `Save Image`.
-   - For Comfy Cloud or custom workflows, the execution history still needs to contain downloadable output metadata.
-   - Without output metadata, the job may finish but the skill cannot return files.
-
-In short: **API-format workflow + clean schema mapping + downloadable output** are required for stable agent usage.
+- Existing workflows with the same ID are overwritten
+- Existing servers are merged instead of replaced
+- The target machine keeps its current `url`, `output_dir`, and `default_server` unless `--apply-environment` is used
 
 ---
 
-## Known Caveats
+## Common Issues
 
-- If `scripts/registry.py list --agent` returns nothing, the agent has nothing to call.
-- Use `python scripts/registry.py list --agent --all --debug` to inspect hidden workflows and invalid schema reasons.
-- If ComfyUI returns HTTP 400 on `/prompt`, the workflow payload or parameter value is usually invalid.
+- If ComfyUI returns HTTP 400 on `/prompt`, the workflow payload or one of the parameter values is usually invalid.
 - `size` must match values accepted by the underlying node (e.g. `3:4,1728x2304`).
 - If `config.json` points to the wrong server URL, job queueing will fail.
-- If a server or workflow is disabled, it disappears from the agent-visible registry even if files still exist on disk.
-
-## Examples
-
-Illustrative example assets live in `examples/`:
-
-- `examples/workflow_api.example.json`
-- `examples/schema.example.json`
-- `examples/registry-agent-output.example.json`
-- `examples/doctor-output.example.txt`
-
-These examples document the skill contract shape. They are not guaranteed to be executable in every ComfyUI environment.
 
 ---
 
-## Roadmap (next)
+## Roadmap
 
-- Workflow version history and rollback
-- Upgrade preview before applying a new workflow version
-- Parameter migration support when upgrading a workflow
-- Better schema validation before queueing
-- Richer error reporting from ComfyUI node errors
-- Optional batch generation / multi-seed helpers
+- [ ] Workflow version history and rollback
+- [x] Upgrade preview before applying a new workflow version
+- [x] Parameter migration support when upgrading a workflow
+- [ ] Better schema validation before queueing
+- [ ] Richer error reporting from ComfyUI node errors
+- [ ] Optional batch generation / multi-seed helpers
 
 ---
 
@@ -419,10 +286,9 @@ ComfyUI_Skills_OpenClaw/
 │   └── banner-ui-20250309.jpg
 ├── data/
 │   ├── <server_id>/
-│   │   ├── workflows/
-│   │   │   └── <workflow_id>.json  # ComfyUI workflow API export
-│   │   └── schemas/
-│   │       └── <workflow_id>.json  # Exposed parameter mapping
+│   │   └── <workflow_id>/
+│   │       ├── workflow.json       # ComfyUI workflow API export
+│   │       └── schema.json         # Exposed parameter mapping
 ├── scripts/
 │   ├── server_manager.py       # CLI tool for managing servers
 │   ├── registry.py             # List workflows + exposed parameters for agent
@@ -441,8 +307,7 @@ ComfyUI_Skills_OpenClaw/
 │   ├── run_ui.sh               # Start UI (macOS/Linux)
 │   ├── run_ui.command          # Double-click launcher (macOS)
 │   ├── run_ui.bat              # Launcher (Windows)
-│   └── static/                 # Built frontend assets served directly by FastAPI
-├── frontend/                   # React + TypeScript + Vite source for UI development
+│   └── static/                 # Modular ES6 frontend (HTML/CSS/JS)
 └── outputs/
     └── .gitkeep
 ```
@@ -454,7 +319,7 @@ ComfyUI_Skills_OpenClaw/
 
 ## Project Keywords
 
-This repository is optimized around these search intents:
+This repository is organized around the following search intents:
 
 - OpenClaw
 - ComfyUI
@@ -464,7 +329,7 @@ This repository is optimized around these search intents:
 - AI image generation skill
 - Xiao Long Xia (small crawfish / 小龙虾, project nickname)
 
-Related files for project understanding and retrieval:
+Core files for project understanding and retrieval:
 - `README.md` (English overview)
 - `README.zh.md` (Chinese overview)
 - `SKILL.md` (agent execution contract)
