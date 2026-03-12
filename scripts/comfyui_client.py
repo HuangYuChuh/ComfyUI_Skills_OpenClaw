@@ -164,7 +164,7 @@ def probe_server_health(server: dict[str, Any]) -> tuple[bool, str]:
             return False, f"cloud target '{server_id}' is unreachable: {exc}"
         if response.ok:
             return True, f"cloud target '{server_id}' is healthy"
-        return False, build_error_message(response, f"cloud target '{server_id}' returned HTTP {response.status_code}")
+        return False, f"cloud target '{server_id}' returned HTTP {response.status_code}"
 
     server_url = str(server.get("url") or "").rstrip("/")
     try:
