@@ -1,11 +1,9 @@
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, type ChangeEvent } from "react";
 import { CustomSelect } from "../../components/ui/CustomSelect";
-import { InfoTooltip } from "../../components/ui/InfoTooltip";
 import { Modal } from "../../components/ui/Modal";
-import type { SaveServerPayload, ServerDto, ServerType } from "../../types/api";
+import type { SaveServerPayload, ServerDto } from "../../types/api";
 
 const DEFAULT_COMFYUI_URL = "http://127.0.0.1:8188";
-const DEFAULT_COMFY_CLOUD_URL = "https://cloud.comfy.org";
 
 interface ServerManagerProps {
   title?: string;
@@ -20,11 +18,10 @@ interface ServerManagerProps {
   modalOpen: boolean;
   modalMode: "add" | "edit";
   form: SaveServerPayload;
-  canKeepApiKey: boolean;
   onFormChange: (next: SaveServerPayload) => void;
   onCloseModal: () => void;
   onSubmitModal: () => void;
-  t: (key: string) => string;
+  t: (key: string, vars?: Record<string, string | number>) => string;
 }
 
 function EditIcon() {
@@ -51,58 +48,36 @@ function TrashIcon() {
   );
 }
 
-function EyeIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-    >
-      <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}
-
-function EyeOffIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-    >
-      <path d="M10.733 5.076A10.744 10.744 0 0 1 12 5c4.642 0 8.73 2.945 9.938 7a10.523 10.523 0 0 1-4.32 5.568" />
-      <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
-      <path d="M17.479 17.499A10.75 10.75 0 0 1 12 19c-4.642 0-8.73-2.945-9.938-7a10.525 10.525 0 0 1 4.446-5.633" />
-      <path d="m2 2 20 20" />
-    </svg>
-  );
-}
-
 export function ServerManager(props: ServerManagerProps) {
   const currentServer = props.servers.find((server) => server.id === props.currentServerId) || null;
+  const currentServerWarning = currentServer?.unsupported
+    ? props.t("server_unsupported_reason", { type: currentServer.server_type || "unknown" })
+    : "";
   const selectedServerLabel = currentServer?.name || currentServer?.id || "";
   const serverOptions = props.servers.map((server) => ({
     value: server.id,
-    label: server.name || server.id,
+    label: `${server.name || server.id}${server.unsupported ? ` ${props.t("server_unsupported_short")}` : ""}`,
   }));
   const serverIdInputRef = useRef<HTMLInputElement | null>(null);
   const serverNameInputRef = useRef<HTMLInputElement | null>(null);
-  const [showApiKey, setShowApiKey] = useState(false);
+  const hasSeededDefaultUrlRef = useRef(false);
 
   useEffect(() => {
-    setShowApiKey(false);
-  }, [props.modalOpen, props.form.id, props.form.server_type]);
+    if (!props.modalOpen) {
+      hasSeededDefaultUrlRef.current = false;
+      return;
+    }
+    if (hasSeededDefaultUrlRef.current) {
+      return;
+    }
+    hasSeededDefaultUrlRef.current = true;
+    if (props.modalMode === "add" && !props.form.url) {
+      props.onFormChange({ ...props.form, url: DEFAULT_COMFYUI_URL });
+    }
+  }, [props.form, props.modalMode, props.modalOpen, props.onFormChange]);
 
   function update<K extends keyof SaveServerPayload>(key: K, value: SaveServerPayload[K]) {
     props.onFormChange({ ...props.form, [key]: value });
-  }
-
-  function onServerTypeChange(value: string) {
-    const serverType = value as ServerType;
-    const nextForm = { ...props.form, server_type: serverType };
-    if (serverType === "comfy_cloud") {
-      nextForm.url = DEFAULT_COMFY_CLOUD_URL;
-    } else if (props.form.server_type === "comfy_cloud" && (!nextForm.url || nextForm.url === DEFAULT_COMFY_CLOUD_URL)) {
-      nextForm.url = DEFAULT_COMFYUI_URL;
-    }
-    props.onFormChange(nextForm);
   }
 
   function onInputChange<K extends keyof SaveServerPayload>(key: K) {
@@ -137,7 +112,7 @@ export function ServerManager(props: ServerManagerProps) {
               <div className="server-selector-wrapper">
                 {props.servers.length === 1 ? (
                   <div className="server-selector-static" aria-label={props.t("select_server")}>
-                    {selectedServerLabel}
+                    {selectedServerLabel}{currentServer?.unsupported ? ` ${props.t("server_unsupported_short")}` : ""}
                   </div>
                 ) : (
                   <CustomSelect
@@ -149,6 +124,7 @@ export function ServerManager(props: ServerManagerProps) {
                   />
                 )}
               </div>
+              {currentServerWarning ? <p className="form-help">{currentServerWarning}</p> : null}
             </div>
 
             {currentServer ? (
@@ -235,92 +211,18 @@ export function ServerManager(props: ServerManagerProps) {
             <p className="form-help">{props.t("server_name_help")}</p>
           </div>
           <div className="form-group form-group-full">
-            <label htmlFor="modal-server-type">{props.t("select_server")}</label>
-            <CustomSelect
-              value={props.form.server_type}
-              options={[
-                { value: "comfyui", label: props.t("server_type_comfyui") },
-                { value: "comfy_cloud", label: props.t("server_type_comfy_cloud") },
-              ]}
-              ariaLabel={props.t("select_server")}
-              className="is-server-select"
-              onChange={onServerTypeChange}
-            />
-          </div>
-          <div className="form-group form-group-full">
-            <label htmlFor="modal-server-url">
-              {props.form.server_type === "comfy_cloud" ? props.t("cloud_base_url_label") : props.t("server_url_label")}
-            </label>
+            <label htmlFor="modal-server-url">{props.t("server_url_label")}</label>
             <input
               id="modal-server-url"
               type="text"
               className="input-field"
               value={props.form.url}
               onChange={onInputChange("url")}
-              placeholder={props.form.server_type === "comfy_cloud" ? props.t("cloud_base_url_placeholder") : props.t("new_server_url_placeholder")}
+              placeholder={props.t("new_server_url_placeholder")}
               autoComplete="off"
             />
+            <p className="form-help">{props.t("server_url_help_comfyui")}</p>
           </div>
-
-          {props.form.server_type === "comfy_cloud" ? (
-            <>
-              <div className="form-group form-group-full">
-                <div className="label-with-help">
-                  <label htmlFor="modal-server-api-key">{props.t("cloud_api_key_label")}</label>
-                  <InfoTooltip
-                    label={props.t("cloud_api_key_apply_tooltip_label")}
-                    content={props.t("cloud_api_key_apply_tooltip")}
-                  />
-                </div>
-                <div className="input-action-group">
-                  <input
-                    id="modal-server-api-key"
-                    type={showApiKey ? "text" : "password"}
-                    className="input-field input-field-with-action"
-                    value={props.form.api_key}
-                    onChange={onInputChange("api_key")}
-                    placeholder={props.canKeepApiKey ? `${props.t("cloud_api_key_placeholder")} (${props.t("save_anyway")})` : props.t("cloud_api_key_placeholder")}
-                    autoComplete="off"
-                  />
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-icon small input-action-btn"
-                    aria-label={showApiKey ? props.t("cloud_api_key_hide") : props.t("cloud_api_key_show")}
-                    aria-pressed={showApiKey}
-                    onClick={() => setShowApiKey((value) => !value)}
-                  >
-                    {showApiKey ? <EyeOffIcon /> : <EyeIcon />}
-                  </button>
-                </div>
-                <p className="form-help">{props.t("cloud_api_key_help")}</p>
-              </div>
-              <div className="form-group form-group-full">
-                <label htmlFor="modal-server-api-key-env">{props.t("cloud_api_key_env_label")}</label>
-                <input
-                  id="modal-server-api-key-env"
-                  type="text"
-                  className="input-field"
-                  value={props.form.api_key_env}
-                  onChange={onInputChange("api_key_env")}
-                  placeholder={props.t("cloud_api_key_env_placeholder")}
-                  autoComplete="off"
-                />
-                <p className="form-help">{props.t("cloud_api_key_env_help")}</p>
-              </div>
-              <div className="form-group form-group-full">
-                <label className="checkbox-inline">
-                  <input
-                    type="checkbox"
-                    checked={props.form.use_api_key_for_partner_nodes}
-                    onChange={(event) => update("use_api_key_for_partner_nodes", event.target.checked)}
-                  />
-                  <span>{props.t("cloud_partner_key_toggle")}</span>
-                </label>
-                <p className="form-help">{props.t("cloud_call_scheme_help")}</p>
-              </div>
-            </>
-          ) : null}
-
           <div className="form-group form-group-full">
             <label htmlFor="modal-server-output">{props.t("server_output_dir")}</label>
             <input

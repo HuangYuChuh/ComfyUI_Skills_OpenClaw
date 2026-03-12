@@ -70,7 +70,7 @@ class UIStorageService:
 
     def list_servers(self) -> list[dict[str, Any]]:
         config = self.get_config()
-        return config.get("servers", [])
+        return [self._serialize_server_for_ui(server) for server in config.get("servers", [])]
 
     def add_server(self, server: dict[str, Any]) -> dict[str, Any]:
         config = self.get_config()
@@ -106,7 +106,7 @@ class UIStorageService:
         get_server_data_dir(sid).mkdir(parents=True, exist_ok=True)
 
         self.save_config(config)
-        return normalized_server
+        return self._serialize_server_for_ui(normalized_server)
 
     def update_server(self, server_id: str, updates: dict[str, Any]) -> dict[str, Any]:
         config = self.get_config()
@@ -116,7 +116,7 @@ class UIStorageService:
                     if key in updates:
                         s[key] = updates[key]
                 self.save_config(config)
-                return s
+                return self._serialize_server_for_ui(s)
         raise FileNotFoundError(f"Server '{server_id}' not found")
 
     def toggle_server(self, server_id: str, enabled: bool) -> dict[str, Any]:
@@ -348,6 +348,28 @@ class UIStorageService:
             if server.get("id") == server_id:
                 return server
         return None
+
+    @staticmethod
+    def _serialize_server_for_ui(server: dict[str, Any]) -> dict[str, Any]:
+        server_type = str(server.get("server_type") or "").strip()
+        unsupported = bool(server_type and server_type != "comfyui")
+
+        payload = {
+            "id": str(server.get("id") or "").strip(),
+            "name": str(server.get("name") or "").strip(),
+            "url": str(server.get("url") or "").strip(),
+            "enabled": bool(server.get("enabled", True)),
+            "output_dir": str(server.get("output_dir") or "./outputs").strip() or "./outputs",
+            "unsupported": unsupported,
+        }
+
+        if server_type:
+            payload["server_type"] = server_type
+
+        if unsupported:
+            payload["unsupported_reason"] = f"Server type '{server_type}' is not supported in this branch."
+
+        return payload
 
     def _sync_workflow_order(self, server_id: str, source_workflow_id: str, workflow_id: str) -> None:
         config = self.get_config()
