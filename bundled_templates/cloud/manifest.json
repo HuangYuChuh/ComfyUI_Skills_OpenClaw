@@ -1,0 +1,40 @@
+{
+  "templates": [
+    {
+      "id": "text_to_image_square",
+      "workflow_id": "cloud_text_to_image_square",
+      "name": "Text to Image (Square)",
+      "description": "Bundled Comfy Cloud starter workflow for square text-to-image generation.",
+      "tags": ["starter", "text-to-image", "square", "recommended"],
+      "recommended": true,
+      "workflow_file": "text_to_image_square.workflow.json",
+      "schema_file": "text_to_image_square.schema.json",
+      "source_label": "Bundled Cloud",
+      "origin": "bundled_cloud"
+    },
+    {
+      "id": "text_to_image_portrait",
+      "workflow_id": "cloud_text_to_image_portrait",
+      "name": "Text to Image (Portrait)",
+      "description": "Bundled Comfy Cloud starter workflow tuned for portrait aspect ratios.",
+      "tags": ["starter", "text-to-image", "portrait", "recommended"],
+      "recommended": true,
+      "workflow_file": "text_to_image_portrait.workflow.json",
+      "schema_file": "text_to_image_portrait.schema.json",
+      "source_label": "Bundled Cloud",
+      "origin": "bundled_cloud"
+    },
+    {
+      "id": "text_to_image_landscape",
+      "workflow_id": "cloud_text_to_image_landscape",
+      "name": "Text to Image (Landscape)",
+      "description": "Bundled Comfy Cloud starter workflow tuned for landscape aspect ratios.",
+      "tags": ["starter", "text-to-image", "landscape", "recommended"],
+      "recommended": true,
+      "workflow_file": "text_to_image_landscape.workflow.json",
+      "schema_file": "text_to_image_landscape.schema.json",
+      "source_label": "Bundled Cloud",
+      "origin": "bundled_cloud"
+    }
+  ]
+}

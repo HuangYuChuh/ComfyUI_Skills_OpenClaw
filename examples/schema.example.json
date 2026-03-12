@@ -1,0 +1,27 @@
+{
+  "workflow_id": "product-photo",
+  "description": "Illustrative schema example for agent-facing parameter mapping.",
+  "enabled": true,
+  "parameters": {
+    "prompt": {
+      "node_id": 3,
+      "field": "text",
+      "required": true,
+      "type": "string",
+      "description": "Positive prompt",
+      "default": "premium product photo",
+      "example": "luxury watch on black stone",
+      "choices": []
+    },
+    "seed": {
+      "node_id": 4,
+      "field": "seed",
+      "required": false,
+      "type": "int",
+      "description": "Random seed",
+      "default": 42,
+      "example": 20260311,
+      "choices": []
+    }
+  }
+}

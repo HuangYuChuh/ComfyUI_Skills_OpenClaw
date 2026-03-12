@@ -1,0 +1,21 @@
+{
+  "3": {
+    "inputs": {
+      "text": "premium product photo"
+    },
+    "class_type": "CLIPTextEncode"
+  },
+  "4": {
+    "inputs": {
+      "seed": 42,
+      "steps": 20
+    },
+    "class_type": "KSampler"
+  },
+  "9": {
+    "inputs": {
+      "filename_prefix": "openclaw-demo"
+    },
+    "class_type": "SaveImage"
+  }
+}

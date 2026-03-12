@@ -3,10 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from shared.config import (
-    DATA_DIR,
-    get_server_data_dir,
-)
+from shared.config import DATA_DIR, default_config as shared_default_config, get_server_data_dir
 from shared.runtime_config import get_runtime_config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -43,8 +40,5 @@ def ensure_runtime_dirs() -> None:
             get_server_data_dir(server_id).mkdir(parents=True, exist_ok=True)
 
 
-def default_config() -> dict[str, str]:
-    return {
-        "comfyui_server_url": DEFAULT_COMFYUI_SERVER_URL,
-        "output_dir": "./outputs",
-    }
+def default_config() -> dict[str, object]:
+    return shared_default_config()

@@ -1,0 +1,27 @@
+{
+  "status": "success",
+  "workflows": [
+    {
+      "server_id": "local",
+      "server_name": "Local Mac",
+      "workflow_id": "product-photo",
+      "description": "Generate premium product shots",
+      "parameters": {
+        "prompt": {
+          "type": "string",
+          "required": true,
+          "description": "Positive prompt",
+          "default": "premium product photo",
+          "example": "luxury watch on black stone"
+        },
+        "seed": {
+          "type": "int",
+          "required": false,
+          "description": "Random seed",
+          "default": 42,
+          "example": 20260311
+        }
+      }
+    }
+  ]
+}
