@@ -111,9 +111,6 @@ pip install -r requirements.txt
 
 对于 Comfy Cloud，建议优先使用 `api_key_env` 而不是 `api_key`，这样真实密钥不会写进 `config.json`。
 
-这里的 `Comfy Cloud` 指的是 Comfy 官方提供的远程 / 云端服务器。
-如果你连接的是自己部署的远程 ComfyUI 实例，即使它跑在云主机上，也通常应该配置为普通 `comfyui` 服务器，而不是 `comfy_cloud`。
-
 
 ### 4）启动本地 UI
 

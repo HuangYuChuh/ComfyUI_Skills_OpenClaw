@@ -10,11 +10,6 @@ Read this file when:
 
 Reduce first-run friction.
 
-For first-time users, treat `Comfy Cloud` as:
-- Comfy 官方提供的远程服务器
-- a hosted cloud runtime, not the user's local ComfyUI process
-- a different setup choice from self-hosted remote ComfyUI machines
-
 The user should not need to understand:
 - `registry.py`
 - `schema.json`
@@ -64,8 +59,6 @@ Do this:
 
 Preferred user-facing style:
 - "当前还没有可直接调用的工作流。我可以先帮你导入一个 Comfy Cloud 示例工作流，然后直接开始生成。"
-- If clarification helps:
-  "这里的 Comfy Cloud 指的是 Comfy 官方提供的云端服务器，不是你自己本地启动的 ComfyUI。"
 
 Do not make the user manually understand templates unless they ask.
 
@@ -90,8 +83,6 @@ Do this:
 
 Preferred user-facing style:
 - "现在还没有可用的绘图服务。我可以先帮你打开配置面板，你添加本地 ComfyUI 或 Comfy Cloud 后我再继续。"
-- If the user looks unsure what Cloud means:
-  "Comfy Cloud 就是 Comfy 官方提供的远程 / 云端服务器；如果你是自己部署的机器，通常应当按普通 ComfyUI 服务器来配置。"
 
 If the user explicitly prefers Cloud, guide toward Cloud.
 If the user explicitly prefers local, guide toward local.
