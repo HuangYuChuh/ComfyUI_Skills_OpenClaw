@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-import subprocess
 import sys
 from pathlib import Path
 
@@ -19,32 +18,28 @@ sys.path.insert(0, str(_project_root / "scripts"))
 
 try:
     from .models import (
-        CloudTemplateImportModel,
         ConfigModel,
         CreateServerModel,
-        RunWorkflowModel,
         SchemaModel,
         ServerModel,
         TransferExportModel,
+        ToggleModel,
         TransferImportModel,
         TransferPreviewModel,
-        ToggleModel,
         WorkflowOrderModel,
     )
     from .services import UIStorageService
     from .settings import DEFAULT_HOST, DEFAULT_PORT, STATIC_DIR, ensure_runtime_dirs
 except ImportError:
     from models import (
-        CloudTemplateImportModel,
         ConfigModel,
         CreateServerModel,
-        RunWorkflowModel,
         SchemaModel,
         ServerModel,
         TransferExportModel,
+        ToggleModel,
         TransferImportModel,
         TransferPreviewModel,
-        ToggleModel,
         WorkflowOrderModel,
     )
     from services import UIStorageService
@@ -60,40 +55,6 @@ from shared.transfer_bundle import (
 
 service = UIStorageService()
 logger = logging.getLogger(__name__)
-
-
-def _run_workflow_command(server_id: str, workflow_id: str, args_payload: dict[str, object]) -> dict:
-    command = [
-        sys.executable,
-        str(_project_root / "scripts" / "comfyui_client.py"),
-        "--workflow",
-        f"{server_id}/{workflow_id}",
-        "--args",
-        json.dumps(args_payload, ensure_ascii=False),
-    ]
-    completed = subprocess.run(
-        command,
-        capture_output=True,
-        text=True,
-        cwd=_project_root,
-        check=False,
-    )
-
-    raw_stdout = completed.stdout.strip()
-    raw_stderr = completed.stderr.strip()
-
-    try:
-        payload = json.loads(raw_stdout) if raw_stdout else {}
-    except json.JSONDecodeError as exc:
-        raise RuntimeError(raw_stderr or raw_stdout or "Workflow runner returned invalid JSON") from exc
-
-    if completed.returncode != 0:
-        message = payload.get("error") if isinstance(payload, dict) else None
-        raise RuntimeError(str(message or raw_stderr or "Workflow run failed"))
-
-    if isinstance(payload, dict) and payload.get("error"):
-        raise RuntimeError(str(payload["error"]))
-    return payload if isinstance(payload, dict) else {}
 
 
 def create_app() -> FastAPI:
@@ -121,12 +82,12 @@ def create_app() -> FastAPI:
 
     @app.get("/api/config")
     async def get_config() -> dict:
-        return service.get_config_for_ui()
+        return service.get_config()
 
     @app.post("/api/config")
     async def save_config(config: ConfigModel) -> dict:
-        service.save_config(config.model_dump())
-        return {"status": "success", "config": service.get_config_for_ui()}
+        saved = service.save_config(config.model_dump())
+        return {"status": "success", "config": saved}
 
     # ── Server CRUD ───────────────────────────────────────────────
 
@@ -286,53 +247,6 @@ def create_app() -> FastAPI:
         except RuntimeError as e:
             raise HTTPException(status_code=409, detail=str(e)) from e
         return report.to_dict()
-
-    @app.get("/api/cloud/templates/bundled")
-    async def list_bundled_cloud_templates(server_id: str | None = Query(None)) -> dict:
-        return {"templates": service.list_bundled_cloud_templates(server_id)}
-
-    @app.get("/api/cloud/templates/official")
-    async def list_official_cloud_templates(server_id: str | None = Query(None)) -> dict:
-        try:
-            templates = service.list_official_cloud_templates(server_id)
-        except Exception as e:
-            raise HTTPException(status_code=502, detail=str(e)) from e
-        return {"templates": templates}
-
-    @app.get("/api/cloud/templates/official/{template_id}")
-    async def get_official_cloud_template_detail(template_id: str) -> dict:
-        try:
-            return service.get_official_cloud_template_detail(template_id)
-        except Exception as e:
-            raise HTTPException(status_code=502, detail=str(e)) from e
-
-    @app.post("/api/cloud/templates/import")
-    async def import_cloud_template(data: CloudTemplateImportModel) -> dict:
-        try:
-            payload = service.import_cloud_template(
-                server_id=data.server_id,
-                source=data.source,
-                template_id=data.template_id,
-                workflow_id=data.workflow_id,
-                overwrite_existing=data.overwrite_existing,
-            )
-        except FileExistsError as e:
-            raise HTTPException(status_code=409, detail=str(e)) from e
-        except FileNotFoundError as e:
-            raise HTTPException(status_code=404, detail=str(e)) from e
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e)) from e
-        except Exception as e:
-            raise HTTPException(status_code=502, detail=str(e)) from e
-        return {"status": "success", **payload}
-
-    @app.post("/api/servers/{server_id}/workflow/{workflow_id}/run")
-    async def run_workflow(server_id: str, workflow_id: str, data: RunWorkflowModel) -> dict:
-        try:
-            payload = _run_workflow_command(server_id, workflow_id, data.args)
-        except RuntimeError as e:
-            raise HTTPException(status_code=400, detail=str(e)) from e
-        return {"status": "success", "result": payload}
 
     return app
 

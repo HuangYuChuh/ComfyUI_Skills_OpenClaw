@@ -1,27 +1,12 @@
 {
-  "servers": [
-    {
-      "id": "local",
-      "name": "Local",
-      "server_type": "comfyui",
-      "url": "http://127.0.0.1:8188",
-      "enabled": true,
-      "output_dir": "./outputs",
-      "api_key": "",
-      "api_key_env": "",
-      "use_api_key_for_partner_nodes": false
-    },
-    {
-      "id": "comfy-cloud",
-      "name": "Comfy Cloud",
-      "server_type": "comfy_cloud",
-      "url": "https://cloud.comfy.org",
-      "enabled": false,
-      "output_dir": "./outputs",
-      "api_key": "",
-      "api_key_env": "COMFY_CLOUD_API_KEY",
-      "use_api_key_for_partner_nodes": true
-    }
-  ],
-  "default_server": "local"
+    "servers": [
+        {
+            "id": "local",
+            "name": "Local",
+            "url": "http://127.0.0.1:8188",
+            "enabled": true,
+            "output_dir": "./outputs"
+        }
+    ],
+    "default_server": "local"
 }
