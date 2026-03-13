@@ -15,6 +15,10 @@ const {
   deleteWorkflowMock,
   reorderWorkflowsMock,
   runWorkflowMock,
+  previewTransferExportMock,
+  buildTransferExportMock,
+  previewTransferImportMock,
+  importTransferBundleMock,
 } = vi.hoisted(() => ({
   listServersMock: vi.fn(),
   addServerMock: vi.fn(),
@@ -28,6 +32,10 @@ const {
   deleteWorkflowMock: vi.fn(),
   reorderWorkflowsMock: vi.fn(),
   runWorkflowMock: vi.fn(),
+  previewTransferExportMock: vi.fn(),
+  buildTransferExportMock: vi.fn(),
+  previewTransferImportMock: vi.fn(),
+  importTransferBundleMock: vi.fn(),
 }));
 
 vi.mock("./services/servers", () => ({
@@ -46,6 +54,13 @@ vi.mock("./services/workflows", () => ({
   deleteWorkflow: deleteWorkflowMock,
   reorderWorkflows: reorderWorkflowsMock,
   runWorkflow: runWorkflowMock,
+}));
+
+vi.mock("./services/transfer", () => ({
+  previewTransferExport: previewTransferExportMock,
+  buildTransferExport: buildTransferExportMock,
+  previewTransferImport: previewTransferImportMock,
+  importTransferBundle: importTransferBundleMock,
 }));
 
 vi.mock("./lib/pixelBlastBackground", () => ({
@@ -99,6 +114,95 @@ const workflowApiJson = JSON.stringify({
   },
 });
 
+function createDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
+const exportPreviewFixture = {
+  portable_only: false,
+  summary: {
+    servers: 1,
+    workflows: 1,
+    warnings: 0,
+  },
+  servers: [
+    {
+      server_id: "local",
+      name: "Local",
+      enabled: true,
+      selected: true,
+      workflow_count: 1,
+      workflows: [
+        {
+          workflow_id: "wf-a",
+          enabled: true,
+          description: "First workflow",
+          selected: true,
+        },
+      ],
+    },
+  ],
+  warnings: [],
+};
+
+const importPreviewFixture = {
+  validation: {
+    valid: true,
+    errors: [],
+    warnings: [],
+  },
+  plan: {
+    created_servers: [{ server_id: "remote", reason: "create_server" }],
+    updated_servers: [],
+    created_workflows: [{ server_id: "remote", workflow_id: "wf-b", reason: "create_workflow" }],
+    overwritten_workflows: [],
+    skipped_items: [],
+    warnings: [],
+    apply_environment: false,
+    overwrite_workflows: true,
+    summary: {
+      created_servers: 1,
+      updated_servers: 0,
+      created_workflows: 1,
+      overwritten_workflows: 0,
+      skipped_items: 0,
+      warnings: 0,
+    },
+  },
+};
+
+const importPreviewFixtureLatest = {
+  validation: {
+    valid: true,
+    errors: [],
+    warnings: [],
+  },
+  plan: {
+    created_servers: [{ server_id: "remote-latest", reason: "create_server" }],
+    updated_servers: [],
+    created_workflows: [{ server_id: "remote-latest", workflow_id: "wf-latest", reason: "create_workflow" }],
+    overwritten_workflows: [],
+    skipped_items: [],
+    warnings: [],
+    apply_environment: false,
+    overwrite_workflows: true,
+    summary: {
+      created_servers: 1,
+      updated_servers: 0,
+      created_workflows: 1,
+      overwritten_workflows: 0,
+      skipped_items: 0,
+      warnings: 0,
+    },
+  },
+};
+
 async function uploadWorkflowFile(fileName = "workflow_api.json", content = workflowApiJson) {
   const fileInput = document.getElementById("file-upload") as HTMLInputElement;
   const file = new File([content], fileName, { type: "application/json" });
@@ -150,6 +254,24 @@ describe("App", () => {
     deleteWorkflowMock.mockResolvedValue({ status: "ok" });
     reorderWorkflowsMock.mockResolvedValue({ status: "ok", workflow_order: [] });
     runWorkflowMock.mockResolvedValue({ status: "ok", result: { images: [] } });
+    previewTransferExportMock.mockResolvedValue(exportPreviewFixture);
+    buildTransferExportMock.mockResolvedValue({ bundle: { ok: true }, preview: exportPreviewFixture });
+    previewTransferImportMock.mockResolvedValue(importPreviewFixture);
+    importTransferBundleMock.mockResolvedValue({
+      status: "success",
+      validation: importPreviewFixture.validation,
+      plan: importPreviewFixture.plan,
+    });
+    Object.defineProperty(window.URL, "createObjectURL", {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => "blob:mock"),
+    });
+    Object.defineProperty(window.URL, "revokeObjectURL", {
+      configurable: true,
+      writable: true,
+      value: vi.fn(),
+    });
   });
 
   it("saves with Ctrl/Cmd+S while editing when no modal is open", async () => {
@@ -334,6 +456,122 @@ describe("App", () => {
         enabled: true,
         output_dir: "./outputs",
       });
+    });
+  });
+
+  it("restores export config entry in the main shell and downloads a selected bundle", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Export Config" }));
+    const dialog = await screen.findByRole("dialog");
+    await within(dialog).findByRole("button", { name: "Download Bundle" });
+    await within(dialog).findByText("wf-a");
+
+    const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+    await user.click(screen.getByRole("button", { name: "Download Bundle" }));
+
+    await waitFor(() => {
+      expect(buildTransferExportMock).toHaveBeenCalledWith({
+        servers: [{ server_id: "local", workflow_ids: ["wf-a"] }],
+      });
+    });
+
+    anchorClick.mockRestore();
+  });
+
+  it("keeps the transfer dialog open while an export bundle is loading", async () => {
+    const user = userEvent.setup();
+    const exportDeferred = createDeferred<{ bundle: { ok: boolean }; preview: typeof exportPreviewFixture }>();
+    buildTransferExportMock.mockReturnValue(exportDeferred.promise);
+    const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Export Config" }));
+    const dialog = await screen.findByRole("dialog");
+    const cancelButton = within(dialog).getByRole("button", { name: "Cancel" });
+    await user.click(within(dialog).getByRole("button", { name: "Download Bundle" }));
+
+    await waitFor(() => {
+      expect(cancelButton).toBeDisabled();
+    });
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    await user.click(cancelButton);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    exportDeferred.resolve({ bundle: { ok: true }, preview: exportPreviewFixture });
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    anchorClick.mockRestore();
+  });
+
+  it("restores import config entry in the main shell and imports a selected bundle", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await screen.findByRole("button", { name: "Import Config" });
+
+    const bundleFile = new File([JSON.stringify({ bundle_type: "openclaw-comfyui-skill" })], "openclaw-skill-export.json", {
+      type: "application/json",
+    });
+    Object.defineProperty(bundleFile, "text", {
+      value: async () => JSON.stringify({ bundle_type: "openclaw-comfyui-skill" }),
+    });
+
+    const importInput = document.getElementById("transfer-import-file") as HTMLInputElement;
+    await user.upload(importInput, bundleFile);
+    await screen.findByRole("button", { name: "Import Bundle" });
+    await user.click(screen.getByRole("button", { name: "Import Bundle" }));
+
+    await waitFor(() => {
+      expect(importTransferBundleMock).toHaveBeenCalledWith({ bundle_type: "openclaw-comfyui-skill" }, false, true);
+    });
+  });
+
+  it("keeps the latest import preview when bundle previews resolve out of order", async () => {
+    const user = userEvent.setup();
+    const firstPreview = createDeferred<typeof importPreviewFixture>();
+    const secondPreview = createDeferred<typeof importPreviewFixtureLatest>();
+    previewTransferImportMock
+      .mockReturnValueOnce(firstPreview.promise)
+      .mockReturnValueOnce(secondPreview.promise);
+    render(<App />);
+
+    await screen.findByRole("button", { name: "Import Config" });
+
+    const firstBundleContent = JSON.stringify({ bundle_type: "openclaw-comfyui-skill", bundle_id: "first" });
+    const secondBundleContent = JSON.stringify({ bundle_type: "openclaw-comfyui-skill", bundle_id: "second" });
+    const firstBundle = new File([firstBundleContent], "first.json", { type: "application/json" });
+    const secondBundle = new File([secondBundleContent], "second.json", { type: "application/json" });
+
+    Object.defineProperty(firstBundle, "text", {
+      value: async () => firstBundleContent,
+    });
+    Object.defineProperty(secondBundle, "text", {
+      value: async () => secondBundleContent,
+    });
+
+    const importInput = document.getElementById("transfer-import-file") as HTMLInputElement;
+    await user.upload(importInput, firstBundle);
+    await user.upload(importInput, secondBundle);
+
+    secondPreview.resolve(importPreviewFixtureLatest);
+
+    await waitFor(() => {
+      expect(screen.getByText("remote-latest/wf-latest")).toBeInTheDocument();
+    });
+
+    firstPreview.resolve(importPreviewFixture);
+
+    await waitFor(() => {
+      expect(screen.getByText("remote-latest/wf-latest")).toBeInTheDocument();
+      expect(screen.queryByText("remote/wf-b")).not.toBeInTheDocument();
     });
   });
 });
