@@ -16,6 +16,7 @@ interface UseAppEffectsArgs {
   hasUnsavedChanges: boolean;
   confirmOpen: boolean;
   serverModalOpen: boolean;
+  transferModalOpen: boolean;
   editorQuery: string;
   clearEditorQuery: () => void;
   mappingSearchRef: RefObject<HTMLInputElement | null>;
@@ -77,7 +78,7 @@ export function useAppEffects(args: UseAppEffectsArgs) {
 
   useEffect(() => {
     function handleEditorShortcuts(event: KeyboardEvent) {
-      if (args.viewMode !== "editor" || args.confirmOpen || args.serverModalOpen) {
+      if (args.viewMode !== "editor" || args.confirmOpen || args.serverModalOpen || args.transferModalOpen) {
         return;
       }
 
@@ -116,6 +117,7 @@ export function useAppEffects(args: UseAppEffectsArgs) {
     args.mappingSearchRef,
     args.saveWorkflow,
     args.serverModalOpen,
+    args.transferModalOpen,
     args.viewMode,
   ]);
 }

@@ -70,3 +70,92 @@ export interface SaveServerPayload {
 export interface WorkflowOrderPayload {
   workflow_ids: string[];
 }
+
+export interface ValidationIssueDto {
+  code: string;
+  message: string;
+  context?: Record<string, unknown>;
+}
+
+export interface TransferSelectionServerPayload {
+  server_id: string;
+  workflow_ids: string[];
+}
+
+export interface TransferSelectionPayload {
+  servers: TransferSelectionServerPayload[];
+}
+
+export interface TransferExportPreviewWorkflowDto {
+  workflow_id: string;
+  enabled: boolean;
+  description: string;
+  selected: boolean;
+}
+
+export interface TransferExportPreviewServerDto {
+  server_id: string;
+  name: string;
+  enabled: boolean;
+  selected: boolean;
+  workflow_count: number;
+  workflows: TransferExportPreviewWorkflowDto[];
+}
+
+export interface TransferExportPreviewDto {
+  portable_only: boolean;
+  summary: {
+    servers: number;
+    workflows: number;
+    warnings: number;
+  };
+  servers: TransferExportPreviewServerDto[];
+  warnings: ValidationIssueDto[];
+}
+
+export interface TransferExportBuildResponseDto {
+  bundle: Record<string, unknown>;
+  preview: TransferExportPreviewDto;
+}
+
+export interface TransferPlanItemDto {
+  server_id: string;
+  workflow_id?: string | null;
+  reason: string;
+}
+
+export interface TransferPlanDto {
+  created_servers: TransferPlanItemDto[];
+  updated_servers: TransferPlanItemDto[];
+  created_workflows: TransferPlanItemDto[];
+  overwritten_workflows: TransferPlanItemDto[];
+  skipped_items: TransferPlanItemDto[];
+  warnings: ValidationIssueDto[];
+  apply_environment: boolean;
+  overwrite_workflows: boolean;
+  summary: {
+    created_servers: number;
+    updated_servers: number;
+    created_workflows: number;
+    overwritten_workflows: number;
+    skipped_items: number;
+    warnings: number;
+  };
+}
+
+export interface TransferValidationDto {
+  valid: boolean;
+  errors: ValidationIssueDto[];
+  warnings: ValidationIssueDto[];
+}
+
+export interface TransferImportPreviewDto {
+  validation: TransferValidationDto;
+  plan: TransferPlanDto | null;
+}
+
+export interface TransferImportResponseDto {
+  status: string;
+  validation: TransferValidationDto;
+  plan: TransferPlanDto;
+}
