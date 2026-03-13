@@ -196,6 +196,8 @@ button:disabled,
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  width: 100%;
+  min-width: 0;
   padding: 18px;
   transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
@@ -222,6 +224,7 @@ button:disabled,
 .workflow-main {
   min-width: 0;
   flex: 1;
+  overflow: hidden;
   padding-right: 12px;
 }
 
@@ -320,4 +323,3 @@ button:disabled,
   font-size: 0.88rem;
   font-weight: 600;
 }
-
