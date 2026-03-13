@@ -20,6 +20,8 @@ interface MainShellProps {
   onSelectServer: (serverId: string) => void;
   onToggleServer: (server: ServerDto, enabled: boolean) => void;
   onDeleteServer: (server: ServerDto) => void;
+  onOpenTransferExport: () => void;
+  onOpenTransferImport: () => void;
   onOpenCreateServer: () => void;
   onOpenEditServer: (server: ServerDto) => void;
   onServerFormChange: (next: SaveServerPayload) => void;
@@ -47,6 +49,14 @@ export function MainShell(props: MainShellProps) {
         <div className="page-title-group">
           <h1>{props.t("title")}</h1>
           <p className="subtitle">{props.t("subtitle")}</p>
+        </div>
+        <div className="page-header-actions">
+          <button type="button" className="btn btn-secondary panel-action-btn" onClick={props.onOpenTransferExport}>
+            {props.t("export_bundle")}
+          </button>
+          <button type="button" className="btn btn-secondary panel-action-btn" onClick={props.onOpenTransferImport}>
+            {props.t("import_bundle")}
+          </button>
         </div>
         <CustomSelect
           value={props.language}

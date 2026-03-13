@@ -1,6 +1,7 @@
 import { ConfirmDialog } from "./components/ui/ConfirmDialog";
 import { ToastViewport } from "./components/ui/ToastViewport";
 import { EditorView } from "./features/editor/EditorView";
+import { TransferModal } from "./features/transfer/TransferModal";
 import { MainShell } from "./app/MainShell";
 import { useAppController } from "./app/useAppController";
 
@@ -26,6 +27,8 @@ export default function App() {
           onSelectServer={controller.setCurrentServerId}
           onToggleServer={controller.handleToggleServer}
           onDeleteServer={controller.requestDeleteServer}
+          onOpenTransferExport={controller.handleOpenTransferExport}
+          onOpenTransferImport={controller.handleOpenTransferImport}
           onOpenCreateServer={controller.handleAddServer}
           onOpenEditServer={controller.handleEditServer}
           onServerFormChange={controller.setServerForm}
@@ -109,6 +112,29 @@ export default function App() {
         onConfirm={() => controller.resolveConfirm(true)}
       />
 
+      <TransferModal
+        open={controller.transferState.open}
+        mode={controller.transferState.mode}
+        exportPreview={controller.transferState.exportPreview}
+        exportSelection={controller.transferState.exportSelection}
+        expandedServerIds={controller.transferState.expandedServerIds}
+        importPreviewSummary={controller.importPreviewSummary}
+        importSections={controller.importSections}
+        importWarnings={(controller.transferState.importPreview?.plan?.warnings || []).map((warning) => warning.message)}
+        applyEnvironment={controller.transferState.applyEnvironment}
+        loading={controller.transferState.loading}
+        onClose={controller.closeTransferModal}
+        onConfirm={controller.handleConfirmTransfer}
+        onToggleServerSelection={(server) => controller.toggleTransferServerSelection(
+          server.server_id,
+          server.workflows.map((workflow) => workflow.workflow_id),
+        )}
+        onToggleWorkflowSelection={controller.toggleTransferWorkflowSelection}
+        onToggleServerExpanded={controller.toggleTransferServerExpanded}
+        onApplyEnvironmentChange={(checked) => controller.setTransferState((current) => ({ ...current, applyEnvironment: checked }))}
+        t={controller.t}
+      />
+
       <input
         ref={controller.versionUploadRef}
         type="file"
@@ -116,6 +142,17 @@ export default function App() {
         className="sr-only"
         onChange={(event) => {
           controller.handleVersionFileChange(event.target.files?.[0] || null);
+          event.currentTarget.value = "";
+        }}
+      />
+      <input
+        id="transfer-import-file"
+        ref={controller.transferImportRef}
+        type="file"
+        accept=".json"
+        className="sr-only"
+        onChange={(event) => {
+          controller.handleTransferImportFile(event.target.files?.[0] || null);
           event.currentTarget.value = "";
         }}
       />
