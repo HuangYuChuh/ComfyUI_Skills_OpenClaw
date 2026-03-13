@@ -12,8 +12,8 @@ permissions:
   contents: read
 
 jobs:
-  ci:
-    name: CI
+  backend:
+    name: Backend
     runs-on: ubuntu-latest
 
     steps:
@@ -30,6 +30,14 @@ jobs:
 
       - name: Run Python compile checks
         run: python -m compileall scripts ui
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
