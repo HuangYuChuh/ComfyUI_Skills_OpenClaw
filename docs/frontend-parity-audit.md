@@ -45,7 +45,7 @@ Current automated coverage includes:
 
 ## Browser-Level Validation
 
-An actual local browser pass was completed against the running FastAPI-served UI at `http://127.0.0.1:8189`.
+An actual local browser pass was completed against the running FastAPI-served UI at `http://127.0.0.1:18189`.
 
 Verified in-browser:
 
