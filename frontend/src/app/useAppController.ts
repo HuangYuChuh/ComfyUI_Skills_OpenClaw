@@ -186,7 +186,7 @@ export function useAppController() {
         loading: false,
       });
     } catch (error) {
-      pushToast("error", getTransferErrorMessage(error, "err_transfer_import"));
+      pushToast("error", getTransferErrorMessage(error, "err_transfer_export_preview"));
     }
   }
 
@@ -263,7 +263,7 @@ export function useAppController() {
           return;
         }
         setTransferState((current) => ({ ...current, loading: false }));
-        pushToast("error", getTransferErrorMessage(error, "err_transfer_import"));
+        pushToast("error", getTransferErrorMessage(error, "err_transfer_export"));
       }
       return;
     }

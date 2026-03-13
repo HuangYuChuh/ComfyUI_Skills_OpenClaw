@@ -108,6 +108,8 @@ export const enMessages = {
   ok_transfer_export_started: "Bundle download started.",
   ok_transfer_import: "Import complete. Added {servers} servers, imported {created} workflows, overwritten {overwritten} workflows.",
   err_transfer_invalid_bundle: "This file is not a valid bundle JSON.",
+  err_transfer_export_preview: "Failed to preview the export bundle.",
+  err_transfer_export: "Failed to build the export bundle.",
   err_transfer_preview: "Failed to preview the import bundle.",
   err_transfer_import: "Failed to import the bundle.",
   transfer_apply_environment: "Also apply default server, URL, and output directory from the bundle",

@@ -108,6 +108,8 @@ export const zhMessages = {
   ok_transfer_export_started: "Bundle 已开始下载。",
   ok_transfer_import: "导入完成。新增 {servers} 个服务器，导入 {created} 个工作流，覆盖 {overwritten} 个工作流。",
   err_transfer_invalid_bundle: "该文件不是有效的 bundle JSON。",
+  err_transfer_export_preview: "预检导出 bundle 失败。",
+  err_transfer_export: "构建导出 bundle 失败。",
   err_transfer_preview: "预检导入 bundle 失败。",
   err_transfer_import: "导入 bundle 失败。",
   transfer_apply_environment: "同时应用 bundle 中的默认服务器、URL 和输出目录",

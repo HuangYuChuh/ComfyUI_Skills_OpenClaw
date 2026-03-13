@@ -480,6 +480,16 @@ describe("App", () => {
     anchorClick.mockRestore();
   });
 
+  it("shows export-specific copy when export preview fails", async () => {
+    const user = userEvent.setup();
+    previewTransferExportMock.mockRejectedValueOnce(new Error(""));
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Export Config" }));
+
+    expect(await screen.findByText("Failed to preview the export bundle.")).toBeInTheDocument();
+  });
+
   it("keeps the transfer dialog open while an export bundle is loading", async () => {
     const user = userEvent.setup();
     const exportDeferred = createDeferred<{ bundle: { ok: boolean }; preview: typeof exportPreviewFixture }>();
@@ -509,6 +519,18 @@ describe("App", () => {
     });
 
     anchorClick.mockRestore();
+  });
+
+  it("shows export-specific copy when export bundle build fails", async () => {
+    const user = userEvent.setup();
+    buildTransferExportMock.mockRejectedValueOnce(new Error(""));
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Export Config" }));
+    await screen.findByRole("dialog");
+    await user.click(screen.getByRole("button", { name: "Download Bundle" }));
+
+    expect(await screen.findByText("Failed to build the export bundle.")).toBeInTheDocument();
   });
 
   it("restores import config entry in the main shell and imports a selected bundle", async () => {
