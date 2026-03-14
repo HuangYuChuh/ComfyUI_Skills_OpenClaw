@@ -1,0 +1,20 @@
+- question: What is ComfyUI Skills for OpenClaw?
+  answer: ComfyUI Skills for OpenClaw is an open-source bridge that turns ComfyUI API-format workflows into callable skills for OpenClaw and compatible AI agents.
+- question: What problem does this repository solve?
+  answer: It lets an agent take natural-language requests, map them to workflow parameters, submit jobs to one or more ComfyUI servers, wait for completion, and download the generated images automatically.
+- question: Can this project work with multiple ComfyUI servers?
+  answer: Yes. The repository supports multi-server workflow namespaces, so one OpenClaw setup can route jobs across different ComfyUI servers instead of being locked to a single machine.
+- question: What files are required for a workflow to work?
+  answer: Each workflow needs an API-format workflow.json exported from ComfyUI and a schema.json file that exposes the parameters the agent is allowed to call.
+- question: Does the project include a web UI?
+  answer: Yes. The repository includes a local web dashboard for uploading workflows, configuring servers, and editing schema mappings.
+- question: Is this only for OpenClaw?
+  answer: OpenClaw is the main target, but the architecture is also useful for other skill-capable AI agents that can call structured tools or local skills.
+- question: Why does the repository use schema.json instead of exposing the whole graph?
+  answer: The schema layer gives the agent a smaller and safer contract with clear aliases, types, descriptions, and required flags, which makes workflow calls more reliable than exposing every node field directly.
+- question: What is the recommended way to configure the first workflow?
+  answer: The recommended flow is to use the local web dashboard first, because it lets you upload an API-format workflow, inspect the parsed inputs, and choose which parameters should be exposed before saving.
+- question: How do I know a workflow export is valid for this project?
+  answer: The workflow should be exported from ComfyUI using Save API Format, and it should include a Save Image style output so the client can download generated images after the job completes.
+- question: Can I move my workflow mappings to another machine?
+  answer: Yes. The repository includes export and import flows for transferring server definitions and workflow mappings, which is useful when moving a skill setup to another machine or workspace.

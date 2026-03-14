@@ -45,6 +45,11 @@ node_modules/
 npm-debug.log
 yarn-error.log
 
+# Jekyll local preview
+.bundle/
+vendor/bundle/
+docs/_site/
+
 # Project specific
 ui/frontend/dist/
 ui/frontend/node_modules/
