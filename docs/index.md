@@ -21,4 +21,5 @@ This project turns ComfyUI workflows into callable skills, so skill-capable agen
 - [English README](https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw/blob/main/README.md)
 - [Chinese README](https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw/blob/main/README.zh.md)
 - [ComfyUI Native Local Routes](https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw/blob/main/docs/comfyui-native-routes.md)
+- [ComfyUI 原生本地路由（中文）](https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw/blob/main/docs/comfyui-native-routes.zh.md)
 - [Project Discovery Checklist](https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw/blob/main/docs/PROJECT_DISCOVERY_CHECKLIST.md)

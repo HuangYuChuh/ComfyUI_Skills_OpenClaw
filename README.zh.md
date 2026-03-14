@@ -5,6 +5,8 @@
 
 它会把自然语言请求转成结构化的 Skill 参数，映射到 ComfyUI 工作流输入后提交执行，等待任务完成并将生成图片下载到本地。
 
+上游 ComfyUI 本地服务路由说明见：[`docs/comfyui-native-routes.zh.md`](./docs/comfyui-native-routes.zh.md)。
+
 ---
 
 ## 这个 Skill 能做什么
@@ -14,6 +16,21 @@
 - 把工作流里需要填写的参数整理出来，方便 OpenClaw 更稳定地理解和复用
 - 工作流上传一次后，就可以在 UI 里持续管理，而不是每次都重新手动整理
 - 提交任务、等待完成、拉回生成结果，这条链路可以直接复用到日常使用里
+
+## ComfyUI 原生 API 范围
+
+这个仓库建议按两层来理解：
+
+- ComfyUI 原生服务路由（目标生图服务），例如 `/prompt`、`/history/{prompt_id}`、`/view`、`/ws`、`/queue`
+- 本项目自己的管理 API（`/api/*`），用于本地 UI 管理服务器、工作流和配置迁移
+
+当前 Skill 的核心执行链路是：
+
+1. `POST /prompt`
+2. `GET /history/{prompt_id}`
+3. `GET /view`
+
+更细的路由说明见：[`docs/comfyui-native-routes.zh.md`](./docs/comfyui-native-routes.zh.md)。
 
 ---
 
