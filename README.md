@@ -11,6 +11,8 @@ This project is a ComfyUI skill integration layer for OpenClaw. It turns the wor
 
 It converts natural language requests into structured skill arguments, maps them to ComfyUI workflow inputs, submits jobs to ComfyUI, waits for completion, then pulls generated images back to local disk.
 
+For the upstream ComfyUI local server routes that back this skill, see [docs/comfyui-native-routes.md](./docs/comfyui-native-routes.md).
+
 ## What This Skill Can Do
 
 - Turn your existing ComfyUI workflows into skills that OpenClaw can call directly
@@ -18,6 +20,21 @@ It converts natural language requests into structured skill arguments, maps them
 - Reuse the parameters you already exposed so OpenClaw can understand what each workflow expects
 - Upload a workflow once, manage it in the UI, and reuse it without rebuilding the setup
 - Submit jobs to ComfyUI, wait for completion, and pull generated images back to local storage
+
+## ComfyUI Native API Scope
+
+This repository should be understood as two layers:
+
+- Native ComfyUI server routes on the target generation server, such as `/prompt`, `/history/{prompt_id}`, `/view`, `/ws`, and `/queue`
+- This project's own manager API under `/api/*`, used by the local UI to manage saved servers, workflows, and transfer bundles
+
+The current skill implementation is centered on the native execution flow:
+
+1. `POST /prompt`
+2. `GET /history/{prompt_id}`
+3. `GET /view`
+
+That route-level reference is documented in [docs/comfyui-native-routes.md](./docs/comfyui-native-routes.md).
 
 ---
 

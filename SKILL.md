@@ -27,6 +27,20 @@ This command will:
 - start it in the background if it is not running
 - try to open the browser to the local dashboard automatically
 
+### Native ComfyUI API Surface
+
+This skill is primarily a workflow execution client for a local or remote ComfyUI server.
+
+The core native ComfyUI routes relevant to this skill are:
+
+- `POST /prompt` to submit a workflow run
+- `GET /history/{prompt_id}` to poll for completion
+- `GET /view` to download generated images
+
+Other native ComfyUI routes such as `/ws`, `/queue`, `/interrupt`, `/upload/image`, `/object_info`, and `/system_stats` exist upstream but are not required for the basic execution path implemented here.
+
+For the route-level reference and the distinction between native ComfyUI routes and this repository's own manager API, see [`docs/comfyui-native-routes.md`](./docs/comfyui-native-routes.md).
+
 ### Step 0: AI-Native Workflow Auto-Configuration (Optional)
 
 If the user provides you with a new ComfyUI workflow JSON (API format) and asks you to "configure it" or "add it":
@@ -85,6 +99,7 @@ python ./scripts/comfyui_client.py --workflow <server_id>/<workflow_id> --args '
 **Blocking and Result Retrieval**:
 - This script will automatically submit the task to the matched server and **poll to wait** for ComfyUI to finish rendering, then download the image locally.
 - If executed successfully, the standard output of the script will finally provide a JSON containing an `images` list, where the absolute paths are the generated image files.
+- Under the hood, this flow uses the native ComfyUI route sequence `POST /prompt` -> `GET /history/{prompt_id}` -> `GET /view`.
 
 ### Step 4: Send the Image to the User
 
