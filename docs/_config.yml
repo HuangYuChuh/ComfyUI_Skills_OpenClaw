@@ -1,0 +1,27 @@
+title: ComfyUI Skills for OpenClaw
+description: >-
+  Open-source ComfyUI skill integration for OpenClaw and compatible AI agents.
+  Turn API-format ComfyUI workflows into callable skills with multi-server
+  routing, schema-based parameter mapping, and downloadable image outputs.
+url: "https://huangyuchuh.github.io"
+baseurl: "/ComfyUI_Skills_OpenClaw"
+lang: en
+timezone: Asia/Shanghai
+repository_url: "https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw"
+logo: "/assets/logo.png"
+image: "/assets/logo.png"
+author:
+  name: HuangYuChuh
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+markdown: kramdown
+kramdown:
+  input: GFM
+permalink: pretty
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
+      image: /assets/logo.png

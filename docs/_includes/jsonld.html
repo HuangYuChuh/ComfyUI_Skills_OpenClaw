@@ -1,0 +1,60 @@
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": {{ site.title | jsonify }},
+  "url": {{ site.url | append: site.baseurl | append: '/' | jsonify }},
+  "description": {{ site.description | jsonify }},
+  "inLanguage": {{ site.lang | jsonify }},
+  "publisher": {
+    "@type": "Person",
+    "name": {{ site.author.name | jsonify }}
+  }
+}
+</script>
+{% if page.url == '/' %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  "name": {{ site.title | jsonify }},
+  "description": {{ site.description | jsonify }},
+  "codeRepository": {{ site.repository_url | jsonify }},
+  "url": {{ site.url | append: site.baseurl | append: '/' | jsonify }},
+  "programmingLanguage": ["Python", "TypeScript", "HTML", "CSS"],
+  "license": "https://opensource.org/license/mit",
+  "runtimePlatform": "ComfyUI, OpenClaw",
+  "keywords": [
+    "ComfyUI",
+    "OpenClaw",
+    "ComfyUI skill",
+    "workflow automation",
+    "AI agent tools"
+  ],
+  "author": {
+    "@type": "Person",
+    "name": {{ site.author.name | jsonify }}
+  }
+}
+</script>
+{% endif %}
+{% if page.url == '/faq/' %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {% for item in site.data.faq %}
+    {
+      "@type": "Question",
+      "name": {{ item.question | jsonify }},
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": {{ item.answer | jsonify }}
+      }
+    }{% unless forloop.last %},{% endunless %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endif %}

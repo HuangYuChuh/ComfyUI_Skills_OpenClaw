@@ -1,3 +1,9 @@
+---
+title: GitHub and Search Discoverability Checklist
+description: Practical checklist for improving search visibility, GitHub discovery, and AI assistant retrieval for ComfyUI Skills for OpenClaw.
+permalink: /discoverability-checklist/
+---
+
 # GitHub and Search Discoverability Checklist (OpenClaw + ComfyUI + Skills + Xiao Long Xia)
 
 > Goal: Improve visibility and click-through performance in Google Search, GitHub Search, and AI assistant retrieval.

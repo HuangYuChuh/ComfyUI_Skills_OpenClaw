@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="{{ page.lang | default: site.lang | default: 'en' }}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101828">
+    <link rel="icon" type="image/png" href="{{ '/assets/logo.png' | relative_url }}">
+    <link rel="apple-touch-icon" href="{{ '/assets/logo.png' | relative_url }}">
+    <link rel="stylesheet" href="{{ '/assets/site.css' | relative_url }}">
+    {% seo %}
+    {% include jsonld.html %}
+  </head>
+  <body>
+    <div class="page-noise" aria-hidden="true"></div>
+    <header class="site-shell site-header">
+      <a class="site-brand" href="{{ '/' | relative_url }}">
+        <span class="site-brand-mark">
+          <img src="{{ '/assets/logo.png' | relative_url }}" alt="ComfyUI Skills for OpenClaw logo">
+        </span>
+        <span class="site-brand-copy">
+          <strong>ComfyUI OpenClaw Skill</strong>
+          <span>Workflow graphs, visual mappings, and agent execution.</span>
+        </span>
+      </a>
+      <div class="site-header-actions">
+        <nav class="site-nav" aria-label="Primary">
+          <a href="{{ '/' | relative_url }}">Overview</a>
+          <a href="{{ '/getting-started/' | relative_url }}">Getting Started</a>
+          <a href="{{ '/use-cases/' | relative_url }}">Use Cases</a>
+          <a href="{{ '/architecture/' | relative_url }}">Architecture</a>
+          <a href="{{ '/faq/' | relative_url }}">FAQ</a>
+          <a href="{{ '/discoverability-checklist/' | relative_url }}">SEO Checklist</a>
+        </nav>
+        <a class="top-star-link" href="{{ site.repository_url }}/stargazers">Star on GitHub</a>
+      </div>
+    </header>
+
+    <main class="site-shell site-main">
+      {{ content }}
+    </main>
+
+    <footer class="site-shell site-footer">
+      <p>
+        Open-source bridge for turning ComfyUI workflows into callable skills for OpenClaw
+        and compatible AI agents.
+      </p>
+    </footer>
+  </body>
+</html>
