@@ -166,6 +166,13 @@ Official docs:
 
 ## Route Groups
 
+Skill status labels in the tables below use this convention:
+
+- `Used now`: actively used by the current implementation.
+- `Candidate`: not used yet, but a realistic near/mid-term integration target.
+- `Not used`: currently out of scope, with no active integration plan.
+- `Not used directly`: available upstream, but not called directly in the current execution path.
+
 ### Execution
 
 | Route | Method | Purpose | Call shape | Skill status |
@@ -208,7 +215,7 @@ Official docs:
 
 ## What This Repository Uses Today
 
-The current CLI client in `scripts/comfyui_client.py` follows a minimal three-step native ComfyUI flow:
+As of 2026-03-14, the current CLI client in [`scripts/comfyui_client.py`](../scripts/comfyui_client.py) follows a minimal three-step native ComfyUI flow:
 
 1. `POST /prompt` to queue the workflow.
 2. `GET /history/{prompt_id}` until the run appears in history.
