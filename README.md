@@ -15,11 +15,38 @@ For the upstream ComfyUI local server routes that back this skill, see [docs/com
 
 ## Features
 
-- Turn your existing ComfyUI workflows into skills that OpenClaw, Codex, or Claude Code can call directly
-- Let these agents call workflows deployed across different ComfyUI servers instead of being tied to a single machine
-- Reuse the parameters you already exposed so the agent can understand what each workflow expects
-- Upload a workflow once, manage it in the UI, and reuse it without rebuilding the setup
-- Submit jobs to ComfyUI, wait for completion, and pull generated images back to local storage
+### Workflow-to-Skill Conversion
+- Turn your ComfyUI workflows into skills that OpenClaw, Codex, or Claude Code can call directly
+- Set up parameters in three steps: upload a workflow, pick the nodes to expose, then name and describe each parameter
+- Input nodes are detected automatically from the workflow — no need to hunt through the JSON by hand
+- When you update a workflow, preview the parameter changes first and carry over existing mappings
+
+### Multi-Server Management
+- Manage multiple ComfyUI servers and route jobs to different machines as needed
+- Servers and workflows each have their own toggle — agents only see a workflow when both are enabled
+- Workflows with the same name on different servers stay separate, identified by `server/workflow` composite IDs
+- Set a per-server output directory and choose a default server
+
+### Web UI
+- A local web interface for managing all servers and workflows in one place
+- Reorder workflows by dragging, or sort by name, status, or custom order
+- Search and filter workflows across all servers
+- Available in English, Simplified Chinese, and Traditional Chinese — switch languages from the UI
+
+### Configuration Transfer
+- Export your current configuration and workflows into a single portable JSON file
+- Choose exactly which workflows to include before exporting
+- Preview what will change on the target machine before applying an import
+- Control whether to overwrite existing workflows or sync environment settings from the source machine
+
+### Workflow Execution
+- Submit a job, wait for it to finish, and download the generated images to local storage automatically
+- Supports multi-image output in a single run
+- Agents can query all available workflows and their parameters from the command line for automated use
+
+### CLI Tools
+- A full set of command-line tools for headless environments and scripting
+- Covers server management, workflow listing, job execution, and configuration import/export
 
 ## ComfyUI Native API Scope
 
