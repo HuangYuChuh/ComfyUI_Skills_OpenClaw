@@ -430,7 +430,6 @@ ComfyUI_Skills_OpenClaw/
 │   ├── open_ui.py              # Agent-friendly UI launcher
 │   ├── services.py             # Business logic (workflow CRUD)
 │   ├── models.py               # Pydantic request/response models
-│   ├── json_store.py           # Low-level JSON file read/write helpers
 │   ├── settings.py             # App-level settings
 │   ├── run_ui.sh               # Start UI (macOS/Linux)
 │   ├── run_ui.command          # Double-click launcher (macOS)

@@ -427,7 +427,6 @@ ComfyUI_Skills_OpenClaw/
 │   ├── open_ui.py              # 供 Agent 调用的 UI 启动入口
 │   ├── services.py             # 业务逻辑（工作流增删改查）
 │   ├── models.py               # Pydantic 请求/响应模型
-│   ├── json_store.py           # JSON 文件读写封装
 │   ├── settings.py             # 应用级配置
 │   ├── run_ui.sh               # 启动脚本（macOS/Linux）
 │   ├── run_ui.command          # macOS 双击启动
