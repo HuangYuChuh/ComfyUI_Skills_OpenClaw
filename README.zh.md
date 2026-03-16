@@ -385,9 +385,14 @@ python scripts/transfer_manager.py import --input ./openclaw-skill-export.json
 
 ## 路线图
 
-- [ ] 支持工作流版本历史和回滚
+- [x] 前端源码分离到独立仓库
+- [x] 服务器健康状态检测与 UI 指示器
+- [x] 配置导入导出，支持跨机器迁移
+- [x] 多 Agent 支持（OpenClaw / Claude Code / Codex）
+- [x] 多语言界面（英文 / 简体中文 / 繁体中文）
 - [x] 上传新版本前先预览参数变化
 - [x] 工作流升级时支持参数迁移
+- [ ] 支持工作流版本历史和回滚
 - [ ] 增强提交前参数校验
 - [ ] 更清晰展示 ComfyUI 返回的节点错误
 - [ ] 支持批量多 seed 生成
