@@ -54,11 +54,3 @@ vendor/bundle/
 docs/_site/
 
 # Project specific
-ui/frontend/dist/
-ui/frontend/node_modules/
-
-# Manus Files
-task_plan.md
-findings.md
-progress.md
-README_EN_STYLE_GUIDE.private.md

@@ -7,13 +7,13 @@ if [[ -x /opt/homebrew/opt/ruby/bin/ruby ]]; then
   export PATH="/opt/homebrew/opt/ruby/bin:$PATH"
 fi
 
-cd "$ROOT_DIR"
+cd "$ROOT_DIR/docs"
 
-bundle config set --local path "vendor/bundle"
+bundle config set --local path "../vendor/bundle"
 bundle install
 bundle exec jekyll serve \
-  --source docs \
-  --destination docs/_site \
+  --source . \
+  --destination _site \
   --host 127.0.0.1 \
   --port 4000 \
   --livereload
