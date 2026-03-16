@@ -2,7 +2,16 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PYTHON_BIN="${PYTHON_BIN:-python3}"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Prefer the project venv, fall back to PYTHON_BIN or system python3
+if [ -z "${PYTHON_BIN:-}" ]; then
+  if [ -x "$PROJECT_ROOT/.venv/bin/python" ]; then
+    PYTHON_BIN="$PROJECT_ROOT/.venv/bin/python"
+  else
+    PYTHON_BIN="python3"
+  fi
+fi
 UI_PORT="${OPENCLAW_UI_PORT:-18189}"
 
 cd "$SCRIPT_DIR"
