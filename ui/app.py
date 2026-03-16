@@ -46,6 +46,7 @@ except ImportError:
     from services import UIStorageService
     from settings import DEFAULT_HOST, DEFAULT_PORT, STATIC_DIR, ensure_runtime_dirs
 
+from shared.frontend_update import check_frontend_update
 from shared.health import check_server_health
 from shared.transfer_bundle import (
     BundleValidationError,
@@ -208,6 +209,12 @@ def create_app() -> FastAPI:
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e)) from e
         return {"status": "success", "workflow_order": workflow_order}
+
+    # ── Frontend Update ─────────────────────────────────────────
+
+    @app.get("/api/frontend/check-update")
+    async def frontend_check_update() -> dict:
+        return await asyncio.to_thread(check_frontend_update, STATIC_DIR)
 
     # ── Transfer Bundle ───────────────────────────────────────────
 
