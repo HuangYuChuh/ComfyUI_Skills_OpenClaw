@@ -388,9 +388,14 @@ Default import behavior:
 
 ## Roadmap
 
-- [ ] Workflow version history and rollback
+- [x] Split frontend source into a standalone repository
+- [x] Server health monitoring with live UI indicators
+- [x] Configuration import/export for cross-machine migration
+- [x] First-class support for OpenClaw, Claude Code, and Codex
+- [x] Multilingual UI (English, Simplified Chinese, Traditional Chinese)
 - [x] Upgrade preview before applying a new workflow version
 - [x] Parameter migration support when upgrading a workflow
+- [ ] Workflow version history and rollback
 - [ ] Better schema validation before queueing
 - [ ] Richer error reporting from ComfyUI node errors
 - [ ] Optional batch generation / multi-seed helpers
