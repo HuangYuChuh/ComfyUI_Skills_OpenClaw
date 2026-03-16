@@ -392,6 +392,11 @@ python scripts/transfer_manager.py import --input ./openclaw-skill-export.json
 - [x] 多语言界面（英文 / 简体中文 / 繁体中文）
 - [x] 上传新版本前先预览参数变化
 - [x] 工作流升级时支持参数迁移
+- [ ] 远程 ComfyUI 服务器鉴权支持
+- [ ] 执行历史记录（参数 + 结果追溯）
+- [ ] 任务完成后 Webhook 回调通知
+- [ ] 定时执行工作流（cron 风格）
+- [ ] 引导式工作流改写模板（Rewrite Recipe）
 - [ ] 支持工作流版本历史和回滚
 - [ ] 增强提交前参数校验
 - [ ] 更清晰展示 ComfyUI 返回的节点错误

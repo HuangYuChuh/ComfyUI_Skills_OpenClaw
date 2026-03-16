@@ -395,6 +395,11 @@ Default import behavior:
 - [x] Multilingual UI (English, Simplified Chinese, Traditional Chinese)
 - [x] Upgrade preview before applying a new workflow version
 - [x] Parameter migration support when upgrading a workflow
+- [ ] Authentication support for remote ComfyUI servers
+- [ ] Execution history with parameter and result tracking
+- [ ] Webhook callbacks on task completion
+- [ ] Scheduled workflow execution (cron-style)
+- [ ] Guided workflow rewrite recipes for agents
 - [ ] Workflow version history and rollback
 - [ ] Better schema validation before queueing
 - [ ] Richer error reporting from ComfyUI node errors
