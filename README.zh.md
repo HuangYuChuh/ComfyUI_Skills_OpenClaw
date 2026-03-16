@@ -24,6 +24,7 @@
 - 可以为每台服务器单独设置输出目录，并指定默认服务器
 
 ### 管理界面
+- 前端源码位于[独立仓库](https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw-frontend)；运行 `scripts/update_frontend.sh` 可拉取最新构建
 - 提供本地 Web 界面，统一管理所有服务器和工作流
 - 支持拖拽调整工作流顺序，也可按名称、启用状态等方式排序
 - 可跨服务器搜索和筛选工作流
@@ -416,6 +417,7 @@ ComfyUI_Skills_OpenClaw/
 │   ├── server_manager.py       # 管理多服务器配置的 CLI 工具
 │   ├── registry.py             # 列出可用工作流及参数
 │   ├── comfyui_client.py       # 注入参数、提交任务、轮询完成、下载图片
+│   ├── update_frontend.sh      # 从 GitHub Release 下载最新前端构建
 │   └── shared/                 # 跨脚本共用的配置与 JSON 工具
 │       ├── config.py
 │       ├── json_utils.py
@@ -430,7 +432,7 @@ ComfyUI_Skills_OpenClaw/
 │   ├── run_ui.sh               # 启动脚本（macOS/Linux）
 │   ├── run_ui.command          # macOS 双击启动
 │   ├── run_ui.bat              # Windows 启动
-│   └── static/                 # 模块化 ES6 前端（HTML/CSS/JS）
+│   └── static/                 # 预构建的前端资源
 └── outputs/
     └── .gitkeep
 ```

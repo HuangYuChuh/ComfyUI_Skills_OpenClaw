@@ -28,6 +28,7 @@ For the upstream ComfyUI local server routes that back this skill, see [docs/com
 - Set a per-server output directory and choose a default server
 
 ### Web UI
+- Frontend source lives in a [separate repository](https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw-frontend); run `scripts/update_frontend.sh` to pull the latest build
 - A local web interface for managing all servers and workflows in one place
 - Reorder workflows by dragging, or sort by name, status, or custom order
 - Search and filter workflows across all servers
@@ -419,6 +420,7 @@ ComfyUI_Skills_OpenClaw/
 │   ├── server_manager.py       # CLI tool for managing servers
 │   ├── registry.py             # List workflows + exposed parameters for agent
 │   ├── comfyui_client.py       # Inject args, queue prompt, poll history, download images
+│   ├── update_frontend.sh      # Download latest frontend build from GitHub Release
 │   └── shared/                 # Shared config & JSON utils (reused across scripts)
 │       ├── config.py
 │       ├── json_utils.py
@@ -433,7 +435,7 @@ ComfyUI_Skills_OpenClaw/
 │   ├── run_ui.sh               # Start UI (macOS/Linux)
 │   ├── run_ui.command          # Double-click launcher (macOS)
 │   ├── run_ui.bat              # Launcher (Windows)
-│   └── static/                 # Modular ES6 frontend (HTML/CSS/JS)
+│   └── static/                 # Pre-built frontend assets
 └── outputs/
     └── .gitkeep
 ```
