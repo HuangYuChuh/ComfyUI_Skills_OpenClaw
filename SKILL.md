@@ -41,6 +41,20 @@ Other native ComfyUI routes such as `/ws`, `/queue`, `/interrupt`, `/upload/imag
 
 For the route-level reference and the distinction between native ComfyUI routes and this repository's own manager API, see [`docs/comfyui-native-routes.md`](./docs/comfyui-native-routes.md).
 
+### Server Health Check
+
+Before running a workflow, check whether the target ComfyUI server is online.
+
+You can query the manager API endpoint:
+
+```http
+GET /api/servers/{server_id}/status
+```
+
+This returns JSON with `"status": "online"` or `"status": "offline"`.
+
+**Recommended agent flow:** Before Step 3 (Trigger Image Generation), run a server status check. If offline, ask the user to start ComfyUI and retry once it is online.
+
 ### Step 0: AI-Native Workflow Auto-Configuration (Optional)
 
 If the user provides you with a new ComfyUI workflow JSON (API format) and asks you to "configure it" or "add it":
@@ -106,6 +120,6 @@ python ./scripts/comfyui_client.py --workflow <server_id>/<workflow_id> --args '
 Once you obtain the absolute local path to the generated image, use your native capabilities to present the file to the user (e.g., in an OpenClaw environment, returning the path allows the client to intercept it and convert it into rich text or an image preview).
 
 ## Common Troubleshooting & Notices
-1. **ComfyUI Offline**: If the script returns "Error connecting to ComfyUI", remind the user to check if the ComfyUI service is running on the specific server, or go to the Web UI panel (start with `python3 ./ui/open_ui.py`, `python3 ui/app.py`, or `./run_ui.sh`) to adjust the server configuration URLs.
+1. **ComfyUI Offline**: If the script returns "Error connecting to ComfyUI", run a server status check and ask the user to start the ComfyUI service for that server URL before retrying.
 2. **Schema Not Found**: If you directly called a workflow the user mentioned verbally, but the script reports a missing Schema, perform Step 1 `registry.py` and tell the user they need to first go to the Web UI panel to upload and configure the mapping for that workflow on the desired server.
 3. **Parameter Format Error**: Ensure that the JSON passed via `--args` is a valid JSON string wrapped in single quotes.

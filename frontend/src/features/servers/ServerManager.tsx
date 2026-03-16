@@ -1,6 +1,7 @@
-import { useEffect, useRef, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { CustomSelect } from "../../components/ui/CustomSelect";
 import { Modal } from "../../components/ui/Modal";
+import { getServerStatus } from "../../services/servers";
 import type { SaveServerPayload, ServerDto } from "../../types/api";
 
 const DEFAULT_COMFYUI_URL = "http://127.0.0.1:8188";
@@ -48,6 +49,29 @@ function TrashIcon() {
   );
 }
 
+function StatusDot({ status }: { status: "online" | "offline" | "checking" }) {
+  let color = "#a3a3a3";
+  if (status === "online") color = "#22c55e";
+  else if (status === "offline") color = "#ef4444";
+  return (
+    <span
+      title={status}
+      style={{
+        display: "inline-block",
+        width: 8,
+        height: 8,
+        borderRadius: "50%",
+        backgroundColor: color,
+        marginRight: 6,
+        flexShrink: 0,
+        animation: status === "checking" ? "pulse 1.5s infinite" : undefined,
+      }}
+    />
+  );
+}
+
+type ServerRunStatus = "online" | "offline" | "checking";
+
 export function ServerManager(props: ServerManagerProps) {
   const currentServer = props.servers.find((server) => server.id === props.currentServerId) || null;
   const currentServerWarning = currentServer?.unsupported
@@ -61,6 +85,29 @@ export function ServerManager(props: ServerManagerProps) {
   const serverIdInputRef = useRef<HTMLInputElement | null>(null);
   const serverNameInputRef = useRef<HTMLInputElement | null>(null);
   const hasSeededDefaultUrlRef = useRef(false);
+
+  const [serverStatus, setServerStatus] = useState<ServerRunStatus>("checking");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkStatus() {
+      if (!props.currentServerId) return;
+      try {
+        const result = await getServerStatus(props.currentServerId);
+        if (!cancelled) setServerStatus(result.status);
+      } catch {
+        if (!cancelled) setServerStatus("offline");
+      }
+    }
+
+    setServerStatus("checking");
+    checkStatus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [props.currentServerId]);
 
   useEffect(() => {
     if (!props.modalOpen) {
@@ -82,6 +129,11 @@ export function ServerManager(props: ServerManagerProps) {
 
   function onInputChange<K extends keyof SaveServerPayload>(key: K) {
     return (event: ChangeEvent<HTMLInputElement>) => update(key, event.target.value as SaveServerPayload[K]);
+  }
+
+  function statusLabel(): string {
+    if (serverStatus === "checking") return "...";
+    return props.t(serverStatus === "online" ? "server_status_online" : "server_status_offline");
   }
 
   return (
@@ -108,7 +160,13 @@ export function ServerManager(props: ServerManagerProps) {
         <div className="server-config-container card card-nested">
           <div className="server-main-row">
             <div className="server-main-left">
-              <span className="section-meta">{props.t("current_server_title")}</span>
+              <span className="section-meta" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <StatusDot status={serverStatus} />
+                {props.t("current_server_title")}
+                <span style={{ fontSize: "0.85em", opacity: 0.7 }}>
+                  ({statusLabel()})
+                </span>
+              </span>
               <div className="server-selector-wrapper">
                 {props.servers.length === 1 ? (
                   <div className="server-selector-static" aria-label={props.t("select_server")}>
@@ -130,9 +188,10 @@ export function ServerManager(props: ServerManagerProps) {
             {currentServer ? (
               <div id="current-server-actions" className="server-header-controls">
                 <div className="server-status-toggle">
-                  <label className="toggle-inline" title="Enable/Disable Server" style={{ margin: 0 }}>
+                  {/* Agent visibility toggle */}
+                  <label className="toggle-inline" title={props.t("server_agent_visibility_hint")} style={{ margin: 0 }}>
                     <span className={currentServer.enabled ? "status-on" : "status-off"}>
-                      {currentServer.enabled ? props.t("server_enabled") : props.t("server_disabled")}
+                      {currentServer.enabled ? props.t("server_agent_visible") : props.t("server_agent_hidden")}
                     </span>
                     <div className="toggle-switch">
                       <input
@@ -143,6 +202,7 @@ export function ServerManager(props: ServerManagerProps) {
                       <span className="slider" />
                     </div>
                   </label>
+
                   <button
                     type="button"
                     className="btn btn-secondary btn-icon server-action-btn"

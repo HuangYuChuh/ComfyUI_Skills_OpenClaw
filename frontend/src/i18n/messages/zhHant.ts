@@ -104,6 +104,9 @@ export const zhHantMessages = {
   delete_server_data_checkbox: "同時刪除該伺服器在 data/ 中的本地資料",
   server_enabled: "已啟用",
   server_disabled: "已停用",
+  server_agent_visible: "對 Agent 可見",
+  server_agent_hidden: "對 Agent 隱藏",
+  server_agent_visibility_hint: "控制 Agent 是否可以發現和使用此伺服器",
   select_server: "選擇伺服器",
   current_server_config: "伺服器配置",
   current_server_title: "當前伺服器",
@@ -174,4 +177,6 @@ export const zhHantMessages = {
   migration_status_review: "待確認",
   migration_status_new: "新增",
   migration_review_hint: "這個參數已發生變化，建議儲存前重新檢查。",
+  server_status_online: "在線",
+  server_status_offline: "離線",
 };

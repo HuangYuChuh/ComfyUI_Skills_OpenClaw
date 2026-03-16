@@ -141,6 +141,9 @@ export const enMessages = {
   delete_server_data_checkbox: "Also delete this server's local data in data/",
   server_enabled: "Enabled",
   server_disabled: "Disabled",
+  server_agent_visible: "Visible to Agent",
+  server_agent_hidden: "Hidden from Agent",
+  server_agent_visibility_hint: "Controls whether agents can see and use this server",
   select_server: "Select Server",
   current_server_config: "Server Config",
   current_server_title: "Current Server",
@@ -213,4 +216,6 @@ export const enMessages = {
   migration_status_review: "Review",
   migration_status_new: "New",
   migration_review_hint: "This parameter changed and should be reviewed before saving.",
+  server_status_online: "Online",
+  server_status_offline: "Offline",
 };

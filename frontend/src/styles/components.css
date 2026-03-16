@@ -207,6 +207,11 @@
   color: var(--text-main);
 }
 
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 .server-delete-btn {
   border-color: rgba(239, 68, 68, 0.42);
   color: #fda4af;

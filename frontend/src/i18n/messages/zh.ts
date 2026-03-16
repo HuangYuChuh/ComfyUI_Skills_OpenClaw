@@ -141,6 +141,9 @@ export const zhMessages = {
   delete_server_data_checkbox: "同时删除该服务器在 data/ 中的本地数据",
   server_enabled: "已启用",
   server_disabled: "已禁用",
+  server_agent_visible: "对 Agent 可见",
+  server_agent_hidden: "对 Agent 隐藏",
+  server_agent_visibility_hint: "控制 Agent 是否可以发现和使用此服务器",
   select_server: "选择服务器",
   current_server_config: "服务器配置",
   current_server_title: "当前服务器",
@@ -213,4 +216,6 @@ export const zhMessages = {
   migration_status_review: "待确认",
   migration_status_new: "新增",
   migration_review_hint: "这个参数发生了变化，保存前建议重新检查。",
+  server_status_online: "在线",
+  server_status_offline: "离线",
 };

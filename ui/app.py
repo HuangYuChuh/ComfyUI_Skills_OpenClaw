@@ -45,6 +45,7 @@ except ImportError:
     from services import UIStorageService
     from settings import DEFAULT_HOST, DEFAULT_PORT, STATIC_DIR, ensure_runtime_dirs
 
+from shared.health import check_server_health
 from shared.transfer_bundle import (
     BundleValidationError,
     apply_bundle_import,
@@ -130,6 +131,18 @@ def create_app() -> FastAPI:
             return {"status": "success"}
         except FileNotFoundError as e:
             raise HTTPException(status_code=404, detail=str(e)) from e
+
+    # ── Server Health ────────────────────────────────────────────
+
+    @app.get("/api/servers/{server_id}/status")
+    async def server_status(server_id: str) -> dict:
+        servers = service.list_servers()
+        server = next((s for s in servers if s["id"] == server_id), None)
+        if server is None:
+            raise HTTPException(status_code=404, detail=f"Server '{server_id}' not found")
+        url = server.get("url", "")
+        online = check_server_health(url) if url else False
+        return {"server_id": server_id, "status": "online" if online else "offline", "url": url}
 
     # ── Workflow CRUD ─────────────────────────────────────────────
 

@@ -36,3 +36,8 @@ export function deleteServer(serverId: string, deleteData: boolean) {
     method: "DELETE",
   });
 }
+
+export function getServerStatus(serverId: string) {
+  return requestJson<{ server_id: string; status: "online" | "offline"; url: string }>(`/api/servers/${encodeURIComponent(serverId)}/status`);
+}
+
