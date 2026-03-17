@@ -76,6 +76,40 @@ def _add_auth(req: urllib.request.Request, auth: str) -> None:
         req.add_header("Authorization", auth)
 
 
+def format_node_errors(node_errors: dict) -> str:
+    """将 ComfyUI node_errors 字典格式化为可读文本。"""
+    lines = []
+    for node_id, errors in node_errors.items():
+        if isinstance(errors, dict):
+            class_type = errors.get("class_type", node_id)
+            error_list = errors.get("errors", [])
+            for err in error_list:
+                msg = err.get("message", str(err)) if isinstance(err, dict) else str(err)
+                lines.append(f"  Node {node_id} ({class_type}): {msg}")
+        elif isinstance(errors, list):
+            for err in errors:
+                lines.append(f"  Node {node_id}: {err}")
+        else:
+            lines.append(f"  Node {node_id}: {errors}")
+    return "\n".join(lines) if lines else ""
+
+
+def format_execution_errors(messages: list) -> str:
+    """将 ComfyUI history status.messages 格式化为可读文本。"""
+    lines = []
+    for msg in messages:
+        if isinstance(msg, (list, tuple)) and len(msg) >= 2:
+            msg_type, msg_data = msg[0], msg[1]
+            if isinstance(msg_data, dict) and msg_type == "execution_error":
+                node_id = msg_data.get("node_id", "?")
+                node_type = msg_data.get("node_type", "?")
+                exception_message = msg_data.get("exception_message", "Unknown error")
+                lines.append(f"  Node {node_id} ({node_type}): {exception_message}")
+    if lines:
+        return "Execution failed:\n" + "\n".join(lines)
+    return "Execution failed (no output produced)."
+
+
 def queue_prompt(server_url, prompt_workflow, auth=""):
     data = json.dumps({"prompt": prompt_workflow, "client_id": str(uuid.uuid4())}).encode('utf-8')
     req = urllib.request.Request(f"{server_url}/prompt", data=data, headers={'Content-Type': 'application/json'})
@@ -83,9 +117,14 @@ def queue_prompt(server_url, prompt_workflow, auth=""):
     try:
         with urllib.request.urlopen(req) as response:
             return json.loads(response.read())
+    except urllib.error.HTTPError as e:
+        try:
+            body = json.loads(e.read())
+        except Exception:
+            body = None
+        return body or {"error": f"HTTP {e.code} from ComfyUI"}
     except urllib.error.URLError as e:
-        print(f"Error connecting to ComfyUI ({server_url}): {e}")
-        return None
+        return {"error": f"Cannot connect to ComfyUI ({server_url}): {e.reason}"}
 
 
 def get_history(server_url, prompt_id, auth=""):
@@ -198,7 +237,13 @@ def main():
     # 6. Queue Prompt
     queue_res = queue_prompt(server_url, workflow_data, auth=server_auth)
     if not queue_res or 'prompt_id' not in queue_res:
-        print(json.dumps({"error": "Failed to queue prompt to ComfyUI."}))
+        error_msg = "Failed to queue prompt to ComfyUI."
+        if queue_res:
+            error_msg = queue_res.get("error", error_msg)
+            node_errors = queue_res.get("node_errors", {})
+            if node_errors:
+                error_msg += "\n" + format_node_errors(node_errors)
+        print(json.dumps({"error": error_msg}))
         return
 
     prompt_id = queue_res['prompt_id']
@@ -211,7 +256,15 @@ def main():
             break
         time.sleep(2)
 
-    # 8. Extract images
+    # 8. Check for execution errors
+    status_info = job_info.get("status", {})
+    if status_info.get("status_str") == "error":
+        messages = status_info.get("messages", [])
+        error_msg = format_execution_errors(messages)
+        print(json.dumps({"error": error_msg}))
+        return
+
+    # 9. Extract images
     if 'outputs' not in job_info:
         print(json.dumps({"error": "No outputs found in job execution."}))
         return
