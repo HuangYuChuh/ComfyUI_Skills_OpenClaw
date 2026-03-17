@@ -207,6 +207,7 @@ cp config.example.json config.json
       "id": "local",                  // 服务器 ID，后面会作为目录名和工作流调用前缀
       "name": "Local",                // 服务器显示名称
       "url": "http://127.0.0.1:8188", // ComfyUI 服务地址
+      "auth": "",                     // 可选：鉴权令牌，填入 Authorization header 的值（如 "Bearer your-token"）
       "enabled": true,                // 是否启用这个服务器
       "output_dir": "./outputs"       // 图片输出目录
     }
@@ -332,6 +333,7 @@ python scripts/comfyui_client.py \
 ### 核心概念
 - **双层控制开关**：`服务器` 和 `独立工作流` 均有各自的开启/关闭状态。OpenClaw 只能发现**两者均开启**的工作流。
 - **命名空间组合**：OpenClaw 识别工作流的唯一标识为 `<server_id>/<workflow_id>` 的复合格式（例如：`local/test` 与 `remote/test`）。
+- **远程鉴权**：如果远程服务器通过反向代理要求鉴权，可以在服务器配置中设置 `auth` 字段，填入 `Authorization` header 的值（如 `Bearer your-token`）。令牌仅存储在本地 `config.json` 中（已被 gitignore），不会上传。在 UI 中可以使用「测试连接」按钮验证访问是否正常。
 
 ### 命令行工具配置
 在无 GUI 的 Linux 机器部署时，可使用内置的 CLI 工具（`scripts/server_manager.py`）进行管理：
@@ -392,7 +394,7 @@ python scripts/transfer_manager.py import --input ./openclaw-skill-export.json
 - [x] 多语言界面（英文 / 简体中文 / 繁体中文）
 - [x] 上传新版本前先预览参数变化
 - [x] 工作流升级时支持参数迁移
-- [ ] 远程 ComfyUI 服务器鉴权支持
+- [x] 远程 ComfyUI 服务器鉴权支持
 - [ ] 执行历史记录（参数 + 结果追溯）
 - [ ] 任务完成后 Webhook 回调通知
 - [ ] 定时执行工作流（cron 风格）

@@ -211,6 +211,7 @@ Configure the server first. Minimal example:
       "id": "local",                  // Server ID, also used as the directory name and workflow prefix
       "name": "Local",                // Display name
       "url": "http://127.0.0.1:8188", // ComfyUI server URL
+      "auth": "",                     // Optional: Authorization header value (e.g. "Bearer your-token")
       "enabled": true,                // Whether this server is enabled
       "output_dir": "./outputs"       // Image output directory
     }
@@ -335,6 +336,7 @@ You can configure multiple ComfyUI servers so OpenClaw can route jobs across dif
 ### Core Concepts
 - **Dual-Layer Toggles**: Both *servers* and *individual workflows* can be enabled or disabled. A workflow is only visible to the AI agent if **both** the server and the workflow itself are enabled.
 - **Namespacing**: Workflows are identified with a composite ID: `<server_id>/<workflow_id>` (e.g., `local/sdxl-base` vs. `remote-a100/sdxl-base`).
+- **Authentication**: Remote servers behind a reverse proxy can require an auth token. Set the `auth` field in the server config to the `Authorization` header value (e.g. `Bearer your-token`). The token is stored locally in `config.json` (gitignored) and never leaves your machine. Use the "Test Connection" button in the UI to verify access before saving.
 
 ### CLI Configuration
 On headless machines, you can use the built-in CLI tool `scripts/server_manager.py`:
@@ -395,7 +397,7 @@ Default import behavior:
 - [x] Multilingual UI (English, Simplified Chinese, Traditional Chinese)
 - [x] Upgrade preview before applying a new workflow version
 - [x] Parameter migration support when upgrading a workflow
-- [ ] Authentication support for remote ComfyUI servers
+- [x] Authentication support for remote ComfyUI servers
 - [ ] Execution history with parameter and result tracking
 - [ ] Webhook callbacks on task completion
 - [ ] Scheduled workflow execution (cron-style)
