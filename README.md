@@ -405,7 +405,7 @@ Default import behavior:
 - [ ] Workflow version history and rollback
 - [x] Better schema validation before queueing
 - [x] Richer error reporting from ComfyUI node errors
-- [ ] Optional batch generation / multi-seed helpers
+
 
 ---
 
