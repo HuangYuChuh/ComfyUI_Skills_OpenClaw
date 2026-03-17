@@ -47,7 +47,7 @@ except ImportError:
     from settings import DEFAULT_HOST, DEFAULT_PORT, STATIC_DIR, ensure_runtime_dirs
 
 from shared.frontend_update import check_frontend_update
-from shared.health import check_server_health
+from shared.health import check_server_health, test_server_connection
 from shared.transfer_bundle import (
     BundleValidationError,
     apply_bundle_import,
@@ -146,6 +146,18 @@ def create_app() -> FastAPI:
         auth = server.get("auth", "")
         online = (await asyncio.to_thread(check_server_health, url, auth)) if url else False
         return {"server_id": server_id, "status": "online" if online else "offline", "url": url}
+
+    @app.post("/api/servers/test-connection")
+    async def test_connection(body: dict) -> dict:
+        url = str(body.get("url") or "").strip()
+        auth = str(body.get("auth") or "").strip()
+        if not url:
+            return {"status": "offline", "message": "URL is empty"}
+        ok, message = await asyncio.to_thread(test_server_connection, url, auth)
+        result: dict = {"status": "online" if ok else "offline"}
+        if not ok:
+            result["message"] = message
+        return result
 
     # ── Workflow CRUD ─────────────────────────────────────────────
 

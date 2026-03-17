@@ -93,6 +93,7 @@ class UIStorageService:
             "id": server_id,
             "name": server_name,
             "url": str(server.get("url") or "").strip(),
+            "auth": str(server.get("auth") or "").strip(),
             "enabled": bool(server.get("enabled", True)),
             "output_dir": str(server.get("output_dir") or "./outputs").strip() or "./outputs",
             "workflow_order": [],
@@ -112,7 +113,7 @@ class UIStorageService:
         config = self.get_config()
         for s in config.get("servers", []):
             if s.get("id") == server_id:
-                for key in ("name", "url", "enabled", "output_dir"):
+                for key in ("name", "url", "auth", "enabled", "output_dir"):
                     if key in updates:
                         s[key] = updates[key]
                 self.save_config(config)
@@ -370,6 +371,7 @@ class UIStorageService:
             "id": str(server.get("id") or "").strip(),
             "name": str(server.get("name") or "").strip(),
             "url": str(server.get("url") or "").strip(),
+            "auth": str(server.get("auth") or ""),
             "enabled": bool(server.get("enabled", True)),
             "output_dir": str(server.get("output_dir") or "./outputs").strip() or "./outputs",
             "unsupported": unsupported,
