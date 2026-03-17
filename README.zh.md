@@ -400,7 +400,7 @@ python scripts/transfer_manager.py import --input ./openclaw-skill-export.json
 - [ ] 定时执行工作流（cron 风格）
 - [ ] 引导式工作流改写模板（Rewrite Recipe）
 - [ ] 支持工作流版本历史和回滚
-- [ ] 增强提交前参数校验
+- [x] 增强提交前参数校验
 - [x] 更清晰展示 ComfyUI 返回的节点错误
 - [ ] 支持批量多 seed 生成
 

@@ -403,7 +403,7 @@ Default import behavior:
 - [ ] Scheduled workflow execution (cron-style)
 - [ ] Guided workflow rewrite recipes for agents
 - [ ] Workflow version history and rollback
-- [ ] Better schema validation before queueing
+- [x] Better schema validation before queueing
 - [x] Richer error reporting from ComfyUI node errors
 - [ ] Optional batch generation / multi-seed helpers
 
