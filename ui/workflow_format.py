@@ -43,15 +43,6 @@ def _get_type_guess(value: Any) -> str:
 
 
 def _get_auto_mapping(node_class: str, field: str, node_id: str) -> dict[str, Any]:
-    if field in {"text", "prompt"}:
-        return {"exposed": True, "required": True, "name": f"prompt_{node_id}", "description": "Text prompt"}
-    if field == "seed":
-        return {"exposed": True, "required": False, "name": f"seed_{node_id}", "description": "Random seed"}
-    if field in {"width", "height", "batch_size", "size", "num", "num_images", "max_images"}:
-        return {"exposed": True, "required": False, "name": f"{field}_{node_id}", "description": f"Workflow parameter: {field}"}
-    if field == "filename_prefix":
-        return {"exposed": True, "required": False, "name": f"filename_prefix_{node_id}", "description": "Output file prefix"}
-
     if "KSampler" in node_class:
         if field == "seed":
             return {"exposed": True, "required": False, "name": field, "description": "Random seed (for reproducibility)"}
@@ -77,6 +68,15 @@ def _get_auto_mapping(node_class: str, field: str, node_id: str) -> dict[str, An
             return {"exposed": True, "required": False, "name": field, "description": "Random seed"}
         if field == "num":
             return {"exposed": True, "required": False, "name": field, "description": "Number of images to generate"}
+
+    if field in {"text", "prompt"}:
+        return {"exposed": True, "required": True, "name": f"prompt_{node_id}", "description": "Text prompt"}
+    if field == "seed":
+        return {"exposed": True, "required": False, "name": f"seed_{node_id}", "description": "Random seed"}
+    if field in {"width", "height", "batch_size", "size", "num", "num_images", "max_images"}:
+        return {"exposed": True, "required": False, "name": f"{field}_{node_id}", "description": f"Workflow parameter: {field}"}
+    if field == "filename_prefix":
+        return {"exposed": True, "required": False, "name": f"filename_prefix_{node_id}", "description": "Output file prefix"}
 
     return {"exposed": False, "required": False, "name": field, "description": ""}
 
