@@ -20,6 +20,7 @@ For the upstream ComfyUI local server routes that back this skill, see [docs/com
 - Set up parameters in three steps: upload a workflow, pick the nodes to expose, then name and describe each parameter
 - Input nodes are detected automatically from the workflow — no need to hunt through the JSON by hand
 - When you update a workflow, preview the parameter changes first and carry over existing mappings
+- Supports bulk workflow import from a ComfyUI server or local JSON files
 
 ### Multi-Server Management
 - Manage multiple ComfyUI servers and route jobs to different machines as needed
@@ -28,7 +29,6 @@ For the upstream ComfyUI local server routes that back this skill, see [docs/com
 - Set a per-server output directory and choose a default server
 
 ### Web UI
-- Frontend source lives in a [separate repository](https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw-frontend); run `scripts/update_frontend.sh` to pull the latest build
 - A local web interface for managing all servers and workflows in one place
 - Reorder workflows by dragging, or sort by name, status, or custom order
 - Search and filter workflows across all servers
@@ -211,7 +211,6 @@ Configure the server first. Minimal example:
       "id": "local",                  // Server ID, also used as the directory name and workflow prefix
       "name": "Local",                // Display name
       "url": "http://127.0.0.1:8188", // ComfyUI server URL
-      "auth": "",                     // Optional: Authorization header value (e.g. "Bearer your-token")
       "enabled": true,                // Whether this server is enabled
       "output_dir": "./outputs"       // Image output directory
     }
@@ -336,7 +335,6 @@ You can configure multiple ComfyUI servers so OpenClaw can route jobs across dif
 ### Core Concepts
 - **Dual-Layer Toggles**: Both *servers* and *individual workflows* can be enabled or disabled. A workflow is only visible to the AI agent if **both** the server and the workflow itself are enabled.
 - **Namespacing**: Workflows are identified with a composite ID: `<server_id>/<workflow_id>` (e.g., `local/sdxl-base` vs. `remote-a100/sdxl-base`).
-- **Authentication**: Remote servers behind a reverse proxy can require an auth token. Set the `auth` field in the server config to the `Authorization` header value (e.g. `Bearer your-token`). The token is stored locally in `config.json` (gitignored) and never leaves your machine. Use the "Test Connection" button in the UI to verify access before saving.
 
 ### CLI Configuration
 On headless machines, you can use the built-in CLI tool `scripts/server_manager.py`:
@@ -390,22 +388,17 @@ Default import behavior:
 
 ## Roadmap
 
-- [x] Split frontend source into a standalone repository
-- [x] Server health monitoring with live UI indicators
-- [x] Configuration import/export for cross-machine migration
-- [x] First-class support for OpenClaw, Claude Code, and Codex
-- [x] Multilingual UI (English, Simplified Chinese, Traditional Chinese)
+- [ ] Workflow version history and rollback
 - [x] Upgrade preview before applying a new workflow version
 - [x] Parameter migration support when upgrading a workflow
 - [x] Authentication support for remote ComfyUI servers
+- [x] Better schema validation before queueing
+- [x] Richer error reporting from ComfyUI node errors
+- [ ] Optional batch generation / multi-seed helpers
 - [ ] Execution history with parameter and result tracking
 - [ ] Webhook callbacks on task completion
 - [ ] Scheduled workflow execution (cron-style)
 - [ ] Guided workflow rewrite recipes for agents
-- [ ] Workflow version history and rollback
-- [x] Better schema validation before queueing
-- [x] Richer error reporting from ComfyUI node errors
-
 
 ---
 
@@ -432,7 +425,6 @@ ComfyUI_Skills_OpenClaw/
 │   ├── server_manager.py       # CLI tool for managing servers
 │   ├── registry.py             # List workflows + exposed parameters for agent
 │   ├── comfyui_client.py       # Inject args, queue prompt, poll history, download images
-│   ├── update_frontend.sh      # Download latest frontend build from GitHub Release
 │   └── shared/                 # Shared config & JSON utils (reused across scripts)
 │       ├── config.py
 │       ├── json_utils.py
@@ -442,11 +434,12 @@ ComfyUI_Skills_OpenClaw/
 │   ├── open_ui.py              # Agent-friendly UI launcher
 │   ├── services.py             # Business logic (workflow CRUD)
 │   ├── models.py               # Pydantic request/response models
+│   ├── json_store.py           # Low-level JSON file read/write helpers
 │   ├── settings.py             # App-level settings
 │   ├── run_ui.sh               # Start UI (macOS/Linux)
 │   ├── run_ui.command          # Double-click launcher (macOS)
 │   ├── run_ui.bat              # Launcher (Windows)
-│   └── static/                 # Pre-built frontend assets
+│   └── static/                 # Modular ES6 frontend (HTML/CSS/JS)
 └── outputs/
     └── .gitkeep
 ```

@@ -1,11 +1,12 @@
 ---
 name: comfyui-skill-openclaw
 description: |
-  Generate images utilizing ComfyUI's powerful node-based workflow capabilities. Supports dynamically loading multiple pre-configured generation workflows from different instances and their corresponding parameter mappings, converting natural language into parameters, driving local or remote ComfyUI services, and ultimately returning the images to the target client.
+  Generate images utilizing ComfyUI's powerful node-based workflow capabilities. Supports dynamically loading multiple pre-configured generation workflows from different instances and their corresponding parameter mappings, importing saved workflows in bulk from ComfyUI or local JSON files, converting natural language into parameters, driving local or remote ComfyUI services, and ultimately returning the images to the target client.
   
   **Use this Skill when:**
   (1) The user requests to "generate an image", "draw a picture", or "execute a ComfyUI workflow".
   (2) The user has specific stylistic, character, or scene requirements for image generation.
+  (3) The user asks you to import, register, sync, or configure saved ComfyUI workflows for later reuse.
 ---
 
 # ComfyUI Agent SKILL
@@ -55,9 +56,17 @@ This returns JSON with `"status": "online"` or `"status": "offline"`.
 
 **Recommended agent flow:** Before Step 3 (Trigger Image Generation), run a server status check. If offline, ask the user to start ComfyUI and retry once it is online.
 
-### Step 0: AI-Native Workflow Auto-Configuration (Optional)
+### Step 0: Workflow Onboarding and Import (Optional)
 
-If the user provides you with a new ComfyUI workflow JSON (API format) and asks you to "configure it" or "add it":
+Use the manager UI/API when the user wants to register workflows into this skill instead of running them immediately.
+
+- For bulk import from ComfyUI `/userdata`, local files, manager API routes, and import result semantics, read [`references/workflow-import.md`](./references/workflow-import.md).
+- Prefer the bulk import flow when the user wants to sync many saved workflows at once.
+- Use single-workflow configuration only when the user gives one workflow and wants a targeted setup.
+
+#### Single-workflow auto-configuration
+
+If the user provides you with one new ComfyUI workflow JSON (API format) and asks you to "configure it" or "add it":
 1. Check the existing server configurations or default to `local`.
 2. Save the provided JSON file to `./data/<server_id>/workflows/<new_workflow_id>.json`.
 3. Analyze the JSON structure (look for `inputs` inside node definitions, e.g., `KSampler`'s `seed`, `CLIPTextEncode`'s `text` for positive/negative prompts, `EmptyLatentImage` for width/height).
