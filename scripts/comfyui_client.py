@@ -110,6 +110,56 @@ def format_execution_errors(messages: list) -> str:
     return "Execution failed (no output produced)."
 
 
+def validate_and_coerce_params(input_args: dict, parameters: dict) -> tuple[dict, list[str]]:
+    """Validate input_args against schema parameters and coerce types.
+
+    Returns (coerced_args, errors) where coerced_args contains type-converted
+    values and defaults applied, and errors is a list of validation messages.
+    """
+    errors = []
+    coerced = {}
+
+    # Check required parameters are present
+    for key, param in parameters.items():
+        if param.get("required", False) and key not in input_args:
+            if "default" in param:
+                coerced[key] = param["default"]
+            else:
+                errors.append(f"Missing required parameter '{key}'")
+
+    # Validate and coerce provided values
+    for key, value in input_args.items():
+        if key not in parameters:
+            coerced[key] = value
+            continue
+
+        param = parameters[key]
+        param_type = param.get("type", "string")
+
+        try:
+            if param_type == "int":
+                value = int(value)
+            elif param_type == "float":
+                value = float(value)
+            elif param_type == "boolean":
+                if isinstance(value, str):
+                    value = value.lower() not in ("false", "0", "no", "")
+                else:
+                    value = bool(value)
+        except (ValueError, TypeError):
+            errors.append(f"Parameter '{key}': cannot convert {value!r} to {param_type}")
+            continue
+
+        coerced[key] = value
+
+    # Apply defaults for optional parameters not provided
+    for key, param in parameters.items():
+        if key not in coerced and "default" in param:
+            coerced[key] = param["default"]
+
+    return coerced, errors
+
+
 def queue_prompt(server_url, prompt_workflow, auth=""):
     data = json.dumps({"prompt": prompt_workflow, "client_id": str(uuid.uuid4())}).encode('utf-8')
     req = urllib.request.Request(f"{server_url}/prompt", data=data, headers={'Content-Type': 'application/json'})
@@ -216,25 +266,23 @@ def main():
 
     parameters = schema_data.get("parameters", {})
 
-    # 5. Map parameters to workflow nodes
-    for key, value in input_args.items():
+    # 5. Validate parameters against schema
+    coerced_args, validation_errors = validate_and_coerce_params(input_args, parameters)
+    if validation_errors:
+        print(json.dumps({"error": "Parameter validation failed:\n" + "\n".join(f"  {e}" for e in validation_errors)}))
+        return
+
+    # 6. Map parameters to workflow nodes
+    for key, value in coerced_args.items():
         if key in parameters:
             node_id = str(parameters[key]["node_id"])
             field = parameters[key]["field"]
             if node_id in workflow_data and "inputs" in workflow_data[node_id]:
-                param_type = parameters[key].get("type", "string")
-                if param_type == "int":
-                    value = int(value)
-                elif param_type == "float":
-                    value = float(value)
-                elif param_type == "boolean":
-                    value = bool(value)
-
                 workflow_data[node_id]["inputs"][field] = value
 
-    output_prefix = get_output_prefix(workflow_id, input_args, parameters)
+    output_prefix = get_output_prefix(workflow_id, coerced_args, parameters)
 
-    # 6. Queue Prompt
+    # 7. Queue Prompt
     queue_res = queue_prompt(server_url, workflow_data, auth=server_auth)
     if not queue_res or 'prompt_id' not in queue_res:
         error_msg = "Failed to queue prompt to ComfyUI."
@@ -248,7 +296,7 @@ def main():
 
     prompt_id = queue_res['prompt_id']
 
-    # 7. Poll for completion via history
+    # 8. Poll for completion via history
     while True:
         history = get_history(server_url, prompt_id, auth=server_auth)
         if history and prompt_id in history:
@@ -256,7 +304,7 @@ def main():
             break
         time.sleep(2)
 
-    # 8. Check for execution errors
+    # 9. Check for execution errors
     status_info = job_info.get("status", {})
     if status_info.get("status_str") == "error":
         messages = status_info.get("messages", [])
@@ -264,7 +312,7 @@ def main():
         print(json.dumps({"error": error_msg}))
         return
 
-    # 9. Extract images
+    # 10. Extract images
     if 'outputs' not in job_info:
         print(json.dumps({"error": "No outputs found in job execution."}))
         return
