@@ -9,6 +9,7 @@ class ServerModel(BaseModel):
     id: str = Field(min_length=1)
     name: str = Field(min_length=1)
     url: str = Field(min_length=1)
+    auth: str = ""
     enabled: bool = True
     output_dir: str = "./outputs"
 
@@ -56,6 +57,7 @@ class CreateServerModel(BaseModel):
     id: str | None = None
     name: str = Field(min_length=1)
     url: str = Field(min_length=1)
+    auth: str = ""
     enabled: bool = True
     output_dir: str = "./outputs"
 

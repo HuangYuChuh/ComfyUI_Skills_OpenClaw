@@ -71,9 +71,15 @@ def build_output_filename(prefix: str, timestamp: str, index: int, original_file
     return f"{prefix}_{timestamp}_{index:02d}{ext}"
 
 
-def queue_prompt(server_url, prompt_workflow):
+def _add_auth(req: urllib.request.Request, auth: str) -> None:
+    if auth:
+        req.add_header("Authorization", auth)
+
+
+def queue_prompt(server_url, prompt_workflow, auth=""):
     data = json.dumps({"prompt": prompt_workflow, "client_id": str(uuid.uuid4())}).encode('utf-8')
     req = urllib.request.Request(f"{server_url}/prompt", data=data, headers={'Content-Type': 'application/json'})
+    _add_auth(req, auth)
     try:
         with urllib.request.urlopen(req) as response:
             return json.loads(response.read())
@@ -82,8 +88,9 @@ def queue_prompt(server_url, prompt_workflow):
         return None
 
 
-def get_history(server_url, prompt_id):
+def get_history(server_url, prompt_id, auth=""):
     req = urllib.request.Request(f"{server_url}/history/{prompt_id}")
+    _add_auth(req, auth)
     try:
         with urllib.request.urlopen(req) as response:
             return json.loads(response.read())
@@ -91,10 +98,11 @@ def get_history(server_url, prompt_id):
         return None
 
 
-def get_image(server_url, filename, subfolder, folder_type):
+def get_image(server_url, filename, subfolder, folder_type, auth=""):
     data = {"filename": filename, "subfolder": subfolder, "type": folder_type}
     url_values = urllib.parse.urlencode(data)
     req = urllib.request.Request(f"{server_url}/view?{url_values}")
+    _add_auth(req, auth)
     try:
         with urllib.request.urlopen(req) as response:
             return response.read()
@@ -130,6 +138,7 @@ def main():
         return
 
     server_url = server.get("url", "http://127.0.0.1:8188")
+    server_auth = server.get("auth", "")
     output_dir = server.get("output_dir", os.path.join(BASE_DIR, "outputs"))
 
     # Resolve relative output_dir
@@ -187,7 +196,7 @@ def main():
     output_prefix = get_output_prefix(workflow_id, input_args, parameters)
 
     # 6. Queue Prompt
-    queue_res = queue_prompt(server_url, workflow_data)
+    queue_res = queue_prompt(server_url, workflow_data, auth=server_auth)
     if not queue_res or 'prompt_id' not in queue_res:
         print(json.dumps({"error": "Failed to queue prompt to ComfyUI."}))
         return
@@ -196,7 +205,7 @@ def main():
 
     # 7. Poll for completion via history
     while True:
-        history = get_history(server_url, prompt_id)
+        history = get_history(server_url, prompt_id, auth=server_auth)
         if history and prompt_id in history:
             job_info = history[prompt_id]
             break
@@ -218,7 +227,7 @@ def main():
                 subfolder = image.get('subfolder', '')
                 folder_type = image.get('type', 'output')
 
-                img_data = get_image(server_url, filename, subfolder, folder_type)
+                img_data = get_image(server_url, filename, subfolder, folder_type, auth=server_auth)
                 if img_data:
                     local_filename = build_output_filename(
                         output_prefix,
