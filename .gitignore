@@ -43,6 +43,9 @@ eggs/
 # Claude Code
 .claude/
 
+# Standalone frontend source repository checked out locally
+frontend/
+
 # Jekyll local preview
 .bundle/
 vendor/bundle/
