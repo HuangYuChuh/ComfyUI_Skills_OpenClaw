@@ -71,7 +71,7 @@ class GitUpdateProvider(UpdateProvider):
     def update(self) -> dict:
         commit_before = self._local_commit()
         try:
-            r = self._run(["git", "pull", "--ff-only"], timeout=60)
+            r = self._run(["git", "fetch", "origin", "main:main"], timeout=60)
             if r.returncode != 0:
                 msg = r.stderr.strip() or r.stdout.strip()
                 logger.error("git pull failed: %s", msg)
