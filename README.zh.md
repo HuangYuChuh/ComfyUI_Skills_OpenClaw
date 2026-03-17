@@ -402,7 +402,7 @@ python scripts/transfer_manager.py import --input ./openclaw-skill-export.json
 - [ ] 支持工作流版本历史和回滚
 - [x] 增强提交前参数校验
 - [x] 更清晰展示 ComfyUI 返回的节点错误
-- [ ] 支持批量多 seed 生成
+
 
 ---
 
