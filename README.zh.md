@@ -25,6 +25,8 @@
 - 可以为每台服务器单独设置输出目录，并指定默认服务器
 
 ### 管理界面
+- 前端源码位于[独立仓库](https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw-frontend)；运行 `scripts/update_frontend.sh` 可拉取最新构建
+- 运行时更新检查会优先走主仓库 git 更新；如果 git 更新不可用，会回退为从前端 release 更新 `ui/static/`
 - 提供本地 Web 界面，统一管理所有服务器和工作流
 - 支持拖拽调整工作流顺序，也可按名称、启用状态等方式排序
 - 可跨服务器搜索和筛选工作流
