@@ -16,6 +16,7 @@
 - 三步完成参数配置：上传工作流 → 选择要暴露的节点 → 设定参数名称和说明
 - 上传工作流后自动识别可配置的输入节点，不需要手动逐个查找
 - 工作流更新时可以先预览参数变化，已有的映射关系会自动迁移
+- 支持从 ComfyUI 服务器或本地 JSON 文件批量导入工作流
 
 ### 多服务器管理
 - 同时管理多台 ComfyUI 服务器，按需把生图任务分发到不同机器
@@ -24,7 +25,6 @@
 - 可以为每台服务器单独设置输出目录，并指定默认服务器
 
 ### 管理界面
-- 前端源码位于[独立仓库](https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw-frontend)；运行 `scripts/update_frontend.sh` 可拉取最新构建
 - 提供本地 Web 界面，统一管理所有服务器和工作流
 - 支持拖拽调整工作流顺序，也可按名称、启用状态等方式排序
 - 可跨服务器搜索和筛选工作流
@@ -207,7 +207,6 @@ cp config.example.json config.json
       "id": "local",                  // 服务器 ID，后面会作为目录名和工作流调用前缀
       "name": "Local",                // 服务器显示名称
       "url": "http://127.0.0.1:8188", // ComfyUI 服务地址
-      "auth": "",                     // 可选：鉴权令牌，填入 Authorization header 的值（如 "Bearer your-token"）
       "enabled": true,                // 是否启用这个服务器
       "output_dir": "./outputs"       // 图片输出目录
     }
@@ -333,7 +332,6 @@ python scripts/comfyui_client.py \
 ### 核心概念
 - **双层控制开关**：`服务器` 和 `独立工作流` 均有各自的开启/关闭状态。OpenClaw 只能发现**两者均开启**的工作流。
 - **命名空间组合**：OpenClaw 识别工作流的唯一标识为 `<server_id>/<workflow_id>` 的复合格式（例如：`local/test` 与 `remote/test`）。
-- **远程鉴权**：如果远程服务器通过反向代理要求鉴权，可以在服务器配置中设置 `auth` 字段，填入 `Authorization` header 的值（如 `Bearer your-token`）。令牌仅存储在本地 `config.json` 中（已被 gitignore），不会上传。在 UI 中可以使用「测试连接」按钮验证访问是否正常。
 
 ### 命令行工具配置
 在无 GUI 的 Linux 机器部署时，可使用内置的 CLI 工具（`scripts/server_manager.py`）进行管理：
@@ -387,22 +385,17 @@ python scripts/transfer_manager.py import --input ./openclaw-skill-export.json
 
 ## 路线图
 
-- [x] 前端源码分离到独立仓库
-- [x] 服务器健康状态检测与 UI 指示器
-- [x] 配置导入导出，支持跨机器迁移
-- [x] 多 Agent 支持（OpenClaw / Claude Code / Codex）
-- [x] 多语言界面（英文 / 简体中文 / 繁体中文）
+- [ ] 支持工作流版本历史和回滚
 - [x] 上传新版本前先预览参数变化
 - [x] 工作流升级时支持参数迁移
 - [x] 远程 ComfyUI 服务器鉴权支持
+- [x] 增强提交前参数校验
+- [x] 更清晰展示 ComfyUI 返回的节点错误
+- [ ] 支持批量多 seed 生成
 - [ ] 执行历史记录（参数 + 结果追溯）
 - [ ] 任务完成后 Webhook 回调通知
 - [ ] 定时执行工作流（cron 风格）
 - [ ] 引导式工作流改写模板（Rewrite Recipe）
-- [ ] 支持工作流版本历史和回滚
-- [x] 增强提交前参数校验
-- [x] 更清晰展示 ComfyUI 返回的节点错误
-
 
 ---
 
@@ -429,7 +422,6 @@ ComfyUI_Skills_OpenClaw/
 │   ├── server_manager.py       # 管理多服务器配置的 CLI 工具
 │   ├── registry.py             # 列出可用工作流及参数
 │   ├── comfyui_client.py       # 注入参数、提交任务、轮询完成、下载图片
-│   ├── update_frontend.sh      # 从 GitHub Release 下载最新前端构建
 │   └── shared/                 # 跨脚本共用的配置与 JSON 工具
 │       ├── config.py
 │       ├── json_utils.py
@@ -439,11 +431,12 @@ ComfyUI_Skills_OpenClaw/
 │   ├── open_ui.py              # 供 Agent 调用的 UI 启动入口
 │   ├── services.py             # 业务逻辑（工作流增删改查）
 │   ├── models.py               # Pydantic 请求/响应模型
+│   ├── json_store.py           # JSON 文件读写封装
 │   ├── settings.py             # 应用级配置
 │   ├── run_ui.sh               # 启动脚本（macOS/Linux）
 │   ├── run_ui.command          # macOS 双击启动
 │   ├── run_ui.bat              # Windows 启动
-│   └── static/                 # 预构建的前端资源
+│   └── static/                 # 模块化 ES6 前端（HTML/CSS/JS）
 └── outputs/
     └── .gitkeep
 ```

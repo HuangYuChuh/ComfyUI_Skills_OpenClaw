@@ -21,6 +21,7 @@ try:
     from .models import (
         ConfigModel,
         CreateServerModel,
+        LocalWorkflowImportModel,
         SchemaModel,
         ServerModel,
         TransferExportModel,
@@ -35,6 +36,7 @@ except ImportError:
     from models import (
         ConfigModel,
         CreateServerModel,
+        LocalWorkflowImportModel,
         SchemaModel,
         ServerModel,
         TransferExportModel,
@@ -46,7 +48,6 @@ except ImportError:
     from services import UIStorageService
     from settings import DEFAULT_HOST, DEFAULT_PORT, STATIC_DIR, ensure_runtime_dirs
 
-from shared.updater import check_update, perform_update, restart_server
 from shared.health import check_server_health, test_server_connection
 from shared.transfer_bundle import (
     BundleValidationError,
@@ -55,6 +56,7 @@ from shared.transfer_bundle import (
     preview_bundle_import,
     summarize_export_bundle,
 )
+from shared.updater import check_update, perform_update, restart_server
 
 service = UIStorageService()
 logger = logging.getLogger(__name__)
@@ -222,6 +224,29 @@ def create_app() -> FastAPI:
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e)) from e
         return {"status": "success", "workflow_order": workflow_order}
+
+    @app.post("/api/servers/{server_id}/workflows/import/comfyui")
+    async def import_workflows_from_comfyui(server_id: str) -> dict:
+        try:
+            report = service.import_workflows_from_comfyui(server_id)
+            return {"status": "success", "report": report}
+        except FileNotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        except (RuntimeError, ValueError) as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+
+    @app.post("/api/servers/{server_id}/workflows/import/local")
+    async def import_local_workflows(server_id: str, data: LocalWorkflowImportModel) -> dict:
+        try:
+            report = service.import_local_workflows(
+                server_id,
+                [{"file_name": item.file_name, "content": item.content} for item in data.files],
+            )
+            return {"status": "success", "report": report}
+        except FileNotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
 
     # ── System Update ────────────────────────────────────────────
 

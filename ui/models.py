@@ -187,3 +187,19 @@ class TransferImportModel(BaseModel):
 
 class TransferExportModel(BaseModel):
     selection: dict[str, Any] | None = None
+
+
+class LocalWorkflowImportFileModel(BaseModel):
+    file_name: str = Field(min_length=1)
+    content: str = Field(min_length=1)
+
+    @field_validator("file_name", "content", mode="before")
+    @classmethod
+    def normalize_string(cls, value: Any) -> str:
+        if value is None:
+            return ""
+        return str(value)
+
+
+class LocalWorkflowImportModel(BaseModel):
+    files: list[LocalWorkflowImportFileModel] = Field(min_length=1)

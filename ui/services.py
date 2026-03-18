@@ -21,6 +21,10 @@ from shared.config import (
 )
 from shared.json_utils import load_json, save_json
 from shared.runtime_config import get_runtime_config
+try:
+    from .workflow_import import WorkflowBulkImporter
+except ImportError:
+    from workflow_import import WorkflowBulkImporter
 
 
 def _read_json(path: Path, fallback: Any = None) -> Any:
@@ -44,6 +48,9 @@ class WorkflowSummary:
     enabled: bool
     description: str = ""
     updated_at: float = 0.0
+    origin: str = ""
+    source_label: str = ""
+    tags: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -53,6 +60,9 @@ class WorkflowSummary:
             "enabled": self.enabled,
             "description": self.description,
             "updated_at": self.updated_at,
+            "origin": self.origin,
+            "source_label": self.source_label,
+            "tags": self.tags,
         }
 
 
@@ -180,11 +190,19 @@ class UIStorageService:
                     continue
                 enabled = True
                 description = ""
+                origin = ""
+                source_label = ""
+                tags: list[str] = []
                 try:
                     schema_data = _read_json(schema_path, fallback={})
                     if isinstance(schema_data, dict):
                         enabled = bool(schema_data.get("enabled", True))
                         description = str(schema_data.get("description") or "")
+                        origin = str(schema_data.get("origin") or "")
+                        source_label = str(schema_data.get("source_label") or "")
+                        raw_tags = schema_data.get("tags")
+                        if isinstance(raw_tags, list):
+                            tags = [str(tag) for tag in raw_tags if str(tag).strip()]
                 except Exception:
                     enabled = True
 
@@ -198,6 +216,9 @@ class UIStorageService:
                         schema_path.stat().st_mtime,
                         self._workflow_path(sid, wf_id).stat().st_mtime if self._workflow_path(sid, wf_id).exists() else 0.0,
                     ),
+                    origin=origin,
+                    source_label=source_label,
+                    tags=tags,
                 ))
 
             server_workflows.sort(
@@ -228,6 +249,9 @@ class UIStorageService:
             "enabled": bool(schema_data.get("enabled", True)),
             "workflow_data": workflow_data,
             "schema_params": schema_data.get("ui_parameters") or schema_data.get("parameters", {}),
+            "origin": str(schema_data.get("origin") or ""),
+            "source_label": str(schema_data.get("source_label") or ""),
+            "tags": [str(tag) for tag in schema_data.get("tags", [])] if isinstance(schema_data.get("tags"), list) else [],
         }
 
     def save_workflow(
@@ -240,6 +264,9 @@ class UIStorageService:
         workflow_data: dict[str, Any],
         schema_params: dict[str, Any],
         ui_schema_params: dict[str, Any] | None = None,
+        origin: str = "",
+        source_label: str = "",
+        tags: list[str] | None = None,
     ) -> dict[str, Any]:
         source_workflow_id = original_workflow_id or workflow_id
         workflow_path = self._workflow_path(server_id, workflow_id)
@@ -254,8 +281,16 @@ class UIStorageService:
 
         existing_schema = _read_json(source_schema_path, fallback={})
         enabled = True
+        existing_origin = ""
+        existing_source_label = ""
+        existing_tags: list[str] = []
         if isinstance(existing_schema, dict):
             enabled = bool(existing_schema.get("enabled", True))
+            existing_origin = str(existing_schema.get("origin") or "")
+            existing_source_label = str(existing_schema.get("source_label") or "")
+            raw_existing_tags = existing_schema.get("tags")
+            if isinstance(raw_existing_tags, list):
+                existing_tags = [str(tag) for tag in raw_existing_tags if str(tag).strip()]
 
         _write_json(workflow_path, workflow_data)
         schema = {
@@ -263,6 +298,9 @@ class UIStorageService:
             "enabled": enabled,
             "parameters": schema_params,
             "ui_parameters": ui_schema_params or {},
+            "origin": origin or existing_origin,
+            "source_label": source_label or existing_source_label,
+            "tags": tags or existing_tags,
         }
         _write_json(schema_path, schema)
 
@@ -281,6 +319,24 @@ class UIStorageService:
                     pass
 
         return schema
+
+    def next_available_workflow_id(
+        self,
+        server_id: str,
+        workflow_id: str,
+        reserved_ids: set[str] | None = None,
+    ) -> str:
+        existing_ids = {workflow.workflow_id for workflow in self.list_workflows(server_id)}
+        blocked_ids = existing_ids | (reserved_ids or set())
+        if workflow_id not in blocked_ids:
+            return workflow_id
+
+        index = 2
+        while True:
+            candidate = f"{workflow_id}-{index}"
+            if candidate not in blocked_ids:
+                return candidate
+            index += 1
 
     def toggle_workflow(self, server_id: str, workflow_id: str, enabled: bool) -> dict[str, Any]:
         schema_path = self._schema_path(server_id, workflow_id)
@@ -328,6 +384,14 @@ class UIStorageService:
         server["workflow_order"] = final_order
         self.save_config(config)
         return final_order
+
+    def import_workflows_from_comfyui(self, server_id: str) -> dict[str, Any]:
+        importer = WorkflowBulkImporter(self, server_id)
+        return importer.import_from_comfyui().to_dict()
+
+    def import_local_workflows(self, server_id: str, files: list[dict[str, str]]) -> dict[str, Any]:
+        importer = WorkflowBulkImporter(self, server_id)
+        return importer.import_local_files(files).to_dict()
 
     @staticmethod
     def _workflow_path(server_id: str, workflow_id: str) -> Path:
