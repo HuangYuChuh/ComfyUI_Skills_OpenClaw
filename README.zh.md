@@ -398,6 +398,8 @@ python scripts/transfer_manager.py import --input ./openclaw-skill-export.json
 - [ ] 任务完成后 Webhook 回调通知
 - [ ] 定时执行工作流（cron 风格）
 - [ ] 引导式工作流改写模板（Rewrite Recipe）
+- [ ] ComfyUI 原生插件 + AI 参数自动映射 —— 直接在 ComfyUI 内用自然语言描述工作流的用途，由 AI 自动推断节点与字段的对应关系并生成 `schema.json`，彻底免除手动配置参数的负担
+- [ ] AI Agent 自动生成工作流 —— 用自然语言描述你的图像或视频生成目标，由 AI Agent 自动从零构建、连接并配置完整的 ComfyUI 工作流图
 
 ---
 
