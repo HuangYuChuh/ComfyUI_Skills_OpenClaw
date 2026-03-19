@@ -296,13 +296,20 @@ def main():
 
     prompt_id = queue_res['prompt_id']
 
-    # 8. Poll for completion via history
-    while True:
+    # 8. Poll for completion via history (timeout: 30 minutes)
+    poll_timeout = 1800
+    poll_elapsed = 0
+    job_info = None
+    while poll_elapsed < poll_timeout:
         history = get_history(server_url, prompt_id, auth=server_auth)
         if history and prompt_id in history:
             job_info = history[prompt_id]
             break
         time.sleep(2)
+        poll_elapsed += 2
+    if job_info is None:
+        print(json.dumps({"error": f"Timed out waiting for job {prompt_id} after {poll_timeout}s"}))
+        return
 
     # 9. Check for execution errors
     status_info = job_info.get("status", {})
