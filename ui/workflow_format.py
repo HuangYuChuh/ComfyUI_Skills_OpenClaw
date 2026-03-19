@@ -72,11 +72,11 @@ def _get_auto_mapping(node_class: str, field: str, node_id: str) -> dict[str, An
     if field in {"text", "prompt"}:
         return {"exposed": True, "required": True, "name": f"prompt_{node_id}", "description": "Text prompt"}
     if field == "seed":
-        return {"exposed": True, "required": False, "name": f"seed_{node_id}", "description": "Random seed"}
+        return {"exposed": True, "required": False, "name": field, "description": "Random seed"}
     if field in {"width", "height", "batch_size", "size", "num", "num_images", "max_images"}:
-        return {"exposed": True, "required": False, "name": f"{field}_{node_id}", "description": f"Workflow parameter: {field}"}
+        return {"exposed": True, "required": False, "name": field, "description": f"Workflow parameter: {field}"}
     if field == "filename_prefix":
-        return {"exposed": True, "required": False, "name": f"filename_prefix_{node_id}", "description": "Output file prefix"}
+        return {"exposed": True, "required": False, "name": field, "description": "Output file prefix"}
 
     return {"exposed": False, "required": False, "name": field, "description": ""}
 
@@ -124,6 +124,7 @@ def build_final_schema(schema_params: dict[str, dict[str, Any]]) -> dict[str, di
         alias = normalize_string(parameter.get("name"))
         if not alias:
             continue
+        alias = _ensure_unique_alias(final_schema, alias, int(parameter["node_id"]))
 
         target: dict[str, Any] = {
             "node_id": int(parameter["node_id"]),
@@ -142,6 +143,20 @@ def build_final_schema(schema_params: dict[str, dict[str, Any]]) -> dict[str, di
         final_schema[alias] = target
 
     return final_schema
+
+
+def _ensure_unique_alias(final_schema: dict[str, dict[str, Any]], alias: str, node_id: int) -> str:
+    if alias not in final_schema:
+        return alias
+
+    node_scoped_alias = f"{alias}_{node_id}"
+    if node_scoped_alias not in final_schema:
+        return node_scoped_alias
+
+    index = 2
+    while f"{node_scoped_alias}_{index}" in final_schema:
+        index += 1
+    return f"{node_scoped_alias}_{index}"
 
 
 def suggest_workflow_id(workflow_data: dict[str, Any], file_name: str = "") -> str:
