@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from json import JSONDecodeError
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 # Add scripts to path for shared imports
 _project_root = Path(__file__).resolve().parent.parent
@@ -15,9 +16,17 @@ sys.path.insert(0, str(_project_root / "scripts"))
 from shared.config import (
     CONFIG_PATH,
     get_server_data_dir,
+    get_server_history_dir,
     get_server_schema_path,
     get_server_workflow_path,
     list_server_workflow_dirs,
+)
+from shared.execution_history import (
+    clear_run_records,
+    delete_run_record,
+    get_run_record,
+    list_run_records,
+    summarize_run_record,
 )
 from shared.json_utils import load_json, save_json
 from shared.runtime_config import get_runtime_config
@@ -51,6 +60,7 @@ class WorkflowSummary:
     origin: str = ""
     source_label: str = ""
     tags: list[str] = field(default_factory=list)
+    has_history: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -63,6 +73,7 @@ class WorkflowSummary:
             "origin": self.origin,
             "source_label": self.source_label,
             "tags": self.tags,
+            "has_history": self.has_history,
         }
 
 
@@ -226,6 +237,7 @@ class UIStorageService:
                     origin=origin,
                     source_label=source_label,
                     tags=tags,
+                    has_history=self._workflow_has_history(sid, wf_id),
                 ))
 
             server_workflows.sort(
@@ -256,6 +268,7 @@ class UIStorageService:
             "enabled": bool(schema_data.get("enabled", True)),
             "workflow_data": workflow_data,
             "schema_params": schema_data.get("ui_parameters") or schema_data.get("parameters", {}),
+            "run_schema_params": schema_data.get("parameters", {}),
             "origin": str(schema_data.get("origin") or ""),
             "source_label": str(schema_data.get("source_label") or ""),
             "tags": [str(tag) for tag in schema_data.get("tags", [])] if isinstance(schema_data.get("tags"), list) else [],
@@ -315,6 +328,9 @@ class UIStorageService:
 
         if source_workflow_id != workflow_id:
             source_dir = source_workflow_path.parent
+            source_history_dir = self._history_dir(server_id, source_workflow_id)
+            target_history_dir = self._history_dir(server_id, workflow_id)
+            self._merge_workflow_history(source_history_dir, target_history_dir)
             if source_workflow_path.exists():
                 source_workflow_path.unlink()
             if source_schema_path.exists():
@@ -363,6 +379,9 @@ class UIStorageService:
 
     def delete_workflow(self, server_id: str, workflow_id: str) -> None:
         workflow_dir = self._workflow_path(server_id, workflow_id).parent
+        history_dir = self._history_dir(server_id, workflow_id)
+        if history_dir.exists():
+            shutil.rmtree(history_dir, ignore_errors=False)
         for path in (self._workflow_path(server_id, workflow_id), self._schema_path(server_id, workflow_id)):
             if path.exists():
                 path.unlink()
@@ -400,6 +419,48 @@ class UIStorageService:
         importer = WorkflowBulkImporter(self, server_id)
         return importer.import_local_files(files).to_dict()
 
+    def list_workflow_history(self, server_id: str, workflow_id: str) -> list[dict[str, Any]]:
+        self._require_workflow_exists(server_id, workflow_id)
+        return [summarize_run_record(record) for record in list_run_records(server_id, workflow_id)]
+
+    def get_workflow_history_entry(self, server_id: str, workflow_id: str, run_id: str) -> dict[str, Any]:
+        self._require_workflow_exists(server_id, workflow_id)
+        return get_run_record(server_id, workflow_id, run_id)
+
+    def get_workflow_history_image_path(self, server_id: str, workflow_id: str, run_id: str, image_index: int) -> Path:
+        self._require_workflow_exists(server_id, workflow_id)
+        record = get_run_record(server_id, workflow_id, run_id)
+        result = record.get("result") if isinstance(record.get("result"), dict) else {}
+        raw_images = result.get("images") if isinstance(result.get("images"), list) else []
+        images = [str(path).strip() for path in raw_images if str(path).strip()]
+
+        if image_index < 0 or image_index >= len(images):
+            raise FileNotFoundError(f"{run_id}:{image_index}")
+
+        output_dir = self._resolve_server_output_dir(server_id)
+        image_path = Path(images[image_index]).expanduser()
+        if not image_path.is_absolute():
+            image_path = output_dir / image_path
+        resolved_image_path = image_path.resolve()
+
+        try:
+            resolved_image_path.relative_to(output_dir)
+        except ValueError as exc:
+            raise PermissionError("History image path is outside the configured output directory") from exc
+
+        if not resolved_image_path.exists() or not resolved_image_path.is_file():
+            raise FileNotFoundError(f"{run_id}:{image_index}")
+
+        return resolved_image_path
+
+    def delete_workflow_history_entry(self, server_id: str, workflow_id: str, run_id: str) -> None:
+        self._require_workflow_exists(server_id, workflow_id)
+        delete_run_record(server_id, workflow_id, run_id)
+
+    def clear_workflow_history(self, server_id: str, workflow_id: str) -> int:
+        self._require_workflow_exists(server_id, workflow_id)
+        return clear_run_records(server_id, workflow_id)
+
     @staticmethod
     def _workflow_path(server_id: str, workflow_id: str) -> Path:
         return get_server_workflow_path(server_id, workflow_id)
@@ -407,6 +468,14 @@ class UIStorageService:
     @staticmethod
     def _schema_path(server_id: str, workflow_id: str) -> Path:
         return get_server_schema_path(server_id, workflow_id)
+
+    @staticmethod
+    def _history_dir(server_id: str, workflow_id: str) -> Path:
+        return get_server_history_dir(server_id, workflow_id)
+
+    def _workflow_has_history(self, server_id: str, workflow_id: str) -> bool:
+        history_dir = self._history_dir(server_id, workflow_id)
+        return history_dir.exists() and any(history_dir.glob("*.json"))
 
     @staticmethod
     def _slugify_server_id(value: str) -> str:
@@ -432,6 +501,19 @@ class UIStorageService:
             if server.get("id") == server_id:
                 return server
         return None
+
+    def _resolve_server_output_dir(self, server_id: str) -> Path:
+        config = self.get_config()
+        server = self._get_server_entry(config, server_id)
+        if server is None:
+            raise FileNotFoundError(server_id)
+
+        output_dir = Path(str(server.get("output_dir") or "./outputs").strip() or "./outputs").expanduser()
+        if not output_dir.is_absolute():
+            output_dir = (_project_root / output_dir).resolve()
+        else:
+            output_dir = output_dir.resolve()
+        return output_dir
 
     @staticmethod
     def _serialize_server_for_ui(server: dict[str, Any]) -> dict[str, Any]:
@@ -497,3 +579,42 @@ class UIStorageService:
             if str(item).strip() and str(item).strip() != workflow_id
         ]
         self.save_config(config)
+
+    def _require_workflow_exists(self, server_id: str, workflow_id: str) -> None:
+        if not self._workflow_path(server_id, workflow_id).exists() or not self._schema_path(server_id, workflow_id).exists():
+            raise FileNotFoundError(workflow_id)
+
+    def _merge_workflow_history(self, source_history_dir: Path, target_history_dir: Path) -> None:
+        if not source_history_dir.exists() or source_history_dir == target_history_dir:
+            return
+
+        if not target_history_dir.exists():
+            target_history_dir.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(source_history_dir), str(target_history_dir))
+            return
+
+        target_history_dir.mkdir(parents=True, exist_ok=True)
+
+        for source_path in source_history_dir.glob("*.json"):
+            if not source_path.is_file():
+                continue
+
+            target_path = target_history_dir / source_path.name
+            if not target_path.exists():
+                shutil.move(str(source_path), str(target_path))
+                continue
+
+            payload = _read_json(source_path, fallback=None)
+            if not isinstance(payload, dict):
+                source_path.unlink()
+                continue
+
+            new_run_id = str(uuid4())
+            payload["run_id"] = new_run_id
+            _write_json(target_history_dir / f"{new_run_id}.json", payload)
+            source_path.unlink()
+
+        try:
+            source_history_dir.rmdir()
+        except OSError:
+            pass

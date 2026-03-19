@@ -8,6 +8,7 @@ DATA_DIR = BASE_DIR / "data"
 OUTPUTS_DIR = BASE_DIR / "outputs"
 WORKFLOW_FILENAME = "workflow.json"
 SCHEMA_FILENAME = "schema.json"
+HISTORY_DIRNAME = "history"
 DEFAULT_COMFYUI_SERVER_URL = "http://127.0.0.1:8188"
 DEFAULT_SERVER_ID = "local"
 DEFAULT_OUTPUT_DIR = "./outputs"
@@ -46,6 +47,14 @@ def get_server_workflow_path(server_id: str, workflow_id: str) -> Path:
 
 def get_server_schema_path(server_id: str, workflow_id: str) -> Path:
     return get_server_workflow_dir(server_id, workflow_id) / SCHEMA_FILENAME
+
+
+def get_server_history_dir(server_id: str, workflow_id: str) -> Path:
+    return get_server_workflow_dir(server_id, workflow_id) / HISTORY_DIRNAME
+
+
+def get_server_history_entry_path(server_id: str, workflow_id: str, run_id: str) -> Path:
+    return get_server_history_dir(server_id, workflow_id) / f"{run_id}.json"
 
 
 def list_server_workflow_dirs(server_id: str) -> list[Path]:

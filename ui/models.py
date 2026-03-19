@@ -203,3 +203,7 @@ class LocalWorkflowImportFileModel(BaseModel):
 
 class LocalWorkflowImportModel(BaseModel):
     files: list[LocalWorkflowImportFileModel] = Field(min_length=1)
+
+
+class RunWorkflowModel(BaseModel):
+    args: dict[str, Any] = Field(default_factory=dict)

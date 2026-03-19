@@ -22,6 +22,7 @@ try:
         ConfigModel,
         CreateServerModel,
         LocalWorkflowImportModel,
+        RunWorkflowModel,
         SchemaModel,
         ServerModel,
         TransferExportModel,
@@ -37,6 +38,7 @@ except ImportError:
         ConfigModel,
         CreateServerModel,
         LocalWorkflowImportModel,
+        RunWorkflowModel,
         SchemaModel,
         ServerModel,
         TransferExportModel,
@@ -49,6 +51,7 @@ except ImportError:
     from settings import DEFAULT_HOST, DEFAULT_PORT, STATIC_DIR, ensure_runtime_dirs
 
 from shared.health import check_server_health, test_server_connection
+from comfyui_client import execute_workflow_by_ids
 from shared.transfer_bundle import (
     BundleValidationError,
     apply_bundle_import,
@@ -214,6 +217,61 @@ def create_app() -> FastAPI:
     async def delete_workflow(server_id: str, workflow_id: str) -> dict:
         service.delete_workflow(server_id, workflow_id)
         return {"status": "success"}
+
+    @app.post("/api/servers/{server_id}/workflow/{workflow_id}/run")
+    async def run_workflow(server_id: str, workflow_id: str, data: RunWorkflowModel) -> dict:
+        try:
+            service.get_workflow_detail(server_id, workflow_id)
+        except FileNotFoundError as e:
+            raise HTTPException(status_code=404, detail="Workflow not found") from e
+        except ValueError as e:
+            raise HTTPException(status_code=500, detail=str(e)) from e
+        result = await asyncio.to_thread(execute_workflow_by_ids, server_id, workflow_id, data.args)
+        return {"status": result.get("status", "error"), "result": result}
+
+    @app.get("/api/servers/{server_id}/workflow/{workflow_id}/history")
+    async def list_workflow_history(server_id: str, workflow_id: str) -> dict:
+        try:
+            entries = service.list_workflow_history(server_id, workflow_id)
+        except FileNotFoundError as e:
+            raise HTTPException(status_code=404, detail="Workflow not found") from e
+        return {"history": entries}
+
+    @app.get("/api/servers/{server_id}/workflow/{workflow_id}/history/{run_id}")
+    async def get_workflow_history_entry(server_id: str, workflow_id: str, run_id: str) -> dict:
+        try:
+            return service.get_workflow_history_entry(server_id, workflow_id, run_id)
+        except FileNotFoundError as e:
+            detail = "Workflow history entry not found" if e.args and e.args[0] == run_id else "Workflow not found"
+            raise HTTPException(status_code=404, detail=detail) from e
+
+    @app.get("/api/servers/{server_id}/workflow/{workflow_id}/history/{run_id}/images/{image_index}")
+    async def get_workflow_history_image(server_id: str, workflow_id: str, run_id: str, image_index: int) -> FileResponse:
+        try:
+            image_path = service.get_workflow_history_image_path(server_id, workflow_id, run_id, image_index)
+        except PermissionError as e:
+            raise HTTPException(status_code=403, detail=str(e)) from e
+        except FileNotFoundError as e:
+            detail = "Workflow not found" if e.args and e.args[0] == workflow_id else "Workflow history image not found"
+            raise HTTPException(status_code=404, detail=detail) from e
+        return FileResponse(image_path)
+
+    @app.delete("/api/servers/{server_id}/workflow/{workflow_id}/history/{run_id}")
+    async def delete_workflow_history_entry(server_id: str, workflow_id: str, run_id: str) -> dict:
+        try:
+            service.delete_workflow_history_entry(server_id, workflow_id, run_id)
+        except FileNotFoundError as e:
+            detail = "Workflow history entry not found" if e.args and e.args[0] == run_id else "Workflow not found"
+            raise HTTPException(status_code=404, detail=detail) from e
+        return {"status": "success"}
+
+    @app.delete("/api/servers/{server_id}/workflow/{workflow_id}/history")
+    async def clear_workflow_history(server_id: str, workflow_id: str) -> dict:
+        try:
+            deleted = service.clear_workflow_history(server_id, workflow_id)
+        except FileNotFoundError as e:
+            raise HTTPException(status_code=404, detail="Workflow not found") from e
+        return {"status": "success", "deleted": deleted}
 
     @app.post("/api/servers/{server_id}/workflows/reorder")
     async def reorder_workflows(server_id: str, data: WorkflowOrderModel) -> dict:

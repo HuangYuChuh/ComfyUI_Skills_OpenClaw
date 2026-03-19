@@ -1,7 +1,7 @@
 ---
 name: comfyui-skill-openclaw
 description: |
-  Generate images utilizing ComfyUI's powerful node-based workflow capabilities. Supports dynamically loading multiple pre-configured generation workflows from different instances and their corresponding parameter mappings, importing saved workflows in bulk from ComfyUI or local JSON files, converting natural language into parameters, driving local or remote ComfyUI services, and ultimately returning the images to the target client.
+  Generate images utilizing ComfyUI's powerful node-based workflow capabilities. Supports dynamically loading multiple pre-configured generation workflows from different instances and their corresponding parameter mappings, importing saved workflows in bulk from ComfyUI or local JSON files, converting natural language into parameters, driving local or remote ComfyUI services, tracking execution history with parameters and results, and ultimately returning the images to the target client.
   
   **Use this Skill when:**
   (1) The user requests to "generate an image", "draw a picture", or "execute a ComfyUI workflow".
@@ -42,6 +42,12 @@ Other native ComfyUI routes such as `/ws`, `/queue`, `/interrupt`, `/upload/imag
 
 For the route-level reference and the distinction between native ComfyUI routes and this repository's own manager API, see [`docs/comfyui-native-routes.md`](./docs/comfyui-native-routes.md).
 
+The local manager API also exposes higher-level workflow execution and history routes:
+
+- `POST /api/servers/{server_id}/workflow/{workflow_id}/run`
+- `GET /api/servers/{server_id}/workflow/{workflow_id}/history`
+- `GET /api/servers/{server_id}/workflow/{workflow_id}/history/{run_id}`
+
 ### Server Health Check
 
 Before running a workflow, check whether the target ComfyUI server is online.
@@ -68,9 +74,9 @@ Use the manager UI/API when the user wants to register workflows into this skill
 
 If the user provides you with one new ComfyUI workflow JSON (API format) and asks you to "configure it" or "add it":
 1. Check the existing server configurations or default to `local`.
-2. Save the provided JSON file to `./data/<server_id>/workflows/<new_workflow_id>.json`.
+2. Save the provided JSON file to `./data/<server_id>/<new_workflow_id>/workflow.json`.
 3. Analyze the JSON structure (look for `inputs` inside node definitions, e.g., `KSampler`'s `seed`, `CLIPTextEncode`'s `text` for positive/negative prompts, `EmptyLatentImage` for width/height).
-4. Automatically generate a schema mapping file and save it to `./data/<server_id>/schemas/<new_workflow_id>.json`. The schema format must follow:
+4. Automatically generate a schema mapping file and save it to `./data/<server_id>/<new_workflow_id>/schema.json`. The schema format must follow:
    ```json
    {
      "workflow_id": "<new_workflow_id>",
@@ -93,7 +99,7 @@ python ./scripts/registry.py list --agent
 ```
 
 **Return Format Parsing**:
-You will receive a JSON containing all available workflows. Notice they are uniquely identified by a combination of `server_id` and `id` (or path format `<server_id>/<workflow_id>`):
+You will receive a JSON containing all available workflows. Notice they are uniquely identified by the combination of `server_id` and `workflow_id` (or path format `<server_id>/<workflow_id>`):
 - For parameters with `required: true`, if the user hasn't provided them, you must **ask the user to provide them**.
 - For parameters with `required: false`, you can infer and generate them yourself based on the user's description (e.g., translating and optimizing the user's scene), or simply use empty values/random numbers (e.g., `seed` = random number).
 - Never expose underlying node information to the user (do not mention Node IDs); only ask about business parameter names (e.g., prompt, style).
@@ -121,8 +127,11 @@ python ./scripts/comfyui_client.py --workflow <server_id>/<workflow_id> --args '
 
 **Blocking and Result Retrieval**:
 - This script will automatically submit the task to the matched server and **poll to wait** for ComfyUI to finish rendering, then download the image locally.
-- If executed successfully, the standard output of the script will finally provide a JSON containing an `images` list, where the absolute paths are the generated image files.
+- If executed successfully, the standard output of the script will provide a JSON containing `run_id`, `prompt_id`, and an `images` list whose values are absolute local file paths.
+- If execution fails after a history record is created, the JSON may still include `run_id` together with `error`, which can be used to inspect the saved execution record through the manager UI/API.
 - Under the hood, this flow uses the native ComfyUI route sequence `POST /prompt` -> `GET /history/{prompt_id}` -> `GET /view`.
+
+The manager stores execution history per workflow, including raw args, resolved args, prompt ID, result files, status, timing, and error summary. History records live under `data/<server_id>/<workflow_id>/history/`.
 
 ### Step 4: Send the Image to the User
 

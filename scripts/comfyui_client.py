@@ -1,19 +1,24 @@
-import os
-import json
-import uuid
-import time
+from __future__ import annotations
+
 import argparse
-import urllib.request
-import urllib.parse
-import sys
+import json
+import os
 import re
+import sys
+import time
+import urllib.parse
+import urllib.request
+import uuid
 from logging import getLogger
+from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from shared.config import get_server_schema_path, get_server_workflow_path
+from shared.execution_history import build_run_record, save_run_record, utc_now_iso
 from shared.json_utils import load_json
-from shared.runtime_config import get_runtime_config, get_server_by_id, get_default_server_id
+from shared.runtime_config import get_default_server_id, get_server_by_id
 
 logger = getLogger(__name__)
 
@@ -21,7 +26,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def is_valid_identifier(value: str) -> bool:
-    """Reject path-like identifiers to prevent path traversal."""
     if not value:
         return False
     if value in {".", ".."}:
@@ -32,27 +36,19 @@ def is_valid_identifier(value: str) -> bool:
 
 
 def parse_workflow_arg(workflow_arg: str) -> tuple[str, str]:
-    """Parse a composite workflow argument like 'server_id/workflow_id'.
-
-    If no '/' is present, uses the default server.
-    Returns (server_id, workflow_id).
-    """
     if "/" in workflow_arg:
         parts = workflow_arg.split("/", 1)
         return parts[0], parts[1]
-    else:
-        return get_default_server_id(), workflow_arg
+    return get_default_server_id(), workflow_arg
 
 
 def sanitize_filename_part(value: str, fallback: str) -> str:
-    """Build a readable, filesystem-safe filename component."""
     normalized = re.sub(r"[^A-Za-z0-9._-]+", "-", (value or "").strip())
     normalized = re.sub(r"-{2,}", "-", normalized).strip("._-")
     return normalized or fallback
 
 
-def get_output_prefix(workflow_id: str, input_args: dict, parameters: dict) -> str:
-    """Prefer an explicit filename_prefix arg, otherwise fall back to workflow_id."""
+def get_output_prefix(workflow_id: str, input_args: dict[str, Any], parameters: dict[str, Any]) -> str:
     for key, param in parameters.items():
         if param.get("field") == "filename_prefix" and key in input_args:
             return sanitize_filename_part(str(input_args[key]), workflow_id)
@@ -65,7 +61,6 @@ def get_output_prefix(workflow_id: str, input_args: dict, parameters: dict) -> s
 
 
 def build_output_filename(prefix: str, timestamp: str, index: int, original_filename: str) -> str:
-    """Create a stable, readable local filename for downloaded images."""
     _, ext = os.path.splitext(original_filename)
     ext = ext or ".png"
     return f"{prefix}_{timestamp}_{index:02d}{ext}"
@@ -76,16 +71,14 @@ def _add_auth(req: urllib.request.Request, auth: str) -> None:
         req.add_header("Authorization", auth)
 
 
-def format_node_errors(node_errors: dict) -> str:
-    """将 ComfyUI node_errors 字典格式化为可读文本。"""
-    lines = []
+def format_node_errors(node_errors: dict[str, Any]) -> str:
+    lines: list[str] = []
     for node_id, errors in node_errors.items():
         if isinstance(errors, dict):
             class_type = errors.get("class_type", node_id)
-            error_list = errors.get("errors", [])
-            for err in error_list:
-                msg = err.get("message", str(err)) if isinstance(err, dict) else str(err)
-                lines.append(f"  Node {node_id} ({class_type}): {msg}")
+            for err in errors.get("errors", []):
+                message = err.get("message", str(err)) if isinstance(err, dict) else str(err)
+                lines.append(f"  Node {node_id} ({class_type}): {message}")
         elif isinstance(errors, list):
             for err in errors:
                 lines.append(f"  Node {node_id}: {err}")
@@ -94,9 +87,8 @@ def format_node_errors(node_errors: dict) -> str:
     return "\n".join(lines) if lines else ""
 
 
-def format_execution_errors(messages: list) -> str:
-    """将 ComfyUI history status.messages 格式化为可读文本。"""
-    lines = []
+def format_execution_errors(messages: list[Any]) -> str:
+    lines: list[str] = []
     for msg in messages:
         if isinstance(msg, (list, tuple)) and len(msg) >= 2:
             msg_type, msg_data = msg[0], msg[1]
@@ -110,16 +102,10 @@ def format_execution_errors(messages: list) -> str:
     return "Execution failed (no output produced)."
 
 
-def validate_and_coerce_params(input_args: dict, parameters: dict) -> tuple[dict, list[str]]:
-    """Validate input_args against schema parameters and coerce types.
+def validate_and_coerce_params(input_args: dict[str, Any], parameters: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
+    errors: list[str] = []
+    coerced: dict[str, Any] = {}
 
-    Returns (coerced_args, errors) where coerced_args contains type-converted
-    values and defaults applied, and errors is a list of validation messages.
-    """
-    errors = []
-    coerced = {}
-
-    # Check required parameters are present
     for key, param in parameters.items():
         if param.get("required", False) and key not in input_args:
             if "default" in param:
@@ -127,7 +113,6 @@ def validate_and_coerce_params(input_args: dict, parameters: dict) -> tuple[dict
             else:
                 errors.append(f"Missing required parameter '{key}'")
 
-    # Validate and coerce provided values
     for key, value in input_args.items():
         if key not in parameters:
             coerced[key] = value
@@ -152,7 +137,6 @@ def validate_and_coerce_params(input_args: dict, parameters: dict) -> tuple[dict
 
         coerced[key] = value
 
-    # Apply defaults for optional parameters not provided
     for key, param in parameters.items():
         if key not in coerced and "default" in param:
             coerced[key] = param["default"]
@@ -160,24 +144,24 @@ def validate_and_coerce_params(input_args: dict, parameters: dict) -> tuple[dict
     return coerced, errors
 
 
-def queue_prompt(server_url, prompt_workflow, auth=""):
-    data = json.dumps({"prompt": prompt_workflow, "client_id": str(uuid.uuid4())}).encode('utf-8')
-    req = urllib.request.Request(f"{server_url}/prompt", data=data, headers={'Content-Type': 'application/json'})
+def queue_prompt(server_url: str, prompt_workflow: dict[str, Any], auth: str = "") -> dict[str, Any]:
+    data = json.dumps({"prompt": prompt_workflow, "client_id": str(uuid.uuid4())}).encode("utf-8")
+    req = urllib.request.Request(f"{server_url}/prompt", data=data, headers={"Content-Type": "application/json"})
     _add_auth(req, auth)
     try:
         with urllib.request.urlopen(req) as response:
             return json.loads(response.read())
-    except urllib.error.HTTPError as e:
+    except urllib.error.HTTPError as exc:
         try:
-            body = json.loads(e.read())
+            body = json.loads(exc.read())
         except Exception:
             body = None
-        return body or {"error": f"HTTP {e.code} from ComfyUI"}
-    except urllib.error.URLError as e:
-        return {"error": f"Cannot connect to ComfyUI ({server_url}): {e.reason}"}
+        return body or {"error": f"HTTP {exc.code} from ComfyUI"}
+    except urllib.error.URLError as exc:
+        return {"error": f"Cannot connect to ComfyUI ({server_url}): {exc.reason}"}
 
 
-def get_history(server_url, prompt_id, auth=""):
+def get_history(server_url: str, prompt_id: str, auth: str = "") -> dict[str, Any] | None:
     req = urllib.request.Request(f"{server_url}/history/{prompt_id}")
     _add_auth(req, auth)
     try:
@@ -187,7 +171,7 @@ def get_history(server_url, prompt_id, auth=""):
         return None
 
 
-def is_job_in_queue(server_url, prompt_id, auth=""):
+def is_job_in_queue(server_url: str, prompt_id: str, auth: str = "") -> bool:
     """Check if prompt_id is still pending or running in ComfyUI queue."""
     req = urllib.request.Request(f"{server_url}/queue")
     _add_auth(req, auth)
@@ -203,7 +187,7 @@ def is_job_in_queue(server_url, prompt_id, auth=""):
         return True
 
 
-def get_image(server_url, filename, subfolder, folder_type, auth=""):
+def get_image(server_url: str, filename: str, subfolder: str, folder_type: str, auth: str = "") -> bytes | None:
     data = {"filename": filename, "subfolder": subfolder, "type": folder_type}
     url_values = urllib.parse.urlencode(data)
     req = urllib.request.Request(f"{server_url}/view?{url_values}")
@@ -215,108 +199,166 @@ def get_image(server_url, filename, subfolder, folder_type, auth=""):
         return None
 
 
-def main():
-    parser = argparse.ArgumentParser(description="ComfyUI Client for OpenClaw Skill")
-    parser.add_argument("--workflow", required=True,
-                        help="Workflow identifier: '<server_id>/<workflow_id>' or just '<workflow_id>' (uses default server)")
-    parser.add_argument("--args", required=True, help="JSON string of parameter key-values mapping to the schema")
+def _build_error_payload(message: str, run_id: str | None = None) -> dict[str, Any]:
+    payload: dict[str, Any] = {"status": "error", "error": message}
+    if run_id:
+        payload["run_id"] = run_id
+    return payload
 
-    args = parser.parse_args()
 
-    # 1. Parse composite workflow argument
-    server_id, workflow_id = parse_workflow_arg(args.workflow)
+def _finalize_record(
+    record: dict[str, Any],
+    server_id: str,
+    workflow_id: str,
+    *,
+    status: str,
+    resolved_args: dict[str, Any] | None = None,
+    prompt_id: str | None = None,
+    images: list[str] | None = None,
+    error_message: str | None = None,
+) -> None:
+    record["status"] = status
+    record["finished_at"] = utc_now_iso()
+    started_at = record.get("_started_monotonic")
+    if isinstance(started_at, (int, float)):
+        record["duration_ms"] = int((time.monotonic() - started_at) * 1000)
+    else:
+        record["duration_ms"] = None
+    record.pop("_started_monotonic", None)
+
+    if resolved_args is not None:
+        record["resolved_args"] = resolved_args
+    if prompt_id is not None:
+        record["prompt_id"] = prompt_id
+
+    if images is not None:
+        record["result"] = {
+            "images": images,
+            "image_count": len(images),
+        }
+
+    if error_message:
+        record["error"] = {"message": error_message}
+    else:
+        record["error"] = None
+
+    save_run_record(server_id, workflow_id, record)
+
+
+def _mark_record_running(
+    record: dict[str, Any],
+    server_id: str,
+    workflow_id: str,
+    prompt_id: str,
+) -> None:
+    record["status"] = "running"
+    record["started_at"] = utc_now_iso()
+    record["prompt_id"] = prompt_id
+    record["_started_monotonic"] = time.monotonic()
+    save_run_record(server_id, workflow_id, record)
+
+
+def execute_workflow(workflow_arg: str, input_args: dict[str, Any]) -> dict[str, Any]:
+    server_id, workflow_id = parse_workflow_arg(workflow_arg)
+    return execute_workflow_by_ids(server_id, workflow_id, input_args)
+
+
+def execute_workflow_by_ids(server_id: str, workflow_id: str, input_args: dict[str, Any]) -> dict[str, Any]:
     if not is_valid_identifier(server_id):
-        print(json.dumps({"error": "Invalid server id in --workflow"}))
-        return
+        return _build_error_payload("Invalid server id in workflow")
     if not is_valid_identifier(workflow_id):
-        print(json.dumps({"error": "Invalid workflow id in --workflow"}))
-        return
+        return _build_error_payload("Invalid workflow id in workflow")
+    if not isinstance(input_args, dict):
+        return _build_error_payload("Workflow arguments must be a JSON object")
 
-    # 2. Look up server config
     server = get_server_by_id(server_id)
     if not server:
-        print(json.dumps({"error": f"Server '{server_id}' not found in config.json"}))
-        return
-
+        return _build_error_payload(f"Server '{server_id}' not found in config.json")
     if not server.get("enabled", True):
-        print(json.dumps({"error": f"Server '{server_id}' is disabled"}))
-        return
+        return _build_error_payload(f"Server '{server_id}' is disabled")
 
-    server_url = server.get("url", "http://127.0.0.1:8188")
-    server_auth = server.get("auth", "")
-    output_dir = server.get("output_dir", os.path.join(BASE_DIR, "outputs"))
-
-    # Resolve relative output_dir
+    server_url = str(server.get("url", "http://127.0.0.1:8188"))
+    server_auth = str(server.get("auth", ""))
+    output_dir = str(server.get("output_dir", os.path.join(BASE_DIR, "outputs")))
     if not os.path.isabs(output_dir):
         output_dir = os.path.join(BASE_DIR, output_dir)
+    os.makedirs(output_dir, exist_ok=True)
 
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir, exist_ok=True)
+    workflow_path = Path(get_server_workflow_path(server_id, workflow_id))
+    schema_path = Path(get_server_schema_path(server_id, workflow_id))
+    if not workflow_path.exists():
+        return _build_error_payload(f"Workflow file not found for '{server_id}/{workflow_id}'")
+    if not schema_path.exists():
+        return _build_error_payload(f"Schema file not found for '{server_id}/{workflow_id}'")
 
-    # 3. Parse input arguments
     try:
-        input_args = json.loads(args.args)
-    except json.JSONDecodeError:
-        print(json.dumps({"error": "Invalid JSON format for --args"}))
-        return
-
-    # 4. Load Workflow and Schema from server-specific directory
-    wf_path = str(get_server_workflow_path(server_id, workflow_id))
-    schema_path = str(get_server_schema_path(server_id, workflow_id))
-
-    if not os.path.exists(wf_path):
-        print(json.dumps({"error": f"Workflow file not found for '{server_id}/{workflow_id}'"}))
-        return
-
-    if not os.path.exists(schema_path):
-        print(json.dumps({"error": f"Schema file not found for '{server_id}/{workflow_id}'"}))
-        return
-
-    workflow_data = load_json(wf_path)
-    schema_data = load_json(schema_path)
-
-    # Check workflow enabled
+        workflow_data = load_json(workflow_path)
+        schema_data = load_json(schema_path)
+    except Exception as exc:
+        logger.exception("Failed to load workflow or schema for %s/%s", server_id, workflow_id)
+        return _build_error_payload(f"Failed to load workflow data: {exc}")
+    if not isinstance(workflow_data, dict):
+        return _build_error_payload(f"Workflow data is invalid for '{server_id}/{workflow_id}'")
+    if not isinstance(schema_data, dict):
+        return _build_error_payload(f"Schema data is invalid for '{server_id}/{workflow_id}'")
     if not schema_data.get("enabled", True):
-        print(json.dumps({"error": f"Workflow '{workflow_id}' is disabled on server '{server_id}'"}))
-        return
+        return _build_error_payload(f"Workflow '{workflow_id}' is disabled on server '{server_id}'")
+
+    run_id = str(uuid.uuid4())
+    record = build_run_record(server_id, workflow_id, run_id, input_args, workflow_path, schema_path)
+    save_run_record(server_id, workflow_id, record)
 
     parameters = schema_data.get("parameters", {})
+    if not isinstance(parameters, dict):
+        error_payload = _build_error_payload(f"Schema parameters are invalid for '{server_id}/{workflow_id}'", run_id)
+        _finalize_record(record, server_id, workflow_id, status="error", error_message=error_payload["error"])
+        return error_payload
 
-    # 5. Validate parameters against schema
     coerced_args, validation_errors = validate_and_coerce_params(input_args, parameters)
     if validation_errors:
-        print(json.dumps({"error": "Parameter validation failed:\n" + "\n".join(f"  {e}" for e in validation_errors)}))
-        return
+        error_message = "Parameter validation failed:\n" + "\n".join(f"  {error}" for error in validation_errors)
+        _finalize_record(
+            record,
+            server_id,
+            workflow_id,
+            status="error",
+            resolved_args=coerced_args,
+            error_message=error_message,
+        )
+        return _build_error_payload(error_message, run_id)
 
-    # 6. Map parameters to workflow nodes
     for key, value in coerced_args.items():
-        if key in parameters:
-            node_id = str(parameters[key]["node_id"])
-            field = parameters[key]["field"]
-            if node_id in workflow_data and "inputs" in workflow_data[node_id]:
-                workflow_data[node_id]["inputs"][field] = value
+        if key not in parameters:
+            continue
+        node_id = str(parameters[key]["node_id"])
+        field = parameters[key]["field"]
+        if node_id in workflow_data and isinstance(workflow_data[node_id], dict) and "inputs" in workflow_data[node_id]:
+            workflow_data[node_id]["inputs"][field] = value
 
     output_prefix = get_output_prefix(workflow_id, coerced_args, parameters)
 
-    # 7. Queue Prompt
     queue_res = queue_prompt(server_url, workflow_data, auth=server_auth)
-    if not queue_res or 'prompt_id' not in queue_res:
-        error_msg = "Failed to queue prompt to ComfyUI."
+    if not queue_res or "prompt_id" not in queue_res:
+        error_message = "Failed to queue prompt to ComfyUI."
         if queue_res:
-            error_msg = queue_res.get("error", error_msg)
+            error_message = queue_res.get("error", error_message)
             node_errors = queue_res.get("node_errors", {})
-            if node_errors:
-                error_msg += "\n" + format_node_errors(node_errors)
-        print(json.dumps({"error": error_msg}))
-        return
+            if isinstance(node_errors, dict) and node_errors:
+                error_message += "\n" + format_node_errors(node_errors)
+        _finalize_record(
+            record,
+            server_id,
+            workflow_id,
+            status="error",
+            resolved_args=coerced_args,
+            error_message=error_message,
+        )
+        return _build_error_payload(error_message, run_id)
 
-    prompt_id = queue_res['prompt_id']
+    prompt_id = str(queue_res["prompt_id"])
+    _mark_record_running(record, server_id, workflow_id, prompt_id)
 
-    # 8. Poll for completion via history
-    # - Job in history → done
-    # - Job not in history but still in queue/running → keep waiting
-    # - Job in neither → lost or cancelled → error
-    job_info = None
+    job_info: dict[str, Any] | None = None
     while True:
         history = get_history(server_url, prompt_id, auth=server_auth)
         if history and prompt_id in history:
@@ -327,51 +369,123 @@ def main():
             return
         time.sleep(2)
 
-    # 9. Check for execution errors
+    if not isinstance(job_info, dict):
+        error_message = "ComfyUI history payload is missing or invalid."
+        _finalize_record(
+            record,
+            server_id,
+            workflow_id,
+            status="error",
+            resolved_args=coerced_args,
+            prompt_id=prompt_id,
+            error_message=error_message,
+        )
+        return _build_error_payload(error_message, run_id)
+
     status_info = job_info.get("status", {})
-    if status_info.get("status_str") == "error":
+    if isinstance(status_info, dict) and status_info.get("status_str") == "error":
         messages = status_info.get("messages", [])
-        error_msg = format_execution_errors(messages)
-        print(json.dumps({"error": error_msg}))
-        return
+        error_message = format_execution_errors(messages if isinstance(messages, list) else [])
+        _finalize_record(
+            record,
+            server_id,
+            workflow_id,
+            status="error",
+            resolved_args=coerced_args,
+            prompt_id=prompt_id,
+            error_message=error_message,
+        )
+        return _build_error_payload(error_message, run_id)
 
-    # 10. Extract images
-    if 'outputs' not in job_info:
-        print(json.dumps({"error": "No outputs found in job execution."}))
-        return
+    if "outputs" not in job_info:
+        error_message = "No outputs found in job execution."
+        _finalize_record(
+            record,
+            server_id,
+            workflow_id,
+            status="error",
+            resolved_args=coerced_args,
+            prompt_id=prompt_id,
+            error_message=error_message,
+        )
+        return _build_error_payload(error_message, run_id)
 
-    downloaded_files = []
+    downloaded_files: list[str] = []
     run_timestamp = f"{time.strftime('%Y%m%d-%H%M%S')}-{int((time.time() % 1) * 1000):03d}"
     image_index = 1
+    outputs = job_info.get("outputs", {})
 
-    for node_id, node_output in job_info['outputs'].items():
-        if 'images' in node_output:
-            for image in node_output['images']:
-                filename = image['filename']
-                subfolder = image.get('subfolder', '')
-                folder_type = image.get('type', 'output')
-
-                img_data = get_image(server_url, filename, subfolder, folder_type, auth=server_auth)
+    if isinstance(outputs, dict):
+        for node_output in outputs.values():
+            if not isinstance(node_output, dict) or "images" not in node_output:
+                continue
+            for image in node_output["images"]:
+                if not isinstance(image, dict):
+                    continue
+                filename = image.get("filename")
+                if not filename:
+                    continue
+                subfolder = image.get("subfolder", "")
+                folder_type = image.get("type", "output")
+                img_data = get_image(server_url, str(filename), str(subfolder), str(folder_type), auth=server_auth)
                 if img_data:
-                    local_filename = build_output_filename(
-                        output_prefix,
-                        run_timestamp,
-                        image_index,
-                        filename,
-                    )
+                    local_filename = build_output_filename(output_prefix, run_timestamp, image_index, str(filename))
                     local_filepath = os.path.join(output_dir, local_filename)
-                    with open(local_filepath, "wb") as f:
-                        f.write(img_data)
+                    with open(local_filepath, "wb") as file:
+                        file.write(img_data)
                     downloaded_files.append(local_filepath)
                     image_index += 1
 
-    # Output the JSON result
-    print(json.dumps({
+    if not downloaded_files:
+        error_message = "No downloadable output images were produced."
+        _finalize_record(
+            record,
+            server_id,
+            workflow_id,
+            status="error",
+            resolved_args=coerced_args,
+            prompt_id=prompt_id,
+            error_message=error_message,
+        )
+        return _build_error_payload(error_message, run_id)
+
+    _finalize_record(
+        record,
+        server_id,
+        workflow_id,
+        status="success",
+        resolved_args=coerced_args,
+        prompt_id=prompt_id,
+        images=downloaded_files,
+    )
+    return {
         "status": "success",
         "server": server_id,
+        "workflow_id": workflow_id,
+        "run_id": run_id,
         "prompt_id": prompt_id,
         "images": downloaded_files,
-    }))
+    }
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="ComfyUI Client for OpenClaw Skill")
+    parser.add_argument(
+        "--workflow",
+        required=True,
+        help="Workflow identifier: '<server_id>/<workflow_id>' or just '<workflow_id>' (uses default server)",
+    )
+    parser.add_argument("--args", required=True, help="JSON string of parameter key-values mapping to the schema")
+    args = parser.parse_args()
+
+    try:
+        input_args = json.loads(args.args)
+    except json.JSONDecodeError:
+        print(json.dumps({"status": "error", "error": "Invalid JSON format for --args"}))
+        return
+
+    result = execute_workflow(args.workflow, input_args)
+    print(json.dumps(result))
 
 
 if __name__ == "__main__":
