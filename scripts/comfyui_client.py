@@ -187,6 +187,22 @@ def get_history(server_url, prompt_id, auth=""):
         return None
 
 
+def is_job_in_queue(server_url, prompt_id, auth=""):
+    """Check if prompt_id is still pending or running in ComfyUI queue."""
+    req = urllib.request.Request(f"{server_url}/queue")
+    _add_auth(req, auth)
+    try:
+        with urllib.request.urlopen(req) as response:
+            queue_data = json.loads(response.read())
+        running = queue_data.get("queue_running", [])
+        pending = queue_data.get("queue_pending", [])
+        all_jobs = running + pending
+        return any(job[1] == prompt_id for job in all_jobs if len(job) > 1)
+    except urllib.error.URLError:
+        # 网络抖动时保守处理，假设任务还活着
+        return True
+
+
 def get_image(server_url, filename, subfolder, folder_type, auth=""):
     data = {"filename": filename, "subfolder": subfolder, "type": folder_type}
     url_values = urllib.parse.urlencode(data)
@@ -296,20 +312,20 @@ def main():
 
     prompt_id = queue_res['prompt_id']
 
-    # 8. Poll for completion via history (timeout: 30 minutes)
-    poll_timeout = 1800
-    poll_elapsed = 0
+    # 8. Poll for completion via history
+    # - Job in history → done
+    # - Job not in history but still in queue/running → keep waiting
+    # - Job in neither → lost or cancelled → error
     job_info = None
-    while poll_elapsed < poll_timeout:
+    while True:
         history = get_history(server_url, prompt_id, auth=server_auth)
         if history and prompt_id in history:
             job_info = history[prompt_id]
             break
+        if not is_job_in_queue(server_url, prompt_id, auth=server_auth):
+            print(json.dumps({"error": f"Job {prompt_id} disappeared from queue without producing results"}))
+            return
         time.sleep(2)
-        poll_elapsed += 2
-    if job_info is None:
-        print(json.dumps({"error": f"Timed out waiting for job {prompt_id} after {poll_timeout}s"}))
-        return
 
     # 9. Check for execution errors
     status_info = job_info.get("status", {})
