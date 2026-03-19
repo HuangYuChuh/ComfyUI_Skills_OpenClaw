@@ -436,19 +436,6 @@ def execute_workflow_by_ids(server_id: str, workflow_id: str, input_args: dict[s
                     downloaded_files.append(local_filepath)
                     image_index += 1
 
-    if not downloaded_files:
-        error_message = "No downloadable output images were produced."
-        _finalize_record(
-            record,
-            server_id,
-            workflow_id,
-            status="error",
-            resolved_args=coerced_args,
-            prompt_id=prompt_id,
-            error_message=error_message,
-        )
-        return _build_error_payload(error_message, run_id)
-
     _finalize_record(
         record,
         server_id,

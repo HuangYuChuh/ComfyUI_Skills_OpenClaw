@@ -437,7 +437,7 @@ class UIStorageService:
         if image_index < 0 or image_index >= len(images):
             raise FileNotFoundError(f"{run_id}:{image_index}")
 
-        output_dir = self._resolve_server_output_dir(server_id)
+        output_dir = self._resolve_server_output_dir(server_id).resolve()
         image_path = Path(images[image_index]).expanduser()
         if not image_path.is_absolute():
             image_path = output_dir / image_path
