@@ -401,6 +401,8 @@ Default import behavior:
 - [ ] Webhook callbacks on task completion
 - [ ] Scheduled workflow execution (cron-style)
 - [ ] Guided workflow rewrite recipes for agents
+- [ ] Native ComfyUI plugin with AI-assisted parameter mapping — describe what a workflow does in natural language inside ComfyUI, and let the AI automatically infer node-field relationships to generate `schema.json`, eliminating manual parameter configuration
+- [ ] AI agent workflow generation — describe your image/video generation goal in natural language, and let the AI agent automatically construct, connect, and configure a complete ComfyUI workflow graph from scratch
 
 ---
 
