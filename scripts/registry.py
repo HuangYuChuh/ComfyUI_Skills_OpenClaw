@@ -1,12 +1,15 @@
 import os
 import json
 import argparse
-
 import sys
+from logging import getLogger
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from shared.config import get_server_schema_path, list_server_workflow_dirs
 from shared.runtime_config import get_runtime_config
+
+logger = getLogger(__name__)
 
 
 def get_workflows(is_agent=False):
@@ -71,8 +74,8 @@ def get_workflows(is_agent=False):
                         }
 
                 all_workflows.append(workflow_info)
-            except Exception:
-                pass
+            except (json.JSONDecodeError, OSError) as e:
+                logger.warning("Skipping workflow '%s/%s': %s", server_id, workflow_id, e)
 
     if is_agent:
         # Clean internal fields
