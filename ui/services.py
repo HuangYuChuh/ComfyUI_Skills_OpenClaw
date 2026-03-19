@@ -123,9 +123,16 @@ class UIStorageService:
         config = self.get_config()
         for s in config.get("servers", []):
             if s.get("id") == server_id:
-                for key in ("name", "url", "auth", "enabled", "output_dir"):
-                    if key in updates:
-                        s[key] = updates[key]
+                if "name" in updates:
+                    s["name"] = str(updates["name"] or "").strip() or server_id
+                if "url" in updates:
+                    s["url"] = str(updates["url"] or "").strip()
+                if "auth" in updates:
+                    s["auth"] = str(updates["auth"] or "").strip()
+                if "enabled" in updates:
+                    s["enabled"] = bool(updates["enabled"])
+                if "output_dir" in updates:
+                    s["output_dir"] = str(updates["output_dir"] or "./outputs").strip() or "./outputs"
                 self.save_config(config)
                 return self._serialize_server_for_ui(s)
         raise FileNotFoundError(f"Server '{server_id}' not found")
