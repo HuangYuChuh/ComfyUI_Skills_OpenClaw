@@ -189,6 +189,18 @@ Requirements:
 
 </details>
 
+## Updating
+
+To update the skill, pull the repository and restart the UI or your agent runtime:
+
+```bash
+git pull --ff-only
+```
+
+This updates the backend code, docs, and the bundled frontend files in `ui/static/` together.
+
+If you use the update prompt in the Web UI, it follows the same repository-first update flow.
+
 ## ComfyUI Workflow Setup
 
 Before you start, make sure your ComfyUI server is already running. The default local address is `http://127.0.0.1:8188`.

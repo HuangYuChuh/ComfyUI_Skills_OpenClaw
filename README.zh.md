@@ -186,6 +186,18 @@ cp config.example.json config.json
 
 </details>
 
+## 更新
+
+更新这个 skill 时，正常只需要拉取仓库，然后重启 UI 或 Agent 运行环境：
+
+```bash
+git pull --ff-only
+```
+
+这会一起更新后端代码、文档，以及仓库里已经打包好的前端文件 `ui/static/`。
+
+如果你是在 Web UI 里点更新提示，走的也是同一条“优先更新整个仓库”的流程。
+
 ## 配置 ComfyUI 工作流
 
 开始配置前，请先确保 ComfyUI 服务已经运行，本地 ComfyUI 默认地址是 `http://127.0.0.1:8188`。
