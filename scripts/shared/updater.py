@@ -14,6 +14,17 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 STATIC_DIR = REPO_ROOT / "ui" / "static"
 
 
+def _format_success_message(component: str, before: str | None, after: str | None) -> str:
+    label = "System" if component == "system" else "Frontend"
+    short_before = (before or "")[:8]
+    short_after = (after or "")[:8]
+    if short_before and short_after and short_before != short_after:
+        return f"{label} updated ({short_before} -> {short_after})"
+    if short_after:
+        return f"{label} updated to {short_after}"
+    return f"{label} updated"
+
+
 class UpdateProvider:
     """Base interface for update providers."""
 
@@ -101,6 +112,7 @@ class GitUpdateProvider(UpdateProvider):
                 "component": "system",
                 "commit_before": (commit_before or "")[:8],
                 "commit_after": (commit_after or "")[:8],
+                "message": _format_success_message("system", commit_before, commit_after),
             }
         except subprocess.TimeoutExpired:
             return {"success": False, "message": "git pull timed out"}
@@ -194,6 +206,12 @@ class CompositeUpdateProvider(UpdateProvider):
         message = primary.get("message")
         if warning:
             message = f"Updated {target}, but another update path failed: {warning}"
+        elif not message:
+            message = _format_success_message(
+                target,
+                str(primary.get("commit_before", "")),
+                str(primary.get("commit_after", "")),
+            )
 
         result = {
             "success": True,
