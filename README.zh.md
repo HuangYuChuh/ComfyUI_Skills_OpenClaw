@@ -1,6 +1,9 @@
 # ComfyUI Skills for OpenClaw
 
 ![ComfyUI Skills Banner](./asset/banner-ui-20250309.jpg)
+
+**[▶ 演示视频（Bilibili）](https://www.bilibili.com/video/BV1a6cUzVEE6/)**
+
 这是一个面向 OpenClaw、Codex 和 Claude Code 的 ComfyUI Skill 集成层：支持调用你在 ComfyUI 中自行编排并导出（API格式）的 Workflow，将其封装为可被这些 Agent 通过自然语言触发的 Skills。
 
 它会把自然语言请求转成结构化的 Skill 参数，映射到 ComfyUI 工作流输入后提交执行，等待任务完成并将生成图片下载到本地。

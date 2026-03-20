@@ -7,6 +7,8 @@
   </a>
 </p>
 
+**[▶ Demo Video (Bilibili)](https://www.bilibili.com/video/BV1a6cUzVEE6/)**
+
 This project is a ComfyUI skill integration layer for OpenClaw, Codex, and Claude Code. It turns the workflows you build and export from ComfyUI in API format into callable skills that these agents can trigger with natural language.
 
 It converts natural language requests into structured skill arguments, maps them to ComfyUI workflow inputs, submits jobs to ComfyUI, waits for completion, then pulls generated images back to local disk.
