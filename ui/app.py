@@ -71,6 +71,15 @@ def create_app() -> FastAPI:
     app = FastAPI(title="ComfyUI OpenClaw Skill Manager")
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
+    @app.middleware("http")
+    async def add_update_safe_cache_headers(request: Request, call_next):
+        response = await call_next(request)
+        if request.url.path in {"/", "/index.html", "/static/index.html", "/static/version.json"}:
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        return response
+
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
         errors = jsonable_encoder(exc.errors())
