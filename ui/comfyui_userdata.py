@@ -49,10 +49,13 @@ class ComfyUIServerAPI:
                 if response.status_code >= 400:
                     continue
                 paths = self._extract_json_paths(response.json())
-                return paths
+                if paths:
+                    return paths
             except (requests.RequestException, ValueError) as exc:
                 last_error = exc
 
+        if last_error is None:
+            return []
         if last_error is not None:
             raise ComfyUIClientError(f"Failed to list saved ComfyUI workflows: {last_error}") from last_error
         raise ComfyUIClientError("Failed to list saved ComfyUI workflows from /userdata.")
