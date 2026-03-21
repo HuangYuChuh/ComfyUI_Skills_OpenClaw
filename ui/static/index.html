@@ -6,10 +6,105 @@
     <title>ComfyUI OpenClaw Skill UI</title>
     <link rel="icon" type="image/png" href="/static/logo.png" />
     <link rel="apple-touch-icon" href="/static/logo.png" />
-    <script type="module" crossorigin src="/static/assets/index-BVcNiZiC.js"></script>
     <link rel="stylesheet" crossorigin href="/static/assets/index-D7OBT30Z.css">
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      (function () {
+        var RECOVERY_PARAM = "__ui_recovery";
+        var RELOAD_PARAM = "__ui_reload";
+        var MAX_RECOVERY_ATTEMPTS = 1;
+        var SESSION_KEYS = ["update-banner-feedback", "update-banner-dismissed"];
+        var LOCAL_KEYS = ["ui-lang", "ui-server"];
+
+        function clearKnownUiState() {
+          try {
+            SESSION_KEYS.forEach(function (key) {
+              window.sessionStorage.removeItem(key);
+            });
+          } catch (_) {}
+
+          try {
+            LOCAL_KEYS.forEach(function (key) {
+              window.localStorage.removeItem(key);
+            });
+          } catch (_) {}
+        }
+
+        function buildReloadUrl(resetRecoveryState) {
+          var url = new URL(window.location.href);
+          var nextAttempt = resetRecoveryState
+            ? 0
+            : Number(url.searchParams.get(RECOVERY_PARAM) || "0") + 1;
+
+          if (nextAttempt > 0) {
+            url.searchParams.set(RECOVERY_PARAM, String(nextAttempt));
+          } else {
+            url.searchParams.delete(RECOVERY_PARAM);
+          }
+
+          url.searchParams.set(RELOAD_PARAM, String(Date.now()));
+          return url.toString();
+        }
+
+        function rootHasRenderedContent(root) {
+          return !!root && (root.childElementCount > 0 || (root.textContent || "").trim() !== "");
+        }
+
+        function renderRecoveryNotice() {
+          var root = document.getElementById("root");
+          if (!root || root.dataset.bootRecoveryShown === "1") {
+            return;
+          }
+
+          root.dataset.bootRecoveryShown = "1";
+          root.innerHTML =
+            '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#090b0f;color:#f3f4f6;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;">' +
+            '<div style="max-width:420px;width:100%;padding:24px;border:1px solid rgba(148,163,184,.22);border-radius:16px;background:rgba(17,19,24,.92);box-shadow:0 20px 40px rgba(0,0,0,.25);">' +
+            '<h1 style="margin:0 0 12px;font-size:20px;">UI failed to load</h1>' +
+            '<p style="margin:0 0 16px;line-height:1.6;color:#d1d5db;">The page did not finish booting after the update. You can retry the reload or reset local UI state.</p>' +
+            '<div style="display:flex;gap:12px;flex-wrap:wrap;">' +
+            '<button id="ui-retry-button" type="button" style="border:0;border-radius:12px;padding:10px 14px;background:#e11d48;color:#fff;cursor:pointer;">Retry Reload</button>' +
+            '<button id="ui-reset-button" type="button" style="border:1px solid rgba(148,163,184,.22);border-radius:12px;padding:10px 14px;background:#111318;color:#f3f4f6;cursor:pointer;">Reset UI State</button>' +
+            "</div>" +
+            "</div>" +
+            "</div>";
+
+          var retryButton = document.getElementById("ui-retry-button");
+          var resetButton = document.getElementById("ui-reset-button");
+
+          if (retryButton) {
+            retryButton.addEventListener("click", function () {
+              window.location.replace(buildReloadUrl(true));
+            });
+          }
+
+          if (resetButton) {
+            resetButton.addEventListener("click", function () {
+              clearKnownUiState();
+              window.location.replace(buildReloadUrl(true));
+            });
+          }
+        }
+
+        window.setTimeout(function () {
+          var root = document.getElementById("root");
+          if (rootHasRenderedContent(root)) {
+            return;
+          }
+
+          var attempts = Number(new URL(window.location.href).searchParams.get(RECOVERY_PARAM) || "0");
+          if (attempts < MAX_RECOVERY_ATTEMPTS) {
+            clearKnownUiState();
+            window.location.replace(buildReloadUrl(false));
+            return;
+          }
+
+          renderRecoveryNotice();
+        }, 5000);
+      })();
+    </script>
+    <script type="module" crossorigin src="/static/assets/index-BVcNiZiC.js"></script>
   </body>
   </html>
