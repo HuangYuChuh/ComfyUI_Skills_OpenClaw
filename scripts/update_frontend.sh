@@ -5,6 +5,19 @@ REPO="HuangYuChuh/ComfyUI_Skills_OpenClaw-frontend"
 TAG="${1:-latest}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 STATIC_DIR="$ROOT_DIR/ui/static"
+CLEAN_REF="${CLEAN_REF:-origin/main}"
+SKIP_UI_CLEAN="${SKIP_UI_CLEAN:-0}"
+CLEAN_SCRIPT="$ROOT_DIR/scripts/clean_generated_ui.sh"
+
+if [[ "$SKIP_UI_CLEAN" != "1" && -f "$CLEAN_SCRIPT" ]]; then
+  if git -C "$ROOT_DIR" rev-parse --verify "$CLEAN_REF" >/dev/null 2>&1; then
+    echo "Cleaning generated UI files against '$CLEAN_REF' ..."
+    bash "$CLEAN_SCRIPT" "$CLEAN_REF"
+  else
+    echo "Skipping generated UI cleanup because git ref '$CLEAN_REF' is unavailable."
+    echo "Hint: run 'git fetch origin' first, or set CLEAN_REF to an existing ref."
+  fi
+fi
 
 echo "Fetching release '$TAG' from $REPO ..."
 
