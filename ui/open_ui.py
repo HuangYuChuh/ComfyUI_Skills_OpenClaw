@@ -48,8 +48,9 @@ def wait_until_ready(url: str, timeout_seconds: float) -> bool:
 def start_ui_process(python_bin: str) -> tuple[subprocess.Popen[bytes], Path]:
     log_path = SCRIPT_DIR / "ui.log"
     log_handle = log_path.open("ab")
+    launcher = SCRIPT_DIR / "run_ui.sh"
     kwargs: dict[str, object] = {
-        "cwd": str(SCRIPT_DIR),
+        "cwd": str(ROOT_DIR),
         "stdin": subprocess.DEVNULL,
         "stdout": log_handle,
         "stderr": subprocess.STDOUT,
@@ -64,10 +65,13 @@ def start_ui_process(python_bin: str) -> tuple[subprocess.Popen[bytes], Path]:
     else:
         kwargs["start_new_session"] = True
 
-    process = subprocess.Popen(
-        [python_bin, str(SCRIPT_DIR / "app.py")],
-        **kwargs,
-    )
+    if os.name == "nt":
+        process = subprocess.Popen([python_bin, str(SCRIPT_DIR / "app.py")], **kwargs)
+    else:
+        env = os.environ.copy()
+        env.setdefault("PYTHON_BIN", python_bin)
+        kwargs["env"] = env
+        process = subprocess.Popen([str(launcher)], **kwargs)
     return process, log_path
 
 

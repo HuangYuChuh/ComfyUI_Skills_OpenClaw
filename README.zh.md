@@ -84,6 +84,8 @@ python3 -m pip install -r requirements.txt
 cp config.example.json config.json
 ```
 
+如果 `python3 --version` 低于 3.10，请改用任意已安装的 `python3.10+` 解释器创建虚拟环境，例如 `python3.12 -m venv .venv`。
+
 
 
 让 OpenClaw 帮你安装：
@@ -123,6 +125,8 @@ python3 -m pip install -r requirements.txt
 cp config.example.json config.json
 ```
 
+如果 `python3 --version` 低于 3.10，请改用任意已安装的 `python3.10+` 解释器创建虚拟环境，例如 `python3.12 -m venv .venv`。
+
 
 
 让 Claude Code 帮你安装：
@@ -161,6 +165,8 @@ source .venv/bin/activate
 python3 -m pip install -r requirements.txt
 cp config.example.json config.json
 ```
+
+如果 `python3 --version` 低于 3.10，请改用任意已安装的 `python3.10+` 解释器创建虚拟环境，例如 `python3.12 -m venv .venv`。
 
 
 

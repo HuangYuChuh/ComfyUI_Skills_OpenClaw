@@ -87,6 +87,8 @@ python3 -m pip install -r requirements.txt
 cp config.example.json config.json
 ```
 
+If `python3 --version` is below 3.10, create the virtual environment with any installed `python3.10+` interpreter, for example `python3.12 -m venv .venv`.
+
 
 
 Let OpenClaw install it for you:
@@ -126,6 +128,8 @@ python3 -m pip install -r requirements.txt
 cp config.example.json config.json
 ```
 
+If `python3 --version` is below 3.10, create the virtual environment with any installed `python3.10+` interpreter, for example `python3.12 -m venv .venv`.
+
 
 
 Let Claude Code install it for you:
@@ -164,6 +168,8 @@ source .venv/bin/activate
 python3 -m pip install -r requirements.txt
 cp config.example.json config.json
 ```
+
+If `python3 --version` is below 3.10, create the virtual environment with any installed `python3.10+` interpreter, for example `python3.12 -m venv .venv`.
 
 
 

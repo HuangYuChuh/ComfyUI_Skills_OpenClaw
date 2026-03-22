@@ -42,6 +42,7 @@ source .venv/bin/activate
 python3 -m pip install -r requirements.txt
 cp config.example.json config.json</code></pre>
     </div>
+    <p>If <code>python3 --version</code> is below 3.10, create the virtual environment with any installed <code>python3.10+</code> interpreter, for example <code>python3.12 -m venv .venv</code>.</p>
     <p>If your macOS Python blocks global package changes, keep everything inside the virtual environment above.</p>
   </section>
 
