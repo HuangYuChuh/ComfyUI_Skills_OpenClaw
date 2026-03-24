@@ -99,7 +99,7 @@ def extract_schema_params(workflow_data: dict[str, Any]) -> dict[str, dict[str, 
             auto_mapping = _get_auto_mapping(node_class, field, node_id)
             schema_params[f"{node_id}_{field}"] = {
                 "exposed": auto_mapping["exposed"],
-                "node_id": int(node_id),
+                "node_id": node_id,
                 "field": field,
                 "name": auto_mapping["name"],
                 "type": _get_type_guess(value),
@@ -124,10 +124,10 @@ def build_final_schema(schema_params: dict[str, dict[str, Any]]) -> dict[str, di
         alias = normalize_string(parameter.get("name"))
         if not alias:
             continue
-        alias = _ensure_unique_alias(final_schema, alias, int(parameter["node_id"]))
+        alias = _ensure_unique_alias(final_schema, alias, str(parameter["node_id"]))
 
         target: dict[str, Any] = {
-            "node_id": int(parameter["node_id"]),
+            "node_id": str(parameter["node_id"]),
             "field": normalize_string(parameter.get("field")),
             "required": bool(parameter.get("required", False)),
             "type": normalize_string(parameter.get("type"), "string") or "string",
@@ -145,7 +145,7 @@ def build_final_schema(schema_params: dict[str, dict[str, Any]]) -> dict[str, di
     return final_schema
 
 
-def _ensure_unique_alias(final_schema: dict[str, dict[str, Any]], alias: str, node_id: int) -> str:
+def _ensure_unique_alias(final_schema: dict[str, dict[str, Any]], alias: str, node_id: str) -> str:
     if alias not in final_schema:
         return alias
 
