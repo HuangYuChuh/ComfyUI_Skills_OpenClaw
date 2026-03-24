@@ -138,7 +138,7 @@ class ToggleModel(BaseModel):
     enabled: bool
 
 
-class WorkflowOrderModel(BaseModel):
+class WorkflowIdsModel(BaseModel):
     workflow_ids: list[str] = Field(min_length=1)
 
     @field_validator("workflow_ids", mode="before")
@@ -171,6 +171,14 @@ class WorkflowOrderModel(BaseModel):
             raise ValueError("At least one workflow ID is required")
 
         return normalized
+
+
+class WorkflowOrderModel(WorkflowIdsModel):
+    pass
+
+
+class WorkflowBatchDeleteModel(WorkflowIdsModel):
+    pass
 
 
 class TransferPreviewModel(BaseModel):

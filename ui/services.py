@@ -73,7 +73,9 @@ class WorkflowSummary:
             "origin": self.origin,
             "source_label": self.source_label,
             "tags": self.tags,
-            "has_history": self.has_history,
+            # Keep the key for backward compatibility with older bundles,
+            # but always disable the list-level history entry point.
+            "has_history": False,
         }
 
 
@@ -237,7 +239,7 @@ class UIStorageService:
                     origin=origin,
                     source_label=source_label,
                     tags=tags,
-                    has_history=self._workflow_has_history(sid, wf_id),
+                    has_history=False,
                 ))
 
             server_workflows.sort(
@@ -391,6 +393,28 @@ class UIStorageService:
             except OSError:
                 pass
         self._remove_workflow_from_order(server_id, workflow_id)
+
+    def delete_workflows(self, server_id: str, workflow_ids: list[str]) -> dict[str, list[str]]:
+        config = self.get_config()
+        if self._get_server_entry(config, server_id) is None:
+            raise FileNotFoundError(f"Server '{server_id}' not found")
+
+        deleted: list[str] = []
+        missing: list[str] = []
+
+        for workflow_id in workflow_ids:
+            workflow_path = self._workflow_path(server_id, workflow_id)
+            schema_path = self._schema_path(server_id, workflow_id)
+            history_dir = self._history_dir(server_id, workflow_id)
+
+            if not workflow_path.exists() and not schema_path.exists() and not history_dir.exists():
+                missing.append(workflow_id)
+                continue
+
+            self.delete_workflow(server_id, workflow_id)
+            deleted.append(workflow_id)
+
+        return {"deleted": deleted, "missing": missing}
 
     def reorder_workflows(self, server_id: str, workflow_ids: list[str]) -> list[str]:
         config = self.get_config()

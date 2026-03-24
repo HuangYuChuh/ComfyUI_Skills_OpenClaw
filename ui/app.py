@@ -25,6 +25,7 @@ try:
         RunWorkflowModel,
         SchemaModel,
         ServerModel,
+        WorkflowBatchDeleteModel,
         TransferExportModel,
         ToggleModel,
         TransferImportModel,
@@ -41,6 +42,7 @@ except ImportError:
         RunWorkflowModel,
         SchemaModel,
         ServerModel,
+        WorkflowBatchDeleteModel,
         TransferExportModel,
         ToggleModel,
         TransferImportModel,
@@ -226,6 +228,14 @@ def create_app() -> FastAPI:
     async def delete_workflow(server_id: str, workflow_id: str) -> dict:
         service.delete_workflow(server_id, workflow_id)
         return {"status": "success"}
+
+    @app.post("/api/servers/{server_id}/workflows/batch-delete")
+    async def batch_delete_workflows(server_id: str, data: WorkflowBatchDeleteModel) -> dict:
+        try:
+            result = service.delete_workflows(server_id, data.workflow_ids)
+        except FileNotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        return {"status": "success", **result}
 
     @app.post("/api/servers/{server_id}/workflow/{workflow_id}/run")
     async def run_workflow(server_id: str, workflow_id: str, data: RunWorkflowModel) -> dict:
