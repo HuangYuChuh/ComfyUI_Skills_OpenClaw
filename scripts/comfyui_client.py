@@ -102,9 +102,10 @@ def format_execution_errors(messages: list[Any]) -> str:
     return "Execution failed (no output produced)."
 
 
-def validate_and_coerce_params(input_args: dict[str, Any], parameters: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
+def validate_and_coerce_params(input_args: dict[str, Any], parameters: dict[str, Any]) -> tuple[dict[str, Any], list[str], list[str]]:
     errors: list[str] = []
     coerced: dict[str, Any] = {}
+    warnings: list[str] = []
 
     for key, param in parameters.items():
         if param.get("required", False) and key not in input_args:
@@ -115,7 +116,7 @@ def validate_and_coerce_params(input_args: dict[str, Any], parameters: dict[str,
 
     for key, value in input_args.items():
         if key not in parameters:
-            coerced[key] = value
+            warnings.append(f"Parameter '{key}' is not defined in the workflow schema and will be ignored. Available parameters: {sorted(parameters.keys())}")
             continue
 
         param = parameters[key]
@@ -141,7 +142,7 @@ def validate_and_coerce_params(input_args: dict[str, Any], parameters: dict[str,
         if key not in coerced and "default" in param:
             coerced[key] = param["default"]
 
-    return coerced, errors
+    return coerced, errors, warnings
 
 
 def queue_prompt(server_url: str, prompt_workflow: dict[str, Any], auth: str = "") -> dict[str, Any]:
@@ -363,7 +364,7 @@ def submit_workflow_by_ids(server_id: str, workflow_id: str, input_args: dict[st
         _finalize_record(record, server_id, workflow_id, status="error", error_message=error_payload["error"])
         return error_payload
 
-    coerced_args, validation_errors = validate_and_coerce_params(input_args, parameters)
+    coerced_args, validation_errors, param_warnings = validate_and_coerce_params(input_args, parameters)
     if validation_errors:
         error_message = "Parameter validation failed:\n" + "\n".join(f"  {error}" for error in validation_errors)
         _finalize_record(record, server_id, workflow_id, status="error", resolved_args=coerced_args, error_message=error_message)
@@ -393,13 +394,16 @@ def submit_workflow_by_ids(server_id: str, workflow_id: str, input_args: dict[st
     record["resolved_args"] = coerced_args
     _mark_record_running(record, server_id, workflow_id, prompt_id)
 
-    return {
+    result: dict[str, Any] = {
         "status": "submitted",
         "server": server_id,
         "workflow_id": workflow_id,
         "run_id": run_id,
         "prompt_id": prompt_id,
     }
+    if param_warnings:
+        result["warnings"] = param_warnings
+    return result
 
 
 def check_status(workflow_arg: str, run_id: str) -> dict[str, Any]:
@@ -629,7 +633,7 @@ def execute_workflow_by_ids(server_id: str, workflow_id: str, input_args: dict[s
         _finalize_record(record, server_id, workflow_id, status="error", error_message=error_payload["error"])
         return error_payload
 
-    coerced_args, validation_errors = validate_and_coerce_params(input_args, parameters)
+    coerced_args, validation_errors, param_warnings = validate_and_coerce_params(input_args, parameters)
     if validation_errors:
         error_message = "Parameter validation failed:\n" + "\n".join(f"  {error}" for error in validation_errors)
         _finalize_record(
@@ -770,7 +774,7 @@ def execute_workflow_by_ids(server_id: str, workflow_id: str, input_args: dict[s
         prompt_id=prompt_id,
         images=downloaded_files,
     )
-    return {
+    result: dict[str, Any] = {
         "status": "success",
         "server": server_id,
         "workflow_id": workflow_id,
@@ -778,6 +782,9 @@ def execute_workflow_by_ids(server_id: str, workflow_id: str, input_args: dict[s
         "prompt_id": prompt_id,
         "images": downloaded_files,
     }
+    if param_warnings:
+        result["warnings"] = param_warnings
+    return result
 
 
 def _cmd_run(args: argparse.Namespace) -> None:
