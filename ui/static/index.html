@@ -6,7 +6,7 @@
     <title>ComfyUI OpenClaw Skill UI</title>
     <link rel="icon" type="image/png" href="/static/logo.png" />
     <link rel="apple-touch-icon" href="/static/logo.png" />
-    <script type="module" crossorigin src="/static/assets/index-Dur4B611.js"></script>
+    <script type="module" crossorigin src="/static/assets/index-DZODVG__.js"></script>
     <link rel="stylesheet" crossorigin href="/static/assets/index-CgJ7x0ai.css">
   </head>
   <body>
@@ -92,6 +92,13 @@
         window.setTimeout(function () {
           var root = document.getElementById("root");
           if (rootHasRenderedContent(root)) {
+            // App loaded successfully — clean internal params from URL
+            var cleanUrl = new URL(window.location.href);
+            if (cleanUrl.searchParams.has(RELOAD_PARAM) || cleanUrl.searchParams.has(RECOVERY_PARAM)) {
+              cleanUrl.searchParams.delete(RELOAD_PARAM);
+              cleanUrl.searchParams.delete(RECOVERY_PARAM);
+              window.history.replaceState(null, "", cleanUrl.toString());
+            }
             return;
           }
 
