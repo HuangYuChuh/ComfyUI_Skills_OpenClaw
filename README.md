@@ -416,7 +416,6 @@ Default import behavior:
 - [x] Authentication support for remote ComfyUI servers
 - [x] Better schema validation before queueing
 - [x] Richer error reporting from ComfyUI node errors
-- [ ] Optional batch generation / multi-seed helpers
 - [ ] Execution history with parameter and result tracking
 - [ ] Webhook callbacks on task completion
 - [ ] Scheduled workflow execution (cron-style)

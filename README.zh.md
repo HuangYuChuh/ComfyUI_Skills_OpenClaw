@@ -414,7 +414,6 @@ python scripts/transfer_manager.py import --input ./openclaw-skill-export.json
 - [x] 远程 ComfyUI 服务器鉴权支持
 - [x] 增强提交前参数校验
 - [x] 更清晰展示 ComfyUI 返回的节点错误
-- [ ] 支持批量多 seed 生成
 - [ ] 执行历史记录（参数 + 结果追溯）
 - [ ] 任务完成后 Webhook 回调通知
 - [ ] 定时执行工作流（cron 风格）
