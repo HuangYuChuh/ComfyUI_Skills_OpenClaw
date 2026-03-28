@@ -1,5 +1,1 @@
-<<<<<<<< HEAD:ui/static/assets/versionUpgrade-DZ8KZRQB.js
 import{p as e,h as i,m as d}from"./index-DZODVG__.js";function c(a,s){const r=e(s),m=i(a.workflow_data,a.schema_params),o=d(m,r.schemaParams);return{workflowData:r.workflowData,schemaParams:o.schemaParams,workflowId:a.workflow_id,description:a.description||"",editingWorkflowId:a.workflow_id,hasUnsavedChanges:!0,upgradeSummary:o.summary}}export{c as buildVersionUpgradeState};
-========
-import{p as e,h as i,m as d}from"./index-Dur4B611.js";function c(a,s){const r=e(s),m=i(a.workflow_data,a.schema_params),o=d(m,r.schemaParams);return{workflowData:r.workflowData,schemaParams:o.schemaParams,workflowId:a.workflow_id,description:a.description||"",editingWorkflowId:a.workflow_id,hasUnsavedChanges:!0,upgradeSummary:o.summary}}export{c as buildVersionUpgradeState};
->>>>>>>> origin/main:ui/static/assets/versionUpgrade-DWt7nwJP.js
