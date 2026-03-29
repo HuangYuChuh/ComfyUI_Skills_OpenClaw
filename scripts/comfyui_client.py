@@ -102,6 +102,50 @@ def format_execution_errors(messages: list[Any]) -> str:
     return "Execution failed (no output produced)."
 
 
+def _build_merged_parameters(
+    parameters: dict[str, Any],
+    ui_parameters: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Merge ``parameters`` (explicit) with ``ui_parameters`` (fallback).
+
+    ``parameters`` entries always take precedence.  For every entry in
+    ``ui_parameters`` whose ``name`` (or ``field``) is not already covered by
+    ``parameters``, a lightweight mapping is added so that user-supplied values
+    can reach the correct workflow node even when the parameter was never
+    explicitly "exposed" in the UI.
+    """
+    merged: dict[str, Any] = dict(parameters)
+    if not ui_parameters:
+        return merged
+
+    covered_names: set[str] = set(merged.keys())
+
+    for _ui_key, ui_entry in ui_parameters.items():
+        if not isinstance(ui_entry, dict):
+            continue
+        name = str(ui_entry.get("name") or "").strip()
+        field = str(ui_entry.get("field") or "").strip()
+        if not name and not field:
+            continue
+
+        lookup_key = name or field
+        if lookup_key in covered_names:
+            continue
+
+        merged[lookup_key] = {
+            "node_id": ui_entry.get("node_id"),
+            "field": field,
+            "required": False,
+            "type": str(ui_entry.get("type") or "string"),
+            "description": str(ui_entry.get("description") or ""),
+        }
+        if "currentVal" in ui_entry:
+            merged[lookup_key]["default"] = ui_entry["currentVal"]
+        covered_names.add(lookup_key)
+
+    return merged
+
+
 def validate_and_coerce_params(input_args: dict[str, Any], parameters: dict[str, Any]) -> tuple[dict[str, Any], list[str], list[str]]:
     errors: list[str] = []
     coerced: dict[str, Any] = {}
@@ -358,11 +402,13 @@ def submit_workflow_by_ids(server_id: str, workflow_id: str, input_args: dict[st
     record = build_run_record(server_id, workflow_id, run_id, input_args, workflow_path, schema_path)
     save_run_record(server_id, workflow_id, record)
 
-    parameters = schema_data.get("parameters", {})
-    if not isinstance(parameters, dict):
+    raw_parameters = schema_data.get("parameters", {})
+    if not isinstance(raw_parameters, dict):
         error_payload = _build_error_payload(f"Schema parameters are invalid for '{server_id}/{workflow_id}'", run_id)
         _finalize_record(record, server_id, workflow_id, status="error", error_message=error_payload["error"])
         return error_payload
+
+    parameters = _build_merged_parameters(raw_parameters, schema_data.get("ui_parameters"))
 
     coerced_args, validation_errors, param_warnings = validate_and_coerce_params(input_args, parameters)
     if validation_errors:
@@ -627,11 +673,13 @@ def execute_workflow_by_ids(server_id: str, workflow_id: str, input_args: dict[s
     record = build_run_record(server_id, workflow_id, run_id, input_args, workflow_path, schema_path)
     save_run_record(server_id, workflow_id, record)
 
-    parameters = schema_data.get("parameters", {})
-    if not isinstance(parameters, dict):
+    raw_parameters = schema_data.get("parameters", {})
+    if not isinstance(raw_parameters, dict):
         error_payload = _build_error_payload(f"Schema parameters are invalid for '{server_id}/{workflow_id}'", run_id)
         _finalize_record(record, server_id, workflow_id, status="error", error_message=error_payload["error"])
         return error_payload
+
+    parameters = _build_merged_parameters(raw_parameters, schema_data.get("ui_parameters"))
 
     coerced_args, validation_errors, param_warnings = validate_and_coerce_params(input_args, parameters)
     if validation_errors:
