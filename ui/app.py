@@ -19,6 +19,7 @@ sys.path.insert(0, str(_project_root / "scripts"))
 
 try:
     from .models import (
+        CheckDependencyModel,
         ConfigModel,
         CreateServerModel,
         LocalWorkflowImportModel,
@@ -36,6 +37,7 @@ try:
     from .settings import DEFAULT_HOST, DEFAULT_PORT, STATIC_DIR, ensure_runtime_dirs
 except ImportError:
     from models import (
+        CheckDependencyModel,
         ConfigModel,
         CreateServerModel,
         LocalWorkflowImportModel,
@@ -55,6 +57,15 @@ except ImportError:
 from shared.health import check_server_health, test_server_connection
 from comfyui_client import execute_workflow_by_ids
 from shared.runtime_config import get_server_by_id
+
+try:
+    from .dependency_checker import DependencyCheckError, check_dependencies
+    from .dependency_installer import DependencyInstaller
+    from .comfyui_userdata import ComfyUIClientError
+except ImportError:
+    from dependency_checker import DependencyCheckError, check_dependencies
+    from dependency_installer import DependencyInstaller
+    from comfyui_userdata import ComfyUIClientError
 from shared.transfer_bundle import (
     BundleValidationError,
     apply_bundle_import,
@@ -376,6 +387,93 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=404, detail=str(e)) from e
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e)) from e
+
+    # ── Dependency Check ────────────────────────────────────────
+
+    @app.post("/api/servers/{server_id}/workflows/check-dependencies")
+    async def check_workflow_dependencies(server_id: str, data: CheckDependencyModel) -> dict:
+        """Check an uploaded workflow JSON for missing nodes and models."""
+        if data.workflow_data is None:
+            raise HTTPException(status_code=400, detail="workflow_data is required")
+        try:
+            server = get_server_by_id(server_id)
+            if server is None:
+                raise FileNotFoundError(f"Server '{server_id}' not found")
+            report = await asyncio.to_thread(
+                check_dependencies,
+                server["url"],
+                server.get("auth", ""),
+                data.workflow_data,
+                None,
+                data.locale,
+            )
+            return {"status": "success", "report": report.to_dict()}
+        except FileNotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        except DependencyCheckError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+        except ComfyUIClientError as e:
+            raise HTTPException(status_code=502, detail=str(e)) from e
+        except Exception as e:
+            logger.exception("Unexpected error in check_workflow_dependencies")
+            raise HTTPException(status_code=500, detail=str(e)) from e
+
+    @app.post("/api/servers/{server_id}/workflows/{workflow_id}/check-dependencies")
+    async def check_saved_workflow_dependencies(
+        server_id: str, workflow_id: str, locale: str = "zh"
+    ) -> dict:
+        """Check an already-saved workflow for missing nodes and models."""
+        try:
+            server = get_server_by_id(server_id)
+            if server is None:
+                raise FileNotFoundError(f"Server '{server_id}' not found")
+            detail = service.get_workflow_detail(server_id, workflow_id)
+            workflow_data = detail["workflow_data"]
+            report = await asyncio.to_thread(
+                check_dependencies,
+                server["url"],
+                server.get("auth", ""),
+                workflow_data,
+                None,
+                locale,
+            )
+            return {"status": "success", "report": report.to_dict()}
+        except FileNotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        except DependencyCheckError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+        except ComfyUIClientError as e:
+            raise HTTPException(status_code=502, detail=str(e)) from e
+        except Exception as e:
+            logger.exception("Unexpected error in check_saved_workflow_dependencies")
+            raise HTTPException(status_code=500, detail=str(e)) from e
+
+    @app.post("/api/servers/{server_id}/install-dependencies")
+    async def install_dependencies(server_id: str, data: dict) -> dict:
+        """Install missing custom nodes and/or models."""
+        repo_urls = data.get("repo_urls", [])
+        models = data.get("models", [])
+        locale = data.get("locale", "zh")
+        if not repo_urls and not models:
+            raise HTTPException(
+                status_code=400,
+                detail="repo_urls list or models list is required",
+            )
+        try:
+            server = get_server_by_id(server_id)
+            if server is None:
+                raise FileNotFoundError(f"Server '{server_id}' not found")
+            installer = DependencyInstaller(server["url"], server.get("auth", ""))
+            report = await asyncio.to_thread(
+                installer.install_all, repo_urls, models or None
+            )
+            result = report.to_dict()
+            result["text_report"] = report.format_text(locale)
+            return {"status": "success", "report": result}
+        except FileNotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        except ComfyUIClientError as e:
+            raise HTTPException(status_code=502, detail=str(e)) from e
 
     # ── System Update ────────────────────────────────────────────
 

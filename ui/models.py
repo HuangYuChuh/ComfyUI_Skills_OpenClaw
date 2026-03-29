@@ -215,3 +215,14 @@ class LocalWorkflowImportModel(BaseModel):
 
 class RunWorkflowModel(BaseModel):
     args: dict[str, Any] = Field(default_factory=dict)
+
+
+class CheckDependencyModel(BaseModel):
+    """Request body for checking workflow dependencies.
+
+    Provide either ``workflow_data`` (raw API-format workflow JSON) or leave
+    it empty to check an already-saved workflow via the URL path parameter.
+    """
+
+    workflow_data: dict[str, Any] | None = None
+    locale: str = "zh"  # "zh" or "en"
