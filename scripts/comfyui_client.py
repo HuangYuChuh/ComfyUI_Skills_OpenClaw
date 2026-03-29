@@ -863,6 +863,66 @@ def _cmd_status(args: argparse.Namespace) -> None:
     print(json.dumps(result))
 
 
+def _cmd_check_deps(args: argparse.Namespace) -> None:
+    """Check workflow dependencies before execution."""
+    server_id, workflow_id = parse_workflow_arg(args.workflow)
+
+    err, server_url, server_auth, _output_dir = _resolve_server_context(server_id)
+    if err:
+        print(json.dumps(err))
+        return
+
+    err, workflow_data, schema_data, _, _ = _load_workflow_and_schema(server_id, workflow_id)
+    if err:
+        print(json.dumps(err))
+        return
+
+    # Import dependency checker (lives in ui/ package)
+    _ui_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ui")
+    if _ui_dir not in sys.path:
+        sys.path.insert(0, _ui_dir)
+
+    try:
+        from dependency_checker import check_dependencies, DependencyCheckError
+        report = check_dependencies(server_url, server_auth, workflow_data)
+        print(json.dumps({"status": "success", "report": report.to_dict()}))
+    except DependencyCheckError as exc:
+        print(json.dumps({"status": "error", "error": str(exc)}))
+    except Exception as exc:
+        print(json.dumps({"status": "error", "error": f"Dependency check failed: {exc}"}))
+
+
+def _cmd_install_deps(args: argparse.Namespace) -> None:
+    """Install missing custom node packages."""
+    server_id, _ = parse_workflow_arg(args.workflow)
+
+    err, server_url, server_auth, _output_dir = _resolve_server_context(server_id)
+    if err:
+        print(json.dumps(err))
+        return
+
+    try:
+        repo_urls = json.loads(args.repos)
+        if not isinstance(repo_urls, list):
+            print(json.dumps({"status": "error", "error": "--repos must be a JSON array of URLs"}))
+            return
+    except json.JSONDecodeError:
+        print(json.dumps({"status": "error", "error": "Invalid JSON for --repos"}))
+        return
+
+    _ui_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ui")
+    if _ui_dir not in sys.path:
+        sys.path.insert(0, _ui_dir)
+
+    try:
+        from dependency_installer import DependencyInstaller
+        installer = DependencyInstaller(server_url, server_auth)
+        report = installer.install_nodes(repo_urls)
+        print(json.dumps({"status": "success", "report": report.to_dict()}))
+    except Exception as exc:
+        print(json.dumps({"status": "error", "error": f"Installation failed: {exc}"}))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="ComfyUI Client for OpenClaw Skill")
     subparsers = parser.add_subparsers(dest="command")
@@ -878,6 +938,17 @@ def main() -> None:
     sp_status.add_argument("--workflow", required=True, help="Workflow identifier: '<server_id>/<workflow_id>'")
     sp_status.add_argument("--run-id", required=True, help="Run ID returned by the submit command")
     sp_status.set_defaults(func=_cmd_status)
+
+    # --- sub: check-deps ---
+    sp_deps = subparsers.add_parser("check-deps", help="Check workflow for missing custom nodes and models")
+    sp_deps.add_argument("--workflow", required=True, help="Workflow identifier: '<server_id>/<workflow_id>'")
+    sp_deps.set_defaults(func=_cmd_check_deps)
+
+    # --- sub: install-deps ---
+    sp_install = subparsers.add_parser("install-deps", help="Install missing custom node packages")
+    sp_install.add_argument("--workflow", required=True, help="Workflow identifier (used to resolve server): '<server_id>/<workflow_id>'")
+    sp_install.add_argument("--repos", required=True, help="JSON array of repository URLs to install")
+    sp_install.set_defaults(func=_cmd_install_deps)
 
     # --- legacy flags (no subcommand) ---
     parser.add_argument("--workflow", dest="legacy_workflow", help=argparse.SUPPRESS)

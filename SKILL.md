@@ -113,9 +113,49 @@ For example, if the schema exposes `prompt` and `seed`, you need to construct:
 
 *If critical parameters are missing, politely ask the user using `notify_user`. For example: "To generate the image you need, would you like a specific person or animal? Do you have an expected visual style?"*
 
+### Step 2.5: Pre-flight Dependency Check (Automatic)
+
+Before executing a workflow, **always** run a dependency check to verify that all required custom nodes and models are available on the ComfyUI server:
+
+```bash
+python ./scripts/comfyui_client.py check-deps --workflow <server_id>/<workflow_id>
+```
+
+**Return format:**
+```json
+{
+  "status": "success",
+  "report": {
+    "is_ready": true/false,
+    "missing_nodes": [
+      {"class_type": "SAMDetectorCombined", "package_name": "ComfyUI Impact Pack", "source_repo": "https://github.com/...", "can_auto_install": true}
+    ],
+    "missing_models": [
+      {"filename": "model.safetensors", "folder": "checkpoints", "loader_node": "CheckpointLoaderSimple"}
+    ],
+    "summary": "缺少 1 个自定义节点包；缺少 1 个模型文件"
+  }
+}
+```
+
+**Agent behavior:**
+1. If `is_ready` is `true` → proceed to Step 3 directly.
+2. If `is_ready` is `false` → present the dependency report to the user in a clear, formatted message:
+   - List missing custom nodes with package names and whether they can be auto-installed.
+   - List missing models with filenames and which folder they belong to.
+   - Ask the user: "Do you want me to install the missing custom nodes?"
+3. If the user agrees to install, run:
+   ```bash
+   python ./scripts/comfyui_client.py install-deps --workflow <server_id>/<workflow_id> --repos '["https://github.com/repo1", "https://github.com/repo2"]'
+   ```
+   This returns installation results for each package. Report the results to the user.
+   - If `needs_restart` is `true`, inform the user that ComfyUI needs to restart for changes to take effect.
+   - After restart, re-run `check-deps` to confirm everything is resolved, then proceed to Step 3.
+4. For missing models: inform the user that models must be downloaded manually, and tell them which folder to place the files in (e.g., "Please download `model.safetensors` and place it in the `checkpoints` folder").
+
 ### Step 3: Trigger the Image Generation Task
 
-Once the complete parameters are collected, execute the workflow client in a command-line environment (ensure your current working directory is the project root, or navigate to it first).
+Once the complete parameters are collected and the dependency check passes, execute the workflow client in a command-line environment (ensure your current working directory is the project root, or navigate to it first).
 
 Pass the full identifier as `<server_id>/<workflow_id>`.
 
