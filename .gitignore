@@ -19,6 +19,10 @@ Icon
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
 
+# Runtime
+.cache/
+*.log
+
 # Python
 __pycache__/
 *.py[cod]
