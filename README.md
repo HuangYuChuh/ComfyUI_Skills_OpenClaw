@@ -410,6 +410,12 @@ Default import behavior:
 
 ---
 
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for the full release history.
+
+---
+
 ## Roadmap
 
 - [ ] Workflow version history and rollback

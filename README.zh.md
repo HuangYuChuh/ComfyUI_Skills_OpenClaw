@@ -408,6 +408,12 @@ python scripts/transfer_manager.py import --input ./openclaw-skill-export.json
 
 ---
 
+## 更新日志
+
+完整版本记录见 [CHANGELOG.zh.md](./CHANGELOG.zh.md)。
+
+---
+
 ## 路线图
 
 - [ ] 支持工作流版本历史和回滚

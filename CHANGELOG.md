@@ -5,33 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.1] - 2026-03-30
+
+### Added
+
+- **ComfyUI API Key support** — New API Key field in server settings enables authentication for cloud API nodes such as Kling, Sora, and Nano Banana (#81, #83)
+
 ## [0.3.0] - 2026-03-30
 
 ### Added
 
-- **工作流依赖检查与安装** — 执行前自动检测缺失的自定义节点和模型，支持一键安装 (#76)
-- **非阻塞执行模式** — 新增 `submit` + `status` 命令，支持实时进度反馈 (#69)
-- **图片上传接口** — API 层支持上传图片供工作流使用 (#64)
-- **工作流批量删除** — 支持一次删除多个工作流 (#62)
-- **导入预览** — 从 ComfyUI 导入工作流前可先预览内容和参数 (#57)
-- **执行历史记录** — 每次运行的参数、结果、耗时等完整记录 (#43)
+- **Workflow dependency check & install** — Automatically detect missing custom nodes and models before execution, with one-click install (#76)
+- **Non-blocking execution** — New `submit` + `status` commands with real-time progress feedback (#69)
+- **Image upload API** — Upload images for use in workflows via the API layer (#64)
+- **Batch workflow deletion** — Delete multiple workflows at once (#62)
+- **Import preview** — Preview workflow content and parameters before importing from ComfyUI (#57)
+- **Execution history** — Full records of each run including parameters, results, and timing (#43)
 
 ### Fixed
 
-- **参数传递失效** — 对话中传的参数（prompt、seed 等）被忽略，工作流始终用默认值执行 (#75)
-- **未匹配参数无提示** — Agent 传了 schema 中不存在的参数名时，现在会输出警告 (#71)
-- **子图节点 ID 兼容** — 修复 ComfyUI 子图工作流导出后 schema 提取失败的问题 (#63)
-- **队列任务消失** — 排队中的任务被取消时，历史记录能正确标记为失败 (#60)
-- **UI 启动失败恢复** — 更新后 UI 无法启动时自动恢复 (#51)
-- **前端缓存未刷新** — 更新后浏览器仍加载旧版 UI (#49)
-- **Python 环境兼容** — 自动检测并使用兼容的 Python 版本启动 UI (#58)
-- **前端合并冲突标记** — 清理 JS bundle 中残留的冲突标记 (#73)
+- **Parameters ignored** — User-supplied parameters (prompt, seed, etc.) were silently dropped; workflows always ran with defaults (#75)
+- **Unmatched parameter warning** — Agent now receives a warning when passing parameter names not in the workflow schema (#71)
+- **Subgraph node ID compatibility** — Fixed schema extraction failure for ComfyUI subgraph workflow exports (#63)
+- **Queued job disappears** — History now correctly marks cancelled queued jobs as failed (#60)
+- **UI startup recovery** — Auto-recover when UI fails to start after an update (#51)
+- **Frontend cache stale** — Browser no longer loads outdated UI after an update (#49)
+- **Python version detection** — Automatically find and use a compatible Python 3.10+ interpreter for UI startup (#58)
+- **Merge conflict markers in JS** — Clean up leftover conflict markers in frontend bundles (#73)
 
 ### Improved
 
-- 前端资源持续同步上游更新（#45 ~ #68，共 12 次）
-- CI 自动化前端同步流程
-- 更新脚本自动清理旧的生成文件
+- Frontend assets continuously synced from upstream (#45 ~ #68, 12 syncs total)
+- CI automation for frontend sync pipeline
+- Update script now cleans up stale generated files
 
 ## [0.2.0] - 2026-03-16
 
