@@ -264,7 +264,7 @@ class WorkflowBulkImporter:
         source_label: str,
     ) -> None:
         schema_params = extract_schema_params(normalized_workflow)
-        final_schema = build_final_schema(schema_params)
+        final_schema = build_final_schema(schema_params, sync_names_back=True)
         self.service.save_workflow(
             server_id=self.server_id,
             workflow_id=workflow_id,
