@@ -197,13 +197,15 @@ Requirements:
 
 ## Updating
 
-To update the skill, pull the repository and restart the UI or your agent runtime:
+To update the skill, run the update script and restart the UI or your agent runtime:
 
 ```bash
-git pull --ff-only
+./update.sh
 ```
 
-This updates the backend code, docs, and the bundled frontend files in `ui/static/` together.
+This pulls the latest code, syncs frontend assets, and installs any new Python dependencies in one step.
+
+If you prefer updating manually, you can also run `git pull` followed by `pip install -r requirements.txt`.
 
 If you use the update prompt in the Web UI, it follows the same repository-first update flow.
 
