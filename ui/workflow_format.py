@@ -42,46 +42,138 @@ def _get_type_guess(value: Any) -> str:
     return "string"
 
 
-def _get_auto_mapping(node_class: str, field: str, node_id: str) -> dict[str, Any]:
+def _get_auto_mapping(node_class: str, field: str) -> dict[str, Any]:
+    """Decide whether a field should be exposed and whether it's required.
+
+    Returns exposure/required/description only — naming is handled separately
+    by ``_assign_parameter_names`` after all parameters have been collected.
+    """
     if "KSampler" in node_class:
         if field == "seed":
-            return {"exposed": True, "required": False, "name": field, "description": "Random seed (for reproducibility)"}
+            return {"exposed": True, "required": False, "description": "Random seed (for reproducibility)"}
         if field == "steps":
-            return {"exposed": True, "required": False, "name": field, "description": "Generation steps"}
+            return {"exposed": True, "required": False, "description": "Generation steps"}
 
     if "CLIPTextEncode" in node_class or "Text" in node_class or "Prompt" in node_class:
         if field in {"text", "prompt"}:
-            return {"exposed": True, "required": True, "name": f"prompt_{node_id}", "description": "Text prompt description"}
+            return {"exposed": True, "required": True, "description": "Text prompt description"}
 
     if node_class == "EmptyLatentImage" and field in {"width", "height", "batch_size"}:
-        return {"exposed": True, "required": False, "name": field, "description": f"Image {field}"}
+        return {"exposed": True, "required": False, "description": f"Image {field}"}
 
     if node_class == "SaveImage" and field == "filename_prefix":
-        return {"exposed": True, "required": False, "name": field, "description": "Output file prefix"}
+        return {"exposed": True, "required": False, "description": "Output file prefix"}
 
     if node_class == "LoadImage" and field == "image":
-        return {"exposed": True, "required": True, "name": f"image_{node_id}", "description": "Upload an image"}
+        return {"exposed": True, "required": True, "description": "Upload an image"}
 
     if node_class == "LightCCDoubaoImageNode":
         if field == "prompt":
-            return {"exposed": True, "required": True, "name": field, "description": "Positive image prompt"}
+            return {"exposed": True, "required": True, "description": "Positive image prompt"}
         if field == "size":
-            return {"exposed": True, "required": False, "name": field, "description": "e.g., 1:1,2048x2048"}
+            return {"exposed": True, "required": False, "description": "e.g., 1:1,2048x2048"}
         if field == "seed":
-            return {"exposed": True, "required": False, "name": field, "description": "Random seed"}
+            return {"exposed": True, "required": False, "description": "Random seed"}
         if field == "num":
-            return {"exposed": True, "required": False, "name": field, "description": "Number of images to generate"}
+            return {"exposed": True, "required": False, "description": "Number of images to generate"}
 
     if field in {"text", "prompt"}:
-        return {"exposed": True, "required": True, "name": f"prompt_{node_id}", "description": "Text prompt"}
+        return {"exposed": True, "required": True, "description": "Text prompt"}
     if field == "seed":
-        return {"exposed": True, "required": False, "name": field, "description": "Random seed"}
+        return {"exposed": True, "required": False, "description": "Random seed"}
     if field in {"width", "height", "batch_size", "size", "num", "num_images", "max_images"}:
-        return {"exposed": True, "required": False, "name": field, "description": f"Workflow parameter: {field}"}
+        return {"exposed": True, "required": False, "description": f"Workflow parameter: {field}"}
     if field == "filename_prefix":
-        return {"exposed": True, "required": False, "name": field, "description": "Output file prefix"}
+        return {"exposed": True, "required": False, "description": "Output file prefix"}
 
-    return {"exposed": False, "required": False, "name": field, "description": ""}
+    return {"exposed": False, "required": False, "description": ""}
+
+
+def _normalize_title(title: str) -> str:
+    """Normalize a node title into a safe parameter name suffix."""
+    normalized = re.sub(r"[^\w]+", "_", title.strip(), flags=re.UNICODE)
+    normalized = re.sub(r"_+", "_", normalized)
+    return normalized.strip("_").lower()
+
+
+def _get_node_title(node_object: dict[str, Any]) -> str:
+    """Extract the user-defined title from a node's _meta."""
+    meta = node_object.get("_meta")
+    if isinstance(meta, dict):
+        return normalize_string(meta.get("title"))
+    return ""
+
+
+def _assign_parameter_names(
+    schema_params: dict[str, dict[str, Any]],
+    workflow_data: dict[str, Any],
+) -> None:
+    """Assign unique, human-readable names to all parameters.
+
+    - If a (class_type, field) pair appears only once → use ``field`` directly
+      (e.g. ``seed``, ``prompt``).
+    - If it appears multiple times → append the node's title or node_id to
+      distinguish (e.g. ``seed_portrait_style`` or ``seed_23``).
+
+    This is a **global** decision — we look at the entire workflow first,
+    then name parameters, instead of naming them one-by-one.
+    """
+    # Count how many times each (class_type, field) pair appears among exposed params.
+    pair_counts: dict[tuple[str, str], int] = {}
+    for param in schema_params.values():
+        if not param.get("exposed"):
+            continue
+        key = (param.get("nodeClass", ""), param.get("field", ""))
+        pair_counts[key] = pair_counts.get(key, 0) + 1
+
+    # Track used names to guarantee uniqueness.
+    used_names: set[str] = set()
+
+    for param in schema_params.values():
+        field = param.get("field", "")
+        node_class = param.get("nodeClass", "")
+        node_id = str(param.get("node_id", ""))
+        pair_key = (node_class, field)
+
+        if pair_counts.get(pair_key, 0) <= 1:
+            # Only one node with this (class_type, field) — use simple name.
+            base_name = _friendly_field_name(field)
+        else:
+            # Multiple nodes — disambiguate with title or node_id.
+            node_object = workflow_data.get(node_id, {})
+            title = _get_node_title(node_object) if isinstance(node_object, dict) else ""
+            # Skip title if it's just the class_type (default, not user-defined)
+            normalized_title = _normalize_title(title) if title and title != node_class else ""
+            suffix = normalized_title or node_id
+            base_name = f"{_friendly_field_name(field)}_{suffix}"
+
+        # Ensure uniqueness.
+        name = base_name
+        if name in used_names:
+            name = f"{base_name}_{node_id}"
+        counter = 2
+        while name in used_names:
+            name = f"{base_name}_{node_id}_{counter}"
+            counter += 1
+
+        used_names.add(name)
+        param["name"] = name
+
+        # Enrich description with node context for duplicate types.
+        if pair_counts.get(pair_key, 0) > 1:
+            node_object = workflow_data.get(node_id, {})
+            title = _get_node_title(node_object) if isinstance(node_object, dict) else ""
+            node_label = title or node_class or "Unknown"
+            orig_desc = param.get("description", "")
+            param["description"] = f"{orig_desc} ({node_label} #{node_id})"
+
+
+def _friendly_field_name(field: str) -> str:
+    """Map common field names to friendlier parameter names."""
+    mapping = {
+        "text": "prompt",
+    }
+    return mapping.get(field, field)
 
 
 def extract_schema_params(workflow_data: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -99,12 +191,12 @@ def extract_schema_params(workflow_data: dict[str, Any]) -> dict[str, dict[str, 
             if isinstance(value, list):
                 continue
 
-            auto_mapping = _get_auto_mapping(node_class, field, node_id)
+            auto_mapping = _get_auto_mapping(node_class, field)
             schema_params[f"{node_id}_{field}"] = {
                 "exposed": auto_mapping["exposed"],
                 "node_id": node_id,
                 "field": field,
-                "name": auto_mapping["name"],
+                "name": "",  # assigned later by _assign_parameter_names
                 "type": "image" if (node_class == "LoadImage" and field == "image") else _get_type_guess(value),
                 "required": auto_mapping["required"],
                 "description": auto_mapping["description"],
@@ -115,12 +207,26 @@ def extract_schema_params(workflow_data: dict[str, Any]) -> dict[str, dict[str, 
                 "nodeClass": node_class or "UnknownNode",
             }
 
+    # Assign names globally — this is where disambiguation happens.
+    _assign_parameter_names(schema_params, workflow_data)
+
     return schema_params
 
 
-def build_final_schema(schema_params: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+def build_final_schema(
+    schema_params: dict[str, dict[str, Any]],
+    *,
+    sync_names_back: bool = False,
+) -> dict[str, dict[str, Any]]:
+    """Build the run-time schema from UI parameters.
+
+    When *sync_names_back* is True, the resolved (unique) alias is written
+    back into each source ``schema_params`` entry so that ``ui_parameters``
+    and ``parameters`` stay consistent.  This prevents the front-end from
+    seeing duplicate names and silently dropping parameters on save.
+    """
     final_schema: dict[str, dict[str, Any]] = {}
-    for parameter in schema_params.values():
+    for param_key, parameter in schema_params.items():
         if not bool(parameter.get("exposed")):
             continue
 
@@ -128,6 +234,9 @@ def build_final_schema(schema_params: dict[str, dict[str, Any]]) -> dict[str, di
         if not alias:
             continue
         alias = _ensure_unique_alias(final_schema, alias, str(parameter["node_id"]))
+
+        if sync_names_back:
+            parameter["name"] = alias
 
         target: dict[str, Any] = {
             "node_id": str(parameter["node_id"]),

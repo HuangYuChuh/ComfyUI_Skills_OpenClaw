@@ -148,5 +148,113 @@ class TestParameterInjection(unittest.TestCase):
         self.assertEqual(injected, [])
 
 
+DUPLICATE_NODES_WORKFLOW = {
+    "23": {
+        "inputs": {
+            "prompt": "portrait style prompt",
+            "seed": 42,
+            "model": "Nano Banana 2 (Gemini 3.1 Flash Image)",
+            "images": ["10", 0],
+        },
+        "class_type": "GeminiNanoBanana2",
+        "_meta": {"title": "GeminiNanoBanana2"},
+    },
+    "26": {
+        "inputs": {
+            "prompt": "landscape style prompt",
+            "seed": 99,
+            "model": "Nano Banana 2 (Gemini 3.1 Flash Image)",
+            "images": ["10", 0],
+        },
+        "class_type": "GeminiNanoBanana2",
+        "_meta": {"title": "GeminiNanoBanana2"},
+    },
+    "9": {
+        "inputs": {"filename_prefix": "ComfyUI", "images": ["23", 0]},
+        "class_type": "SaveImage",
+        "_meta": {"title": "Save Image 1"},
+    },
+    "24": {
+        "inputs": {"filename_prefix": "ComfyUI", "images": ["26", 0]},
+        "class_type": "SaveImage",
+        "_meta": {"title": "Save Image 2"},
+    },
+    "10": {
+        "inputs": {"image": "test.png"},
+        "class_type": "LoadImage",
+        "_meta": {"title": "Load Image"},
+    },
+}
+
+DUPLICATE_NODES_WITH_TITLES = {
+    "23": {
+        "inputs": {"prompt": "portrait prompt", "seed": 42, "images": ["10", 0]},
+        "class_type": "GeminiNanoBanana2",
+        "_meta": {"title": "Portrait Style"},
+    },
+    "26": {
+        "inputs": {"prompt": "landscape prompt", "seed": 99, "images": ["10", 0]},
+        "class_type": "GeminiNanoBanana2",
+        "_meta": {"title": "Landscape Style"},
+    },
+}
+
+
+class TestDuplicateNodeParams(unittest.TestCase):
+    """Duplicate same-type nodes must not lose parameters (#87)."""
+
+    def test_all_params_extracted_from_duplicate_nodes(self):
+        params = extract_schema_params(DUPLICATE_NODES_WORKFLOW)
+        # Both nodes' prompt and seed should be present.
+        self.assertIn("23_prompt", params)
+        self.assertIn("26_prompt", params)
+        self.assertIn("23_seed", params)
+        self.assertIn("26_seed", params)
+
+    def test_final_schema_preserves_all_duplicate_params(self):
+        params = extract_schema_params(DUPLICATE_NODES_WORKFLOW)
+        final = build_final_schema(params)
+        # Both prompts and both seeds must appear in the final schema.
+        prompt_entries = {k: v for k, v in final.items() if v["field"] == "prompt"}
+        seed_entries = {k: v for k, v in final.items() if v["field"] == "seed"
+                        and v["node_id"] in ("23", "26")}
+        self.assertEqual(len(prompt_entries), 2,
+                         f"Expected 2 prompt entries, got: {list(prompt_entries.keys())}")
+        self.assertEqual(len(seed_entries), 2,
+                         f"Expected 2 seed entries, got: {list(seed_entries.keys())}")
+        # Verify they map to different nodes.
+        prompt_node_ids = {v["node_id"] for v in prompt_entries.values()}
+        self.assertEqual(prompt_node_ids, {"23", "26"})
+
+    def test_sync_names_back_prevents_ui_params_collision(self):
+        """The core bug fix: after build_final_schema with sync_names_back,
+        ui_parameters should have unique names — no two exposed params
+        with the same name."""
+        params = extract_schema_params(DUPLICATE_NODES_WORKFLOW)
+        build_final_schema(params, sync_names_back=True)
+        exposed_names = [
+            p["name"] for p in params.values() if p.get("exposed")
+        ]
+        self.assertEqual(len(exposed_names), len(set(exposed_names)),
+                         f"Duplicate names found in ui_parameters: {exposed_names}")
+
+    def test_node_titles_used_for_disambiguation(self):
+        """When nodes have custom titles, use them instead of node IDs."""
+        params = extract_schema_params(DUPLICATE_NODES_WITH_TITLES)
+        final = build_final_schema(params)
+        param_names = list(final.keys())
+        # Should contain title-based names, not just node IDs.
+        has_title_based = any("portrait" in n or "landscape" in n for n in param_names)
+        self.assertTrue(has_title_based,
+                        f"Expected title-based names, got: {param_names}")
+
+    def test_single_node_type_keeps_simple_names(self):
+        """When there's only one node of a type, names stay simple."""
+        params = extract_schema_params(PLAIN_WORKFLOW)
+        final = build_final_schema(params)
+        self.assertIn("seed", final)
+        self.assertIn("prompt", final)
+
+
 if __name__ == "__main__":
     unittest.main()
