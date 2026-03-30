@@ -1,0 +1,4 @@
+# Auto-generated frontend assets: always accept the incoming version on merge
+ui/static/version.json merge=ours
+ui/static/assets/** merge=ours
+ui/static/index.html merge=ours
