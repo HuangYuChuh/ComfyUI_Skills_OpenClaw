@@ -10,6 +10,7 @@ class ServerModel(BaseModel):
     name: str = Field(min_length=1)
     url: str = Field(min_length=1)
     auth: str = ""
+    comfy_api_key: str = ""
     enabled: bool = True
     output_dir: str = "./outputs"
 
@@ -58,6 +59,7 @@ class CreateServerModel(BaseModel):
     name: str = Field(min_length=1)
     url: str = Field(min_length=1)
     auth: str = ""
+    comfy_api_key: str = ""
     enabled: bool = True
     output_dir: str = "./outputs"
 
