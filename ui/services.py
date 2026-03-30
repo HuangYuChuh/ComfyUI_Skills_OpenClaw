@@ -131,6 +131,7 @@ class UIStorageService:
             "name": server_name,
             "url": str(server.get("url") or "").strip(),
             "auth": str(server.get("auth") or "").strip(),
+            "comfy_api_key": str(server.get("comfy_api_key") or "").strip(),
             "enabled": bool(server.get("enabled", True)),
             "output_dir": str(server.get("output_dir") or "./outputs").strip() or "./outputs",
             "workflow_order": [],
@@ -156,6 +157,8 @@ class UIStorageService:
                     s["url"] = str(updates["url"] or "").strip()
                 if "auth" in updates:
                     s["auth"] = str(updates["auth"] or "").strip()
+                if "comfy_api_key" in updates:
+                    s["comfy_api_key"] = str(updates["comfy_api_key"] or "").strip()
                 if "enabled" in updates:
                     s["enabled"] = bool(updates["enabled"])
                 if "output_dir" in updates:
@@ -572,6 +575,7 @@ class UIStorageService:
             "name": str(server.get("name") or "").strip(),
             "url": str(server.get("url") or "").strip(),
             "auth": str(server.get("auth") or ""),
+            "comfy_api_key": str(server.get("comfy_api_key") or ""),
             "enabled": bool(server.get("enabled", True)),
             "output_dir": str(server.get("output_dir") or "./outputs").strip() or "./outputs",
             "unsupported": unsupported,

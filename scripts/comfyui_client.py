@@ -189,8 +189,11 @@ def validate_and_coerce_params(input_args: dict[str, Any], parameters: dict[str,
     return coerced, errors, warnings
 
 
-def queue_prompt(server_url: str, prompt_workflow: dict[str, Any], auth: str = "") -> dict[str, Any]:
-    data = json.dumps({"prompt": prompt_workflow, "client_id": str(uuid.uuid4())}).encode("utf-8")
+def queue_prompt(server_url: str, prompt_workflow: dict[str, Any], auth: str = "", comfy_api_key: str = "") -> dict[str, Any]:
+    payload: dict[str, Any] = {"prompt": prompt_workflow, "client_id": str(uuid.uuid4())}
+    if comfy_api_key:
+        payload["extra_data"] = {"api_key_comfy_org": comfy_api_key}
+    data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(f"{server_url}/prompt", data=data, headers={"Content-Type": "application/json"})
     _add_auth(req, auth)
     try:
@@ -327,21 +330,22 @@ def get_queue_status(server_url: str, prompt_id: str, auth: str = "") -> dict[st
     return {"phase": "not_found"}
 
 
-def _resolve_server_context(server_id: str) -> tuple[dict[str, Any] | None, str, str, str]:
-    """Load and validate server config, return (error_payload | None, url, auth, output_dir)."""
+def _resolve_server_context(server_id: str) -> tuple[dict[str, Any] | None, str, str, str, str]:
+    """Load and validate server config, return (error_payload | None, url, auth, output_dir, comfy_api_key)."""
     server = get_server_by_id(server_id)
     if not server:
-        return _build_error_payload(f"Server '{server_id}' not found in config.json"), "", "", ""
+        return _build_error_payload(f"Server '{server_id}' not found in config.json"), "", "", "", ""
     if not server.get("enabled", True):
-        return _build_error_payload(f"Server '{server_id}' is disabled"), "", "", ""
+        return _build_error_payload(f"Server '{server_id}' is disabled"), "", "", "", ""
 
     server_url = str(server.get("url", "http://127.0.0.1:8188"))
     server_auth = str(server.get("auth", ""))
+    comfy_api_key = str(server.get("comfy_api_key", ""))
     output_dir = str(server.get("output_dir", os.path.join(BASE_DIR, "outputs")))
     if not os.path.isabs(output_dir):
         output_dir = os.path.join(BASE_DIR, output_dir)
     os.makedirs(output_dir, exist_ok=True)
-    return None, server_url, server_auth, output_dir
+    return None, server_url, server_auth, output_dir, comfy_api_key
 
 
 def _load_workflow_and_schema(
@@ -390,7 +394,7 @@ def submit_workflow_by_ids(server_id: str, workflow_id: str, input_args: dict[st
     if not isinstance(input_args, dict):
         return _build_error_payload("Workflow arguments must be a JSON object")
 
-    err, server_url, server_auth, _output_dir = _resolve_server_context(server_id)
+    err, server_url, server_auth, _output_dir, comfy_api_key = _resolve_server_context(server_id)
     if err:
         return err
 
@@ -424,7 +428,7 @@ def submit_workflow_by_ids(server_id: str, workflow_id: str, input_args: dict[st
         if node_id in workflow_data and isinstance(workflow_data[node_id], dict) and "inputs" in workflow_data[node_id]:
             workflow_data[node_id]["inputs"][field] = value
 
-    queue_res = queue_prompt(server_url, workflow_data, auth=server_auth)
+    queue_res = queue_prompt(server_url, workflow_data, auth=server_auth, comfy_api_key=comfy_api_key)
     if not queue_res or "prompt_id" not in queue_res:
         error_message = "Failed to queue prompt to ComfyUI."
         if queue_res:
@@ -497,7 +501,7 @@ def check_status_by_ids(server_id: str, workflow_id: str, run_id: str) -> dict[s
         return _build_error_payload("Run record has no prompt_id (submit may have failed)", run_id)
 
     # Resolve server context
-    err, server_url, server_auth, output_dir = _resolve_server_context(server_id)
+    err, server_url, server_auth, output_dir, _comfy_api_key = _resolve_server_context(server_id)
     if err:
         return err
 
@@ -644,6 +648,7 @@ def execute_workflow_by_ids(server_id: str, workflow_id: str, input_args: dict[s
 
     server_url = str(server.get("url", "http://127.0.0.1:8188"))
     server_auth = str(server.get("auth", ""))
+    comfy_api_key = str(server.get("comfy_api_key", ""))
     output_dir = str(server.get("output_dir", os.path.join(BASE_DIR, "outputs")))
     if not os.path.isabs(output_dir):
         output_dir = os.path.join(BASE_DIR, output_dir)
@@ -704,7 +709,7 @@ def execute_workflow_by_ids(server_id: str, workflow_id: str, input_args: dict[s
 
     output_prefix = get_output_prefix(workflow_id, coerced_args, parameters)
 
-    queue_res = queue_prompt(server_url, workflow_data, auth=server_auth)
+    queue_res = queue_prompt(server_url, workflow_data, auth=server_auth, comfy_api_key=comfy_api_key)
     if not queue_res or "prompt_id" not in queue_res:
         error_message = "Failed to queue prompt to ComfyUI."
         if queue_res:
@@ -867,7 +872,7 @@ def _cmd_check_deps(args: argparse.Namespace) -> None:
     """Check workflow dependencies before execution."""
     server_id, workflow_id = parse_workflow_arg(args.workflow)
 
-    err, server_url, server_auth, _output_dir = _resolve_server_context(server_id)
+    err, server_url, server_auth, _output_dir, _comfy_api_key = _resolve_server_context(server_id)
     if err:
         print(json.dumps(err))
         return
@@ -896,7 +901,7 @@ def _cmd_install_deps(args: argparse.Namespace) -> None:
     """Install missing custom node packages."""
     server_id, _ = parse_workflow_arg(args.workflow)
 
-    err, server_url, server_auth, _output_dir = _resolve_server_context(server_id)
+    err, server_url, server_auth, _output_dir, _comfy_api_key = _resolve_server_context(server_id)
     if err:
         print(json.dumps(err))
         return
