@@ -9,6 +9,13 @@
 
 **[▶ Demo Video (Bilibili)](https://www.bilibili.com/video/BV1a6cUzVEE6/)**
 
+> **NEW:** [ComfyUI Skill CLI](https://github.com/HuangYuChuh/ComfyUI_Skill_CLI) is now available — a standalone, `pip install` ready CLI with `--json` output. Any AI agent that can run shell commands can now use ComfyUI Skills directly.
+> ```bash
+> pip install comfyui-skill-cli
+> comfyui-skill --json list
+> comfyui-skill --json run local/txt2img --args '{"prompt": "a white cat"}'
+> ```
+
 This project is a ComfyUI skill integration layer for OpenClaw, Codex, and Claude Code. It turns the workflows you build and export from ComfyUI in API format into callable skills that these agents can trigger with natural language.
 
 It converts natural language requests into structured skill arguments, maps them to ComfyUI workflow inputs, submits jobs to ComfyUI, waits for completion, then pulls generated images back to local disk.
