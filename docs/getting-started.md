@@ -101,10 +101,16 @@ comfyui-skill run local/my-workflow --args '{"prompt": "a white cat"}'</code></p
       Not required for agent usage — the CLI covers all functionality.
     </p>
     <div class="code-panel">
-      <pre><code>pip install -r requirements.txt   # first time only
-./ui/run_ui.sh</code></pre>
+      <pre><code># macOS / Linux
+./ui/run_ui.sh
+
+# Windows
+ui\run_ui.bat</code></pre>
     </div>
-    <p>Visit <code>http://localhost:18189</code> to manage workflows visually.</p>
+    <p>
+      The script automatically creates a <code>.venv</code>, installs dependencies, and starts the server.
+      Visit <code>http://localhost:18189</code> to manage workflows visually.
+    </p>
   </section>
 
   <section class="section-card">
