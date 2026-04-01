@@ -2,17 +2,11 @@
 
 ![ComfyUI Skills Banner](./asset/banner-ui-dashboard-20260322.png)
 
-<p>
-  <a href="./README.zh.md">
-    <img src="https://img.shields.io/badge/简体中文-README.zh.md-blue?style=flat-square" alt="简体中文" />
-  </a>
-</p>
-
-**[▶ Demo Video (Bilibili)](https://www.bilibili.com/video/BV1a6cUzVEE6/)**
-
 Turn your ComfyUI workflows into callable skills for AI agents. Any agent that can run shell commands — Claude Code, Codex, OpenClaw — can discover, execute, and manage ComfyUI workflows through a single CLI.
 
-[Install](#install) · [CLI Usage](#cli-usage) · [Web UI](#web-ui-optional) · [Workflow Setup](#workflow-setup) · [Multi-Server](#multi-server-management)
+<a href="./README.zh.md"><img src="https://img.shields.io/badge/简体中文-README.zh.md-blue?style=flat-square" alt="简体中文" /></a>
+
+[Demo Video](https://www.bilibili.com/video/BV1a6cUzVEE6/) · [Install](#install) · [CLI Usage](#cli-usage) · [Web UI](#web-ui-optional) · [Workflow Setup](#workflow-setup) · [Multi-Server](#multi-server-management)
 
 ---
 

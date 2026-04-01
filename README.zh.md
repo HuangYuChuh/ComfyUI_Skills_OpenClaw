@@ -2,11 +2,9 @@
 
 ![ComfyUI Skills Banner](./asset/banner-ui-dashboard-20260322.png)
 
-**[▶ 演示视频（Bilibili）](https://www.bilibili.com/video/BV1a6cUzVEE6/)**
-
 把 ComfyUI 工作流变成 AI Agent 可调用的技能。任何能执行 Shell 命令的 Agent — Claude Code、Codex、OpenClaw — 都可以通过一个 CLI 发现、执行和管理 ComfyUI 工作流。
 
-[安装](#安装) · [CLI 使用](#cli-使用) · [Web UI](#web-ui可选) · [工作流配置](#工作流配置) · [多服务器](#多服务器管理)
+[演示视频](https://www.bilibili.com/video/BV1a6cUzVEE6/) · [安装](#安装) · [CLI 使用](#cli-使用) · [Web UI](#web-ui可选) · [工作流配置](#工作流配置) · [多服务器](#多服务器管理)
 
 ---
 
