@@ -55,7 +55,29 @@ except ImportError:
     from settings import DEFAULT_HOST, DEFAULT_PORT, STATIC_DIR, ensure_runtime_dirs
 
 from shared.health import check_server_health, test_server_connection
-from comfyui_client import execute_workflow_by_ids
+def execute_workflow_by_ids(server_id: str, workflow_id: str, input_args: dict) -> dict:
+    """Bridge to CLI: run workflow via comfyui-skill CLI subprocess."""
+    import subprocess
+    args_json = json.dumps(input_args, ensure_ascii=False)
+    try:
+        result = subprocess.run(
+            ["comfyui-skill", "--json", "run", f"{server_id}/{workflow_id}", "--args", args_json],
+            capture_output=True, text=True, timeout=300,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return json.loads(result.stdout)
+        error_msg = result.stderr.strip() or result.stdout.strip() or "CLI execution failed"
+        try:
+            err_data = json.loads(error_msg)
+            return {"status": "error", "error": err_data.get("error", {}).get("message", error_msg)}
+        except (json.JSONDecodeError, TypeError):
+            return {"status": "error", "error": error_msg}
+    except FileNotFoundError:
+        return {"status": "error", "error": "comfyui-skill CLI not installed. Run: pip install comfyui-skill-cli"}
+    except subprocess.TimeoutExpired:
+        return {"status": "error", "error": "Workflow execution timed out (300s)"}
+    except Exception as exc:
+        return {"status": "error", "error": str(exc)}
 from shared.runtime_config import get_server_by_id
 
 try:
