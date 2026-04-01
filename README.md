@@ -383,11 +383,11 @@ You can configure multiple ComfyUI servers so OpenClaw can route jobs across dif
 - **Namespacing**: Workflows are identified with a composite ID: `<server_id>/<workflow_id>` (e.g., `local/sdxl-base` vs. `remote-a100/sdxl-base`).
 
 ### CLI Configuration
-On headless machines, you can use the built-in CLI tool `scripts/server_manager.py`:
+On headless machines, use the CLI tool (`pip install comfyui-skill-cli`):
 ```bash
-python scripts/server_manager.py list
-python scripts/server_manager.py add --id remote --name "Remote Node" --url http://10.0.0.1:8188
-python scripts/server_manager.py disable remote
+comfyui-skill server list
+comfyui-skill server add --id remote --name "Remote Node" --url http://10.0.0.1:8188
+comfyui-skill server disable remote
 ```
 *You can still manage all server settings through the web UI.*
 
@@ -406,9 +406,9 @@ UI flow:
 CLI flow:
 
 ```bash
-python scripts/transfer_manager.py export --output ./openclaw-skill-export.json
-python scripts/transfer_manager.py import --input ./openclaw-skill-export.json --dry-run
-python scripts/transfer_manager.py import --input ./openclaw-skill-export.json
+comfyui-skill config export --output ./openclaw-skill-export.json
+comfyui-skill config import ./openclaw-skill-export.json --dry-run
+comfyui-skill config import ./openclaw-skill-export.json
 ```
 
 Optional flags:
@@ -475,10 +475,8 @@ ComfyUI_Skills_OpenClaw/
 │   │       ├── workflow.json       # ComfyUI workflow API export
 │   │       └── schema.json         # Exposed parameter mapping
 ├── scripts/
-│   ├── server_manager.py       # CLI tool for managing servers
-│   ├── registry.py             # List workflows + exposed parameters for agent
-│   ├── comfyui_client.py       # Inject args, queue prompt, poll history, download images
-│   └── shared/                 # Shared config & JSON utils (reused across scripts)
+│   ├── update_frontend.sh      # Pull latest frontend build from GitHub Releases
+│   └── shared/                 # Shared config & utils (used by Web UI backend)
 │       ├── config.py
 │       ├── json_utils.py
 │       └── runtime_config.py
