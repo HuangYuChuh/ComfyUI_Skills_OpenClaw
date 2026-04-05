@@ -41,6 +41,7 @@ eggs/
 # IDE
 .idea/
 .vscode/
+.obsidian/
 *.swp
 *.swo
 

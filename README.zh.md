@@ -1,16 +1,96 @@
-# ComfyUI Skills for OpenClaw
+<div align="center">
+  <img src="./asset/banner-ui-dashboard-20260322.png" alt="ComfyUI Skills Banner">
 
-![ComfyUI Skills Banner](./asset/banner-ui-dashboard-20260322.png)
+  <h1>ComfyUI Skills for OpenClaw</h1>
 
-把 ComfyUI 工作流变成 AI Agent 可调用的技能。任何能执行 Shell 命令的 Agent — Claude Code、Codex、OpenClaw — 都可以通过一个 CLI 发现、执行和管理 ComfyUI 工作流。
+  <p><strong>更适合 Agent 调用的 ComfyUI 工作流技能层，适用于 OpenClaw、Codex、Claude Code 以及其他 AI Agent。</strong></p>
 
-[演示视频](https://www.bilibili.com/video/BV1a6cUzVEE6/) · [安装](#安装) · [CLI 使用](#cli-使用) · [Web UI](#web-ui可选) · [工作流配置](#工作流配置) · [多服务器](#多服务器管理)
+  <p>
+    这个项目可以把 ComfyUI 工作流变成可调用的技能，并以一个更适合 Agent 使用的 CLI 作为主接口，
+    同时提供一个可视化 Web UI 用于更方便地完成配置和测试。
+  </p>
+
+  <p>
+    <a href="https://huangyuchuh.github.io/ComfyUI_Skills_OpenClaw/">
+      <img src="https://img.shields.io/badge/docs-GitHub_Pages-0A7EA4?style=flat-square" alt="Docs">
+    </a>
+    <a href="https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw/blob/main/LICENSE">
+      <img src="https://img.shields.io/github/license/HuangYuChuh/ComfyUI_Skills_OpenClaw?style=flat-square" alt="License">
+    </a>
+    <a href="https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw/stargazers">
+      <img src="https://img.shields.io/github/stars/HuangYuChuh/ComfyUI_Skills_OpenClaw?style=flat-square" alt="GitHub stars">
+    </a>
+  </p>
+
+  <p>
+    <a href="https://www.bilibili.com/video/BV1a6cUzVEE6/">🎬 演示视频</a> ·
+    <a href="https://huangyuchuh.github.io/ComfyUI_Skills_OpenClaw/">📘 文档站</a> ·
+    <a href="#快速开始">🧭 快速开始</a> ·
+    <a href="#web-ui">🖥️ Web UI</a> ·
+    <a href="#多服务器管理">🛰️ 多服务器</a>
+  </p>
+
+  <p>
+    <a href="./README.md">English</a>
+  </p>
+</div>
 
 ---
 
-## 安装
+## 概览
 
-### 第一步：克隆项目
+ComfyUI Skills for OpenClaw 是一个更适合 Agent 调用的桥接层，用来把 ComfyUI 工作流封装成 AI Agent 可调用的技能。
+
+它不是让 Agent 直接去操作原始的 ComfyUI graph，而是通过 CLI 和基于 schema 的参数映射，为每个工作流提供一个更清晰、更可控的调用接口。只要 Agent 能执行 Shell 命令，就可以与它配合使用，包括 OpenClaw、Codex、Claude Code 等。
+
+当你想导入已有的 ComfyUI 工作流、只暴露必要参数、在聊天或 Agent 任务中直接调用，并把整个调用流程统一到一个稳定的工作流层时，这个项目就很适合。
+
+| 适合谁 | 你能得到什么 |
+|--------|--------------|
+| OpenClaw、Codex、Claude Code 用户 | 一个 Agent 可以安全调用的 ComfyUI 工作流层 |
+| 已有 ComfyUI 工作流的用户 | 不暴露完整 graph 的前提下复用导出工作流 |
+| 多机部署场景 | 用统一命名空间管理本地和远程 ComfyUI 服务器 |
+| 希望可视化配置和测试的用户 | 一个可选的 Web UI，用来配置、预览和验证工作流，再交给 Agent 使用 |
+
+## 为什么做这个项目
+
+直接使用 ComfyUI 很强大，但并不适合 Agent 驱动的执行方式。
+
+原始工作流 graph 信息量大、结构噪声多，而且对 Agent 来说不够安全。直接调用 ComfyUI API 也意味着你需要自己处理参数注入、工作流命名、服务器选择、依赖检查和输出回收等问题。这个项目在 ComfyUI 之上加了一层更稳定的抽象，让 Agent 可以发现工作流、用结构化参数调用，并获得更可预测的结果。
+
+相比直接使用 ComfyUI 工作流或更底层的交互方式，这个项目的 CLI 明显更偏向 Agent 友好：输入更清晰、参数暴露更安全、工作流发现更直接，执行结果也更稳定可预测。
+
+它尤其适合这些需求：
+
+- 把现有的 ComfyUI 工作流变成 Agent 工具
+- 只暴露安全、可控的参数接口，而不是整个 graph
+- 在多台 ComfyUI 服务器之间调度工作流
+- 在 OpenClaw、Codex、Claude Code 等不同 Agent 环境中复用同一套工作流配置
+
+## 功能特性
+
+| 能力 | 价值 |
+|------|------|
+| **面向 Agent 的 CLI** | 这个 CLI 的设计重点不是只方便人手动操作，而是更适合 Agent 调用。相比直接面对原始 ComfyUI graph 或更底层的 ComfyUI 交互方式，它提供了更清晰的输入和更可靠的调用接口。 |
+| **基于 schema 的参数映射** | 只暴露你希望 Agent 控制的字段，并为参数提供别名、类型和描述。 |
+| **ComfyUI 工作流导入** | 导入工作流 JSON，自动识别格式，并生成 Agent 可用的映射层。 |
+| **多服务器路由** | 用统一命名空间管理本地和远程 ComfyUI 服务器，并把任务发到正确的机器上。 |
+| **依赖检查与安装** | 在执行前检查缺失的节点和模型，并通过 CLI 安装支持的依赖。 |
+| **可选 Web UI** | 一个用于配置和测试的可视化层。它不替代 CLI，面向 Agent 的能力仍然对应同一套 CLI 工作流。 |
+
+## 快速开始
+
+几分钟内跑通 ComfyUI Skills。
+
+开始之前，请确保你已经具备：
+
+- Python 3.10+
+- 一台正在运行的 ComfyUI 服务器
+- 如果想立刻测试执行，准备一个 ComfyUI API 格式导出的工作流
+
+### 1. 克隆项目
+
+根据你的 Agent 环境选择对应目录。
 
 <details>
 <summary><strong>用于 OpenClaw</strong></summary>
@@ -19,7 +99,6 @@
 cd ~/.openclaw/workspace/skills
 git clone https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw.git comfyui-skill-openclaw
 cd comfyui-skill-openclaw
-cp config.example.json config.json
 ```
 
 </details>
@@ -31,7 +110,6 @@ cp config.example.json config.json
 cd ~/.claude/skills
 git clone https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw.git comfyui-skill
 cd comfyui-skill
-cp config.example.json config.json
 ```
 
 </details>
@@ -43,149 +121,88 @@ cp config.example.json config.json
 cd ~/.codex/skills
 git clone https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw.git comfyui-skill
 cd comfyui-skill
-cp config.example.json config.json
 ```
 
 </details>
 
-### 第二步：安装 CLI
+### 2. 创建本地配置
+
+```bash
+cp config.example.json config.json
+```
+
+### 3. 安装 CLI
 
 ```bash
 pipx install comfyui-skill-cli
 ```
 
-或用 pip：
+或者：
 
 ```bash
 pip install comfyui-skill-cli
 ```
 
-### 第三步：验证
+### 4. 验证环境
 
 ```bash
 comfyui-skill server status
 comfyui-skill list
 ```
 
-搞定。CLI 会从项目目录读取 `config.json` 和 `data/`。
-
-> **Web UI 依赖**（可选，仅在需要管理界面时安装）：
-> ```bash
-> pip install -r requirements.txt
-> ```
-
----
-
-## CLI 使用
-
-CLI 是与 ComfyUI Skills 交互的主要方式。所有命令支持 `--json` 输出结构化数据。
-
-### 快速开始
+### 5. 导入并运行第一个工作流
 
 ```bash
-# 检查服务器
-comfyui-skill server status
-
-# 列出工作流
-comfyui-skill list
-
-# 执行工作流
-comfyui-skill run local/txt2img --args '{"prompt": "a white cat"}'
-
-# 从 JSON 导入新工作流
-comfyui-skill workflow import ./my-workflow.json --check-deps
-
-# 上传图片（用于图生图工作流）
-comfyui-skill upload ./photo.png
-```
-
-### 完整命令参考
-
-| 分类 | 命令 | 说明 |
-|------|------|------|
-| **发现** | `comfyui-skill list` | 列出所有工作流及参数 |
-| | `comfyui-skill info <workflow_id>` | 查看工作流详情和参数 schema |
-| **执行** | `comfyui-skill run <workflow_id> --args '{...}'` | 执行工作流（阻塞等待） |
-| | `comfyui-skill submit <workflow_id> --args '{...}'` | 提交工作流（非阻塞） |
-| | `comfyui-skill status <prompt_id>` | 查询执行状态 |
-| | `comfyui-skill upload <image_path>` | 上传图片到 ComfyUI |
-| **工作流** | `comfyui-skill workflow import <json_path>` | 从本地 JSON 导入（自动检测格式） |
-| | `comfyui-skill workflow import --from-server` | 从 ComfyUI 服务器导入 |
-| | `comfyui-skill workflow enable/disable <workflow_id>` | 启用/禁用工作流 |
-| | `comfyui-skill workflow delete <workflow_id>` | 删除工作流 |
-| **服务器** | `comfyui-skill server list` | 列出服务器 |
-| | `comfyui-skill server status [<server_id>]` | 检查服务器状态 |
-| | `comfyui-skill server add --id <server_id> --url <url>` | 添加服务器 |
-| | `comfyui-skill server enable/disable <server_id>` | 启用/禁用服务器 |
-| | `comfyui-skill server remove <server_id>` | 移除服务器 |
-| **依赖** | `comfyui-skill deps check <workflow_id>` | 检查缺失的节点和模型 |
-| | `comfyui-skill deps install <workflow_id> --all` | 安装所有缺失依赖 |
-| **配置** | `comfyui-skill config export --output <path>` | 导出配置 |
-| | `comfyui-skill config import <path>` | 导入配置 |
-| **历史** | `comfyui-skill history list <workflow_id>` | 查看执行历史 |
-| | `comfyui-skill history show <workflow_id> <run_id>` | 查看运行详情 |
-
-> `<workflow_id>` 格式：`服务器ID/工作流名称`（如 `local/txt2img`）。省略服务器前缀则使用默认服务器。
-
-完整 CLI 文档见 [ComfyUI Skill CLI](https://github.com/HuangYuChuh/ComfyUI_Skill_CLI)。
-
----
-
-## Web UI（可选）
-
-本地 Web 管理界面，用于可视化管理工作流。Agent 使用不需要 Web UI — CLI 已覆盖全部功能。
-
-### 启动
-
-```bash
-pip install -r requirements.txt   # 仅首次需要
-./ui/run_ui.sh                    # macOS/Linux
-# 或: ui\run_ui.bat               # Windows
-```
-
-访问 `http://localhost:18189`。
-
-### 功能
-
-- 上传从 ComfyUI 导出的工作流（API 格式）
-- 可视化编辑参数映射
-- 统一管理多台服务器和工作流
-- 拖拽排序、跨服务器搜索和筛选
-- 支持英文、简体中文、繁体中文
-
-前端源码位于[独立仓库](https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw-frontend)。
-
----
-
-## 工作流配置
-
-开始前请确保 ComfyUI 服务已运行（默认地址：`http://127.0.0.1:8188`）。
-
-### 方式一：通过 CLI 导入（推荐）
-
-```bash
-# 导入工作流 JSON — 自动检测格式、自动转换、自动生成 schema
 comfyui-skill workflow import ./my-workflow.json
-
-# 检查并安装依赖
 comfyui-skill deps check local/my-workflow
-comfyui-skill deps install local/my-workflow --all
-
-# 验证
-comfyui-skill run local/my-workflow --args '{"prompt": "test"}'
+comfyui-skill run local/my-workflow --args '{"prompt": "a white cat"}'
 ```
 
-### 方式二：通过 Web UI 导入
+到这里，CLI 就会读取本地 `config.json`，发现可用工作流，并通过你的 ComfyUI 服务器执行它们。
 
-1. 打开 `http://localhost:18189`
-2. 上传从 ComfyUI 导出的工作流 JSON（**Save (API Format)**）
-3. 选择要暴露给 Agent 的参数
-4. 保存映射
+## 配置路径
 
-### 方式三：手动配置
+根据你的使用方式选择对应路径。
+
+### OpenClaw
+
+如果你希望 OpenClaw 自动发现并执行 ComfyUI 工作流技能，就走这条路径。
+
+- 把仓库克隆到 `~/.openclaw/workspace/skills`
+- 安装 `comfyui-skill-cli`
+- 配置 `config.json`
+- 导入工作流并暴露 Agent 可安全使用的参数
+
+### Codex 或 Claude Code
+
+如果你希望编码类 Agent 通过 Shell 命令调用 ComfyUI 工作流，就走这条路径。
+
+- 把仓库克隆到 Agent 的 skills 目录
+- 安装 CLI
+- 用 `comfyui-skill list` 验证环境
+- 用结构化的 `--args` 执行工作流
+
+### Web UI
+
+如果你希望通过一个可视化界面完成配置、查看和测试，同时仍然以 CLI 作为 Agent 的主接口，就走这条路径。
+
+```bash
+pip install -r requirements.txt
+./ui/run_ui.sh
+```
+
+然后打开：
+
+```text
+http://localhost:18189
+```
+
+### 手动配置
+
+如果你想直接控制 `config.json`、`workflow.json` 和 `schema.json`，就走这条路径。
 
 <details>
-<summary>展开查看手动配置步骤</summary>
+<summary><strong>展开查看手动配置示例</strong></summary>
 
 #### 1）编辑 `config.json`
 
@@ -206,7 +223,7 @@ comfyui-skill run local/my-workflow --args '{"prompt": "test"}'
 
 #### 2）放置工作流文件
 
-```
+```text
 data/local/my-workflow/
   workflow.json  # ComfyUI API 格式导出
   schema.json    # 参数映射
@@ -232,111 +249,196 @@ data/local/my-workflow/
 
 </details>
 
-### 工作流要求
+## 工作原理
 
-- **必须导出为 ComfyUI API 格式**（在 ComfyUI 中点击 **Save (API Format)**）
-- **末端必须包含 `Save Image` 节点**（否则可能执行成功但拿不到图片）
+这个项目在 AI Agent 和 ComfyUI 工作流之间增加了一层受控执行层。
 
----
+1. 从 ComfyUI 以 API 格式导出工作流。
+2. 导入工作流，并定义哪些参数需要对外暴露。
+3. 把映射关系保存到 `schema.json`。
+4. 通过 `comfyui-skill` 用结构化参数调用工作流。
+5. 把任务提交到目标 ComfyUI 服务器，并返回生成结果。
+
+实际流程大致如下：
+
+```text
+ComfyUI workflow.json
+  -> schema.json 参数映射
+  -> comfyui-skill CLI
+  -> ComfyUI server
+  -> 生成图片输出
+```
+
+这种结构让 Agent 面对的是一个稳定的调用契约，而不是直接去理解原始的 ComfyUI graph 节点。
+
+## 常用命令
+
+下面这些命令覆盖了最常见的使用场景。
+
+### 发现工作流
+
+```bash
+comfyui-skill list
+comfyui-skill info local/txt2img
+```
+
+### 执行工作流
+
+```bash
+comfyui-skill run local/txt2img --args '{"prompt": "a white cat"}'
+```
+
+### 异步提交工作流
+
+```bash
+comfyui-skill submit local/txt2img --args '{"prompt": "a white cat"}'
+comfyui-skill status <prompt_id>
+```
+
+### 导入工作流
+
+```bash
+comfyui-skill workflow import ./my-workflow.json --check-deps
+```
+
+### 检查依赖
+
+```bash
+comfyui-skill deps check local/my-workflow
+comfyui-skill deps install local/my-workflow --all
+```
+
+### 管理服务器
+
+```bash
+comfyui-skill server list
+comfyui-skill server add --id remote --url http://10.0.0.1:8188
+comfyui-skill server status
+```
+
+完整 CLI 文档见 [ComfyUI Skill CLI](https://github.com/HuangYuChuh/ComfyUI_Skill_CLI)。
+
+## 工作流要求
+
+为了让项目稳定运行，每个工作流最好满足以下条件。
+
+- 工作流必须以 ComfyUI API 格式导出。
+- 工作流里应包含 `Save Image` 这类输出节点。
+- 需要有一个 `schema.json` 映射层，方便 Agent 通过清晰参数接口调用。
+- 目标 ComfyUI 服务器需要提前安装好对应的自定义节点和模型。
+
+如果你使用 `comfyui-skill workflow import`，CLI 可以帮助生成映射并在执行前检查依赖。
 
 ## 多服务器管理
 
-管理多台 ComfyUI 服务器，将任务分发到不同算力。
+这个项目从设计上就支持多台 ComfyUI 服务器。
 
-### 核心概念
+你可以把本地和远程的 ComfyUI 实例统一放到一个配置里，通过命名空间来路由工作流。这很适合不同机器承担不同任务的场景，比如本地轻量测试、大显存机器跑重任务，或者按模型环境拆分服务器。
 
-- **双层开关**：服务器和工作流各有独立的启用/禁用开关，Agent 只能看到两者都启用的工作流。
-- **命名空间**：工作流以 `<server_id>/<workflow_id>` 格式标识（如 `local/txt2img` 与 `remote-a100/txt2img` 互不干扰）。
-
-### CLI
+例如：
 
 ```bash
-comfyui-skill server add --id remote --name "Remote GPU" --url http://10.0.0.1:8188
+comfyui-skill server add --id local --url http://127.0.0.1:8188
+comfyui-skill server add --id remote-a100 --url http://10.0.0.20:8188
 comfyui-skill server list
-comfyui-skill server disable remote
 ```
 
-### 配置迁移
+工作流使用下面这种格式标识：
+
+```text
+<server_id>/<workflow_id>
+```
+
+例如：
+
+```text
+local/txt2img
+remote-a100/sdxl-base
+```
+
+服务器和工作流都支持启用/禁用开关，所以 Agent 只能看到当前可用的工作流。
+
+你也可以通过下面这些命令在不同机器之间迁移配置：
 
 ```bash
-# 导出
 comfyui-skill config export --output ./backup.json
-
-# 预览导入
 comfyui-skill config import ./backup.json --dry-run
-
-# 执行导入
 comfyui-skill config import ./backup.json
 ```
 
-*所有服务器配置也可以通过 Web UI 管理。*
+## Web UI
 
----
+项目提供了一个本地 Web 界面，用于可视化配置和测试。它是可选的，存在的目的主要是让 setup、检查和验证更直观；这个 skill 本身仍然是为 Agent 通过 CLI 调用而设计的。
 
-## 更新
-
-```bash
-./update.sh
-```
-
-更新 CLI：
+### 启动
 
 ```bash
-pipx upgrade comfyui-skill-cli
+pip install -r requirements.txt   # 仅首次需要
+./ui/run_ui.sh                    # macOS/Linux
+# 或: ui\run_ui.bat               # Windows
 ```
 
----
+访问 `http://localhost:18189`。
+
+### 你可以在 Web UI 里做什么
+
+- 上传从 ComfyUI 导出的工作流
+- 用可视化编辑器配置参数映射
+- 统一管理多台服务器和工作流
+- 搜索、排序和查看工作流定义
+- 在交给 Agent 使用之前，对工作流配置进行测试和验证
+- 在英文、简体中文和繁体中文之间切换界面语言
+
+Web UI 中的配置最终都会映射回同一套底层 CLI 流程。它是配置和测试的可视化辅助层，不是另一套独立的执行模型。
+
+前端源码位于[独立仓库](https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw-frontend)。
 
 ## 常见问题
 
-- **`/prompt` 返回 HTTP 400**：工作流 payload 或参数值不合法。
-- **没有返回图片**：工作流缺少 `Save Image` 节点。
-- **连接失败**：检查 `config.json` 中的服务器地址是否正确。
+### `/prompt` 返回 HTTP 400
 
----
+工作流 payload 或注入后的某个参数值不合法。
+
+请检查：
+
+- 工作流是否以 API 格式导出
+- schema 映射是否指向了正确的节点和字段
+- 传入参数的类型是否和 schema 定义一致
+
+### 没有返回图片
+
+工作流里可能缺少有效的输出节点，例如 `Save Image`。
+
+### 连接失败
+
+请检查：
+
+- ComfyUI 服务器是否已经启动
+- `config.json` 中的服务器 URL 是否正确
+- 当前选择的服务器是否处于启用状态
+
+### 缺少节点或模型
+
+运行：
+
+```bash
+comfyui-skill deps check <workflow_id>
+```
+
+然后按需安装支持的依赖。
 
 ## 更新日志
 
+最近的重要更新：
+
+- **v0.3.1**：新增 ComfyUI API Key 支持，可用于 Kling、Sora、Nano Banana 等云 API 节点。
+- **v0.3.0**：新增依赖检查与安装、非阻塞 `submit` / `status`、图片上传、导入预览和执行历史。
+- **v0.2.0**：将前端源码拆分到独立仓库，并加入前端自动同步能力。
+
 完整版本记录见 [CHANGELOG.zh.md](./CHANGELOG.zh.md)。
 
----
+## 相关资源
 
-## 项目结构
-
-```text
-ComfyUI_Skills_OpenClaw/
-├── SKILL.md                    # Agent 指令规范
-├── config.example.json         # 配置示例
-├── config.json                 # 本地配置（gitignored）
-├── requirements.txt            # Web UI 的 Python 依赖
-├── data/
-│   └── <server_id>/
-│       └── <workflow_id>/
-│           ├── workflow.json   # ComfyUI API 格式工作流
-│           └── schema.json     # 参数映射
-├── scripts/
-│   ├── update_frontend.sh      # 拉取最新前端构建
-│   └── shared/                 # 共用工具（Web UI 后端使用）
-├── ui/
-│   ├── app.py                  # FastAPI 后端
-│   ├── open_ui.py              # UI 启动器
-│   └── static/                 # 前端（HTML/CSS/JS）
-└── outputs/
-```
-
----
-
-<details>
-<summary>项目关键词与资料</summary>
-
-### 项目关键词
-
-- OpenClaw · ComfyUI · ComfyUI Skills · ComfyUI 工作流自动化
-- AI 生图技能 · OpenClaw + ComfyUI 集成
-
-### 核心文件
-
-- `SKILL.md` — Agent 调用规范
-- `docs/llms.txt` / `docs/llms-full.txt` — 面向 LLM 的摘要
-
-</details>
+- [English README](./README.md)
+- [ComfyUI Skill CLI](https://github.com/HuangYuChuh/ComfyUI_Skill_CLI)
+- [Frontend Repository](https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw-frontend)

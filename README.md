@@ -1,18 +1,96 @@
-# ComfyUI Skills for OpenClaw
+<div align="center">
+  <img src="./asset/banner-ui-dashboard-20260322.png" alt="ComfyUI Skills Banner">
 
-![ComfyUI Skills Banner](./asset/banner-ui-dashboard-20260322.png)
+  <h1>ComfyUI Skills for OpenClaw</h1>
 
-Turn your ComfyUI workflows into callable skills for AI agents. Any agent that can run shell commands — Claude Code, Codex, OpenClaw — can discover, execute, and manage ComfyUI workflows through a single CLI.
+  <p><strong>Agent-friendly ComfyUI workflow skills for OpenClaw, Codex, Claude Code, and other AI agents.</strong></p>
 
-<a href="./README.zh.md"><img src="https://img.shields.io/badge/简体中文-README.zh.md-blue?style=flat-square" alt="简体中文" /></a>
+  <p>
+    Use this project to turn ComfyUI workflows into callable skills with an agent-friendly CLI as the primary interface,
+    plus a visual Web UI for easier configuration and testing.
+  </p>
 
-[Demo Video](https://www.bilibili.com/video/BV1a6cUzVEE6/) · [Install](#install) · [CLI Usage](#cli-usage) · [Web UI](#web-ui-optional) · [Workflow Setup](#workflow-setup) · [Multi-Server](#multi-server-management)
+  <p>
+    <a href="https://huangyuchuh.github.io/ComfyUI_Skills_OpenClaw/">
+      <img src="https://img.shields.io/badge/docs-GitHub_Pages-0A7EA4?style=flat-square" alt="Docs">
+    </a>
+    <a href="https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw/blob/main/LICENSE">
+      <img src="https://img.shields.io/github/license/HuangYuChuh/ComfyUI_Skills_OpenClaw?style=flat-square" alt="License">
+    </a>
+    <a href="https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw/stargazers">
+      <img src="https://img.shields.io/github/stars/HuangYuChuh/ComfyUI_Skills_OpenClaw?style=flat-square" alt="GitHub stars">
+    </a>
+  </p>
+
+  <p>
+    <a href="https://www.bilibili.com/video/BV1a6cUzVEE6/">🎬 Demo Video</a> ·
+    <a href="https://huangyuchuh.github.io/ComfyUI_Skills_OpenClaw/">📘 Docs</a> ·
+    <a href="#quick-start">🧭 Quick Start</a> ·
+    <a href="#web-ui">🖥️ Web UI</a> ·
+    <a href="#multi-server-management">🛰️ Multi-Server</a>
+  </p>
+
+  <p>
+    <a href="./README.zh.md">简体中文</a>
+  </p>
+</div>
 
 ---
 
-## Install
+## Overview
 
-### Step 1: Clone the project
+ComfyUI Skills for OpenClaw is an agent-friendly bridge that turns ComfyUI workflows into callable skills for AI agents.
+
+Instead of asking an agent to manipulate raw ComfyUI graphs, this project gives each workflow a clean, controlled interface through a CLI and schema-based parameter mapping. It works with OpenClaw, Codex, Claude Code, and other agents that can run shell commands.
+
+Use it when you want to import existing ComfyUI workflows, expose only the parameters that matter, run them from chat or agent tasks, and manage everything through one consistent workflow layer.
+
+| Best for | What you get |
+|----------|--------------|
+| OpenClaw, Codex, and Claude Code users | A ComfyUI workflow layer that agents can call safely |
+| Existing ComfyUI workflow owners | A clean way to reuse exported workflows without exposing the full graph |
+| Multi-machine setups | One namespace for local and remote ComfyUI servers |
+| Users who want visual setup and testing | An optional Web UI for configuring, previewing, and validating workflows before agents use them |
+
+## Why This Project
+
+Working with ComfyUI directly is powerful, but not ideal for agent-driven execution.
+
+Raw workflow graphs are noisy, fragile, and difficult for an agent to use safely. Direct API calls also require you to manually manage parameter injection, workflow naming, server selection, dependency checks, and output handling. This project adds a stable abstraction layer on top of ComfyUI so agents can discover workflows, call them with structured arguments, and get predictable results.
+
+Compared with working directly against ComfyUI workflows or lower-level tooling, the CLI in this project is designed to be more agent-friendly: clearer inputs, safer parameter exposure, better workflow discovery, and more predictable execution results.
+
+This makes the project useful when you want to:
+
+- Turn an existing ComfyUI workflow into an agent tool
+- Expose a safe parameter contract instead of the full graph
+- Run workflows across multiple ComfyUI servers
+- Reuse the same workflow setup across OpenClaw, Codex, Claude Code, and similar agents
+
+## Features
+
+| Capability | Why it matters |
+|------------|----------------|
+| **Agent-friendly CLI** | Designed for agents, not just humans. It provides a cleaner and more reliable interface than working directly with raw ComfyUI graphs or lower-level ComfyUI interaction patterns. |
+| **Schema-based parameter mapping** | Expose only the fields you want the agent to control, with clear aliases, types, and descriptions. |
+| **ComfyUI workflow import** | Import workflow JSON files, auto-detect formats, and generate the mapping layer needed for agent use. |
+| **Multi-server routing** | Manage local and remote ComfyUI servers under one namespace and route jobs to the right machine. |
+| **Dependency management** | Check missing nodes and models before execution and install supported dependencies through the CLI. |
+| **Optional Web UI** | A visual layer for configuration and testing. It does not replace the CLI, and agent-facing actions still map to the same CLI workflow. |
+
+## Quick Start
+
+Get ComfyUI Skills running in a few minutes.
+
+Before you start, make sure you have:
+
+- Python 3.10+
+- A running ComfyUI server
+- An exported workflow in ComfyUI API format if you want to test execution right away
+
+### 1. Clone the project
+
+Choose the directory that matches your agent environment.
 
 <details>
 <summary><strong>For OpenClaw</strong></summary>
@@ -21,7 +99,6 @@ Turn your ComfyUI workflows into callable skills for AI agents. Any agent that c
 cd ~/.openclaw/workspace/skills
 git clone https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw.git comfyui-skill-openclaw
 cd comfyui-skill-openclaw
-cp config.example.json config.json
 ```
 
 </details>
@@ -33,7 +110,6 @@ cp config.example.json config.json
 cd ~/.claude/skills
 git clone https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw.git comfyui-skill
 cd comfyui-skill
-cp config.example.json config.json
 ```
 
 </details>
@@ -45,149 +121,88 @@ cp config.example.json config.json
 cd ~/.codex/skills
 git clone https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw.git comfyui-skill
 cd comfyui-skill
-cp config.example.json config.json
 ```
 
 </details>
 
-### Step 2: Install the CLI
+### 2. Create your local config
+
+```bash
+cp config.example.json config.json
+```
+
+### 3. Install the CLI
 
 ```bash
 pipx install comfyui-skill-cli
 ```
 
-Or with pip:
+Or:
 
 ```bash
 pip install comfyui-skill-cli
 ```
 
-### Step 3: Verify
+### 4. Verify the setup
 
 ```bash
 comfyui-skill server status
 comfyui-skill list
 ```
 
-That's it. The CLI reads `config.json` and `data/` from the project directory.
-
-> **Web UI dependencies** (optional, only needed if you want the management interface):
-> ```bash
-> pip install -r requirements.txt
-> ```
-
----
-
-## CLI Usage
-
-The CLI is the primary way to interact with ComfyUI Skills. All commands support `--json` for structured output.
-
-### Quick Start
+### 5. Import and run your first workflow
 
 ```bash
-# Check server
-comfyui-skill server status
-
-# List workflows
-comfyui-skill list
-
-# Execute a workflow
-comfyui-skill run local/txt2img --args '{"prompt": "a white cat"}'
-
-# Import a new workflow from JSON
-comfyui-skill workflow import ./my-workflow.json --check-deps
-
-# Upload an image for img2img workflows
-comfyui-skill upload ./photo.png
-```
-
-### Full Command Reference
-
-| Category | Command | Description |
-|----------|---------|-------------|
-| **Discovery** | `comfyui-skill list` | List all workflows with parameters |
-| | `comfyui-skill info <workflow_id>` | Show workflow details and parameter schema |
-| **Execution** | `comfyui-skill run <workflow_id> --args '{...}'` | Execute workflow (blocking) |
-| | `comfyui-skill submit <workflow_id> --args '{...}'` | Submit workflow (non-blocking) |
-| | `comfyui-skill status <prompt_id>` | Check execution status |
-| | `comfyui-skill upload <image_path>` | Upload image to ComfyUI |
-| **Workflow** | `comfyui-skill workflow import <json_path>` | Import from local JSON (auto-detect format) |
-| | `comfyui-skill workflow import --from-server` | Import from ComfyUI server |
-| | `comfyui-skill workflow enable/disable <workflow_id>` | Toggle workflow |
-| | `comfyui-skill workflow delete <workflow_id>` | Delete workflow |
-| **Server** | `comfyui-skill server list` | List servers |
-| | `comfyui-skill server status [<server_id>]` | Check server health |
-| | `comfyui-skill server add --id <server_id> --url <url>` | Add server |
-| | `comfyui-skill server enable/disable <server_id>` | Toggle server |
-| | `comfyui-skill server remove <server_id>` | Remove server |
-| **Dependencies** | `comfyui-skill deps check <workflow_id>` | Check missing nodes and models |
-| | `comfyui-skill deps install <workflow_id> --all` | Install all missing deps |
-| **Config** | `comfyui-skill config export --output <path>` | Export config bundle |
-| | `comfyui-skill config import <path>` | Import config bundle |
-| **History** | `comfyui-skill history list <workflow_id>` | List execution history |
-| | `comfyui-skill history show <workflow_id> <run_id>` | Show run details |
-
-> `<workflow_id>` format: `server_id/workflow_name` (e.g. `local/txt2img`). Omit the server prefix to use the default server.
-
-For full CLI documentation, see [ComfyUI Skill CLI](https://github.com/HuangYuChuh/ComfyUI_Skill_CLI).
-
----
-
-## Web UI (Optional)
-
-A local web interface for visual workflow management. Not required for Agent usage — the CLI covers all functionality.
-
-### Launch
-
-```bash
-pip install -r requirements.txt   # first time only
-./ui/run_ui.sh                    # macOS/Linux
-# or: ui\run_ui.bat               # Windows
-```
-
-Visit `http://localhost:18189`.
-
-### Capabilities
-
-- Upload workflows exported from ComfyUI (API Format)
-- Configure parameter mappings with a visual editor
-- Manage multiple servers and workflows in one place
-- Drag to reorder, search and filter across servers
-- Available in English, Simplified Chinese, and Traditional Chinese
-
-Frontend source lives in a [separate repository](https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw-frontend).
-
----
-
-## Workflow Setup
-
-Before you start, make sure your ComfyUI server is running (default: `http://127.0.0.1:8188`).
-
-### Option A: Import via CLI (Recommended)
-
-```bash
-# Import a workflow JSON — auto-detects format, converts if needed, generates schema
 comfyui-skill workflow import ./my-workflow.json
-
-# Check and install dependencies
 comfyui-skill deps check local/my-workflow
-comfyui-skill deps install local/my-workflow --all
-
-# Verify
-comfyui-skill run local/my-workflow --args '{"prompt": "test"}'
+comfyui-skill run local/my-workflow --args '{"prompt": "a white cat"}'
 ```
 
-### Option B: Import via Web UI
+At this point, the CLI will read your local `config.json`, discover available workflows, and execute them through your ComfyUI server.
 
-1. Open the Web UI at `http://localhost:18189`
-2. Upload a workflow JSON exported from ComfyUI with **Save (API Format)**
-3. Select which parameters to expose to agents
-4. Save the mapping
+## Setup Options
 
-### Option C: Manual Setup
+Choose the path that matches how you want to use the project.
+
+### OpenClaw
+
+Use this path if you want OpenClaw to discover and execute ComfyUI workflows as skills.
+
+- Clone the repository into `~/.openclaw/workspace/skills`
+- Install `comfyui-skill-cli`
+- Configure `config.json`
+- Import workflows and expose agent-safe parameters
+
+### Codex or Claude Code
+
+Use this path if you want coding agents to call ComfyUI workflows through shell commands.
+
+- Clone the repository into your agent skills directory
+- Install the CLI
+- Verify with `comfyui-skill list`
+- Execute workflows with structured `--args`
+
+### Web UI
+
+Use this path if you want a visual interface for configuration, inspection, and testing while keeping the CLI as the primary agent-facing interface.
+
+```bash
+pip install -r requirements.txt
+./ui/run_ui.sh
+```
+
+Then open:
+
+```text
+http://localhost:18189
+```
+
+### Manual Setup
+
+Use this path if you want direct control over `config.json`, `workflow.json`, and `schema.json`.
 
 <details>
-<summary>Expand for manual config file setup</summary>
+<summary><strong>Expand for manual config file setup</strong></summary>
 
 #### 1) Edit `config.json`
 
@@ -208,7 +223,7 @@ comfyui-skill run local/my-workflow --args '{"prompt": "test"}'
 
 #### 2) Place workflow files
 
-```
+```text
 data/local/my-workflow/
   workflow.json  # ComfyUI API-format export
   schema.json    # Parameter mapping
@@ -234,113 +249,196 @@ data/local/my-workflow/
 
 </details>
 
-### Workflow Requirements
+## How It Works
 
-- **Must be exported in ComfyUI API format** (click **Save (API Format)** in ComfyUI)
-- **Must end with a `Save Image` node** (or equivalent image output node)
+The project adds a controlled execution layer between AI agents and ComfyUI workflows.
 
----
+1. Export a workflow from ComfyUI in API format.
+2. Import the workflow and define which parameters should be exposed.
+3. Store that mapping in `schema.json`.
+4. Call the workflow through `comfyui-skill` with structured arguments.
+5. Submit the job to the target ComfyUI server and return generated outputs.
+
+In practice, the flow looks like this:
+
+```text
+ComfyUI workflow.json
+  -> schema.json parameter mapping
+  -> comfyui-skill CLI
+  -> ComfyUI server
+  -> generated image outputs
+```
+
+This structure lets agents work with a stable contract instead of reasoning about raw ComfyUI graph nodes.
+
+## Common Commands
+
+Use these commands for the most common workflow operations.
+
+### Discover workflows
+
+```bash
+comfyui-skill list
+comfyui-skill info local/txt2img
+```
+
+### Run a workflow
+
+```bash
+comfyui-skill run local/txt2img --args '{"prompt": "a white cat"}'
+```
+
+### Submit a workflow asynchronously
+
+```bash
+comfyui-skill submit local/txt2img --args '{"prompt": "a white cat"}'
+comfyui-skill status <prompt_id>
+```
+
+### Import a workflow
+
+```bash
+comfyui-skill workflow import ./my-workflow.json --check-deps
+```
+
+### Check dependencies
+
+```bash
+comfyui-skill deps check local/my-workflow
+comfyui-skill deps install local/my-workflow --all
+```
+
+### Manage servers
+
+```bash
+comfyui-skill server list
+comfyui-skill server add --id remote --url http://10.0.0.1:8188
+comfyui-skill server status
+```
+
+For the full CLI reference, see [ComfyUI Skill CLI](https://github.com/HuangYuChuh/ComfyUI_Skill_CLI).
+
+## Workflow Requirements
+
+To work reliably with this project, each workflow should meet these requirements.
+
+- The workflow must be exported from ComfyUI in API format.
+- The workflow should include an output node such as `Save Image`.
+- The workflow needs a `schema.json` mapping so the agent can work with a clean parameter interface.
+- The target ComfyUI server must have the required custom nodes and models installed.
+
+If you use `comfyui-skill workflow import`, the CLI can help generate the required mapping and check dependencies before execution.
 
 ## Multi-Server Management
 
-Manage multiple ComfyUI servers and route jobs to different hardware.
+This project is designed to work with more than one ComfyUI server.
 
-### Core Concepts
+You can keep multiple local or remote ComfyUI instances under one configuration and route workflows by namespace. This is useful when different machines serve different purposes, such as lightweight local testing, larger GPU jobs, or model-specific environments.
 
-- **Dual-layer toggles**: Both servers and workflows have independent enable/disable. Agents only see workflows where both are enabled.
-- **Namespacing**: Workflows are identified as `<server_id>/<workflow_id>` (e.g. `local/txt2img` vs `remote-a100/txt2img`).
-
-### CLI
+Examples:
 
 ```bash
-comfyui-skill server add --id remote --name "Remote GPU" --url http://10.0.0.1:8188
+comfyui-skill server add --id local --url http://127.0.0.1:8188
+comfyui-skill server add --id remote-a100 --url http://10.0.0.20:8188
 comfyui-skill server list
-comfyui-skill server disable remote
 ```
 
-### Configuration Migration
+Workflows are addressed with the format:
+
+```text
+<server_id>/<workflow_id>
+```
+
+For example:
+
+```text
+local/txt2img
+remote-a100/sdxl-base
+```
+
+Both servers and workflows support enable and disable switches, so agents only see workflows that are currently available.
+
+You can also move settings between machines with:
 
 ```bash
-# Export
 comfyui-skill config export --output ./backup.json
-
-# Preview import
 comfyui-skill config import ./backup.json --dry-run
-
-# Apply import
 comfyui-skill config import ./backup.json
 ```
 
-*All server settings can also be managed through the Web UI.*
+## Web UI
 
----
+A local web interface is available for visual configuration and testing. It is optional, and it exists to make setup, inspection, and validation easier. The skill itself is still designed for agents to use through the CLI.
 
-## Updating
-
-```bash
-./update.sh
-```
-
-This pulls the latest code, syncs frontend assets, and installs new dependencies. You can also run `git pull` manually.
-
-To update the CLI:
+### Launch
 
 ```bash
-pipx upgrade comfyui-skill-cli
+pip install -r requirements.txt   # first time only
+./ui/run_ui.sh                    # macOS/Linux
+# or: ui\run_ui.bat               # Windows
 ```
 
----
+Visit `http://localhost:18189`.
+
+### What you can do in the Web UI
+
+- Upload workflows exported from ComfyUI
+- Configure parameter mappings with a visual editor
+- Manage multiple servers and workflows in one place
+- Search, reorder, and inspect workflow definitions
+- Test and validate workflow configuration before handing it off to agents
+- Use the interface in English, Simplified Chinese, or Traditional Chinese
+
+Everything the Web UI configures maps back to the same underlying CLI-driven workflow. It is a visual companion for setup and testing, not a separate execution model.
+
+Frontend source lives in a [separate repository](https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw-frontend).
 
 ## Common Issues
 
-- **HTTP 400 on `/prompt`**: The workflow payload or parameter values are invalid.
-- **No images returned**: The workflow is missing a `Save Image` node.
-- **Connection failed**: Check that `config.json` has the correct server URL.
+### HTTP 400 on `/prompt`
 
----
+The workflow payload or one of the injected parameter values is invalid.
+
+Check:
+
+- Whether the workflow was exported in API format
+- Whether the schema mapping points to the correct node and field
+- Whether the provided argument types match the schema
+
+### No images returned
+
+The workflow may be missing a valid output node such as `Save Image`.
+
+### Connection failed
+
+Check that:
+
+- The ComfyUI server is running
+- The server URL in `config.json` is correct
+- The selected server is enabled
+
+### Missing nodes or models
+
+Run:
+
+```bash
+comfyui-skill deps check <workflow_id>
+```
+
+Then install supported dependencies if needed.
 
 ## Changelog
 
+Recent highlights:
+
+- **v0.3.1**: Added ComfyUI API Key support for cloud API nodes such as Kling, Sora, and Nano Banana.
+- **v0.3.0**: Added dependency check and install, non-blocking `submit` and `status`, image upload, import preview, and execution history.
+- **v0.2.0**: Moved frontend source code into a separate repository and added automated frontend sync support.
+
 See [CHANGELOG.md](./CHANGELOG.md) for the full release history.
 
----
+## Resources
 
-## Project Structure
-
-```text
-ComfyUI_Skills_OpenClaw/
-├── SKILL.md                    # Agent instruction spec
-├── config.example.json         # Example config
-├── config.json                 # Local config (gitignored)
-├── requirements.txt            # Python deps for Web UI only
-├── data/
-│   └── <server_id>/
-│       └── <workflow_id>/
-│           ├── workflow.json   # ComfyUI API-format workflow
-│           └── schema.json     # Parameter mapping
-├── scripts/
-│   ├── update_frontend.sh      # Pull latest frontend build
-│   └── shared/                 # Shared utils (Web UI backend)
-├── ui/
-│   ├── app.py                  # FastAPI backend
-│   ├── open_ui.py              # UI launcher
-│   └── static/                 # Frontend (HTML/CSS/JS)
-└── outputs/
-```
-
----
-
-<details>
-<summary>Project Keywords And Resources</summary>
-
-### Project Keywords
-
-- OpenClaw · ComfyUI · ComfyUI Skills · ComfyUI workflow automation
-- AI image generation skill · OpenClaw ComfyUI integration
-
-### Core Files
-
-- `SKILL.md` — Agent execution contract
-- `docs/llms.txt` / `docs/llms-full.txt` — LLM-oriented summaries
-
-</details>
+- [Chinese README](./README.zh.md)
+- [ComfyUI Skill CLI](https://github.com/HuangYuChuh/ComfyUI_Skill_CLI)
+- [Frontend Repository](https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw-frontend)
