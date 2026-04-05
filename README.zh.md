@@ -39,7 +39,7 @@
 
 ## 概览
 
-ComfyUI Skills for OpenClaw 是一个更适合 Agent 调用的桥接层，用来把 ComfyUI 工作流封装成 AI Agent 可调用的技能。
+ComfyUI Skills for OpenClaw 是一个更适合 Agent 调用的桥接层，用来把 ComfyUI 工作流封装成 Agent 可调用的技能。
 
 它不是让 Agent 直接去操作原始的 ComfyUI graph，而是通过 CLI 和基于 schema 的参数映射，为每个工作流提供一个更清晰、更可控的调用接口。只要 Agent 能执行 Shell 命令，就可以与它配合使用，包括 OpenClaw、Codex、Claude Code 等。
 
@@ -160,6 +160,8 @@ comfyui-skill run local/my-workflow --args '{"prompt": "a white cat"}'
 
 到这里，CLI 就会读取本地 `config.json`，发现可用工作流，并通过你的 ComfyUI 服务器执行它们。
 
+如果你更希望通过可视化方式完成配置和测试，可以继续看下方的 [Web UI](#web-ui) 章节。
+
 ## 配置路径
 
 根据你的使用方式选择对应路径。
@@ -252,7 +254,7 @@ data/local/my-workflow/
 
 ## 工作原理
 
-这个项目在 AI Agent 和 ComfyUI 工作流之间增加了一层受控执行层。
+这个项目在 Agent 和 ComfyUI 工作流之间增加了一层受控执行层。
 
 1. 从 ComfyUI 以 API 格式导出工作流。
 2. 导入工作流，并定义哪些参数需要对外暴露。

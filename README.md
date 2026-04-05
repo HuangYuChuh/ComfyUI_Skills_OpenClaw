@@ -3,7 +3,7 @@
 
   <h1>ComfyUI Skills for OpenClaw</h1>
 
-  <p><strong>Agent-friendly ComfyUI workflow skills for OpenClaw, Codex, Claude Code, and other AI agents.</strong></p>
+  <p><strong>Agent-friendly ComfyUI workflow skills for OpenClaw, Codex, Claude Code, and other agents.</strong></p>
 
   <p>
     Use this project to turn ComfyUI workflows into callable skills with an agent-friendly CLI as the primary interface,
@@ -39,7 +39,7 @@
 
 ## Overview
 
-ComfyUI Skills for OpenClaw is an agent-friendly bridge that turns ComfyUI workflows into callable skills for AI agents.
+ComfyUI Skills for OpenClaw is an agent-friendly bridge that turns ComfyUI workflows into callable skills for agents.
 
 Instead of asking an agent to manipulate raw ComfyUI graphs, this project gives each workflow a clean, controlled interface through a CLI and schema-based parameter mapping. It works with OpenClaw, Codex, Claude Code, and other agents that can run shell commands.
 
@@ -160,6 +160,8 @@ comfyui-skill run local/my-workflow --args '{"prompt": "a white cat"}'
 
 At this point, the CLI will read your local `config.json`, discover available workflows, and execute them through your ComfyUI server.
 
+If you prefer a visual setup and testing flow, see the [Web UI](#web-ui) section below.
+
 ## Setup Options
 
 Choose the path that matches how you want to use the project.
@@ -252,7 +254,7 @@ data/local/my-workflow/
 
 ## How It Works
 
-The project adds a controlled execution layer between AI agents and ComfyUI workflows.
+The project adds a controlled execution layer between agents and ComfyUI workflows.
 
 1. Export a workflow from ComfyUI in API format.
 2. Import the workflow and define which parameters should be exposed.
