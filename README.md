@@ -187,9 +187,10 @@ Use this path if you want coding agents to call ComfyUI workflows through shell 
 Use this path if you want a visual interface for configuration, inspection, and testing while keeping the CLI as the primary agent-facing interface.
 
 ```bash
-pip install -r requirements.txt
 ./ui/run_ui.sh
 ```
+
+The launch script automatically creates a project `.venv` if needed and installs the required UI dependencies into that virtual environment.
 
 Then open:
 
@@ -373,10 +374,11 @@ A local web interface is available for visual configuration and testing. It is o
 ### Launch
 
 ```bash
-pip install -r requirements.txt   # first time only
 ./ui/run_ui.sh                    # macOS/Linux
 # or: ui\run_ui.bat               # Windows
 ```
+
+The launch scripts create a project `.venv` when needed and install UI dependencies into that virtual environment. No global Web UI dependency install is required.
 
 Visit `http://localhost:18189`.
 

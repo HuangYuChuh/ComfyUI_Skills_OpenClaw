@@ -3,10 +3,10 @@
 
   <h1>ComfyUI Skills for OpenClaw</h1>
 
-  <p><strong>更适合 Agent 调用的 ComfyUI 工作流技能层，适用于 OpenClaw、Codex、Claude Code 以及其他 AI Agent。</strong></p>
+  <p><strong>更适合 Agent 调用的 ComfyUI 工作流技能层，适用于 OpenClaw、Codex、Claude Code 以及其他 Agent。</strong></p>
 
   <p>
-    这个项目可以把 ComfyUI 工作流变成可调用的技能，并以一个更适合 Agent 使用的 CLI 作为主接口，
+    这个项目可以把 ComfyUI 工作流变成可调用的 skill，并以一个更适合 Agent 使用的 CLI 作为主接口，
     同时提供一个可视化 Web UI 用于更方便地完成配置和测试。
   </p>
 
@@ -187,9 +187,10 @@ comfyui-skill run local/my-workflow --args '{"prompt": "a white cat"}'
 如果你希望通过一个可视化界面完成配置、查看和测试，同时仍然以 CLI 作为 Agent 的主接口，就走这条路径。
 
 ```bash
-pip install -r requirements.txt
 ./ui/run_ui.sh
 ```
+
+启动脚本会在需要时自动创建项目级 `.venv`，并把 UI 依赖安装到这个虚拟环境里。
 
 然后打开：
 
@@ -373,10 +374,11 @@ comfyui-skill config import ./backup.json
 ### 启动
 
 ```bash
-pip install -r requirements.txt   # 仅首次需要
 ./ui/run_ui.sh                    # macOS/Linux
 # 或: ui\run_ui.bat               # Windows
 ```
+
+启动脚本会在需要时自动创建项目级 `.venv`，并把 UI 依赖安装到这个虚拟环境中，不需要全局安装 Web UI 依赖。
 
 访问 `http://localhost:18189`。
 
