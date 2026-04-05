@@ -25,13 +25,16 @@
   <p>
     <a href="https://www.bilibili.com/video/BV1a6cUzVEE6/">🎬 演示视频</a> ·
     <a href="https://huangyuchuh.github.io/ComfyUI_Skills_OpenClaw/">📘 文档站</a> ·
-    <a href="#快速开始">🧭 快速开始</a> ·
+    <a href="#quick-start">🧭 快速开始</a> ·
     <a href="#web-ui">🖥️ Web UI</a> ·
-    <a href="#多服务器管理">🛰️ 多服务器</a>
+    <a href="#multi-server-management">🛰️ 多服务器</a>
   </p>
 
   <p>
-    <a href="./README.md">English</a>
+    <a href="./README.md">English</a> ·
+    <a href="./README.zh.md"><strong>简体中文</strong></a> ·
+    <a href="./README.zh-TW.md">繁體中文</a> ·
+    <a href="./README.ja.md">日本語</a>
   </p>
 </div>
 
@@ -78,6 +81,7 @@ ComfyUI Skills for OpenClaw 是一个更适合 Agent 调用的桥接层，用来
 | **依赖检查与安装** | 在执行前检查缺失的节点和模型，并通过 CLI 安装支持的依赖。 |
 | **可选 Web UI** | 一个用于配置和测试的可视化层。它不替代 CLI，面向 Agent 的能力仍然对应同一套 CLI 工作流。 |
 
+<a id="quick-start"></a>
 ## 快速开始
 
 几分钟内跑通 ComfyUI Skills。
@@ -332,6 +336,7 @@ comfyui-skill server status
 
 如果你使用 `comfyui-skill workflow import`，CLI 可以帮助生成映射并在执行前检查依赖。
 
+<a id="multi-server-management"></a>
 ## 多服务器管理
 
 这个项目从设计上就支持多台 ComfyUI 服务器。
@@ -369,6 +374,7 @@ comfyui-skill config import ./backup.json --dry-run
 comfyui-skill config import ./backup.json
 ```
 
+<a id="web-ui"></a>
 ## Web UI
 
 项目提供了一个本地 Web 界面，用于可视化配置和测试。它是可选的，存在的目的主要是让 setup、检查和验证更直观；这个 skill 本身仍然是为 Agent 通过 CLI 调用而设计的。
@@ -444,5 +450,8 @@ comfyui-skill deps check <workflow_id>
 ## 相关资源
 
 - [English README](./README.md)
+- [简体中文 README](./README.zh.md)
+- [繁體中文 README](./README.zh-TW.md)
+- [日本語 README](./README.ja.md)
 - [ComfyUI Skill CLI](https://github.com/HuangYuChuh/ComfyUI_Skill_CLI)
 - [Frontend Repository](https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw-frontend)

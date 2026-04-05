@@ -31,7 +31,10 @@
   </p>
 
   <p>
-    <a href="./README.zh.md">简体中文</a>
+    <a href="./README.md"><strong>English</strong></a> ·
+    <a href="./README.zh.md">简体中文</a> ·
+    <a href="./README.zh-TW.md">繁體中文</a> ·
+    <a href="./README.ja.md">日本語</a>
   </p>
 </div>
 
@@ -78,6 +81,7 @@ This makes the project useful when you want to:
 | **Dependency management** | Check missing nodes and models before execution and install supported dependencies through the CLI. |
 | **Optional Web UI** | A visual layer for configuration and testing. It does not replace the CLI, and agent-facing actions still map to the same CLI workflow. |
 
+<a id="quick-start"></a>
 ## Quick Start
 
 Get ComfyUI Skills running in a few minutes.
@@ -332,6 +336,7 @@ To work reliably with this project, each workflow should meet these requirements
 
 If you use `comfyui-skill workflow import`, the CLI can help generate the required mapping and check dependencies before execution.
 
+<a id="multi-server-management"></a>
 ## Multi-Server Management
 
 This project is designed to work with more than one ComfyUI server.
@@ -369,6 +374,7 @@ comfyui-skill config import ./backup.json --dry-run
 comfyui-skill config import ./backup.json
 ```
 
+<a id="web-ui"></a>
 ## Web UI
 
 A local web interface is available for visual configuration and testing. It is optional, and it exists to make setup, inspection, and validation easier. The skill itself is still designed for agents to use through the CLI.
@@ -443,6 +449,9 @@ See [CHANGELOG.md](./CHANGELOG.md) for the full release history.
 
 ## Resources
 
-- [Chinese README](./README.zh.md)
+- [English README](./README.md)
+- [简体中文 README](./README.zh.md)
+- [繁體中文 README](./README.zh-TW.md)
+- [日本語 README](./README.ja.md)
 - [ComfyUI Skill CLI](https://github.com/HuangYuChuh/ComfyUI_Skill_CLI)
 - [Frontend Repository](https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw-frontend)
