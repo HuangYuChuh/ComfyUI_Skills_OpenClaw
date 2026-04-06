@@ -33,7 +33,7 @@
   <p>
     <a href="./README.md">English</a> ·
     <a href="./README.zh.md">简体中文</a> ·
-    <a href="./README.zh-TW.md"><strong>繁體中文</strong></a> ·
+    <strong>繁體中文</strong> ·
     <a href="./README.ja.md">日本語</a>
   </p>
 </div>
