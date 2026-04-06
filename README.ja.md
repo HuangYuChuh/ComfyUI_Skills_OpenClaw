@@ -13,13 +13,13 @@
 
   <p>
     <a href="https://huangyuchuh.github.io/ComfyUI_Skills_OpenClaw/">
-      <img src="https://img.shields.io/badge/docs-GitHub_Pages-0A7EA4?style=flat-square" alt="Docs">
+      <img src="https://img.shields.io/badge/docs-GitHub_Pages-0A7EA4?style=flat" alt="Docs">
     </a>
     <a href="https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw/blob/main/LICENSE">
-      <img src="https://img.shields.io/github/license/HuangYuChuh/ComfyUI_Skills_OpenClaw?style=flat-square" alt="License">
+      <img src="https://img.shields.io/github/license/HuangYuChuh/ComfyUI_Skills_OpenClaw?style=flat" alt="License">
     </a>
     <a href="https://github.com/HuangYuChuh/ComfyUI_Skills_OpenClaw/stargazers">
-      <img src="https://img.shields.io/github/stars/HuangYuChuh/ComfyUI_Skills_OpenClaw?style=flat-square" alt="GitHub stars">
+      <img src="https://img.shields.io/github/stars/HuangYuChuh/ComfyUI_Skills_OpenClaw?style=flat" alt="GitHub stars">
     </a>
   </p>
 
