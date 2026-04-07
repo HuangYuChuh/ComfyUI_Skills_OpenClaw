@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./asset/banner-ui-dashboard-20260322.png" alt="ComfyUI Skills Banner">
+  <img src="./asset/banner.png" alt="ComfyUI Skills Banner">
 
   <h1>ComfyUI Skills for OpenClaw</h1>
 
