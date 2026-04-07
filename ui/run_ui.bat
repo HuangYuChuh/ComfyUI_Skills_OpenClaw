@@ -14,46 +14,48 @@ if "%OPENCLAW_UI_PORT%"=="" (
   set "UI_PORT=%OPENCLAW_UI_PORT%"
 )
 
-:: --- Find a suitable Python (3.10+) ---
 set "BOOTSTRAP_PYTHON="
+set "BOOTSTRAP_PYTHON_ARGS="
 
 if defined PYTHON_BIN (
-  where "%PYTHON_BIN%" >nul 2>nul
-  if not errorlevel 1 (
-    set "BOOTSTRAP_PYTHON=%PYTHON_BIN%"
-  ) else (
-    echo Python interpreter not found: %PYTHON_BIN%
+  call :try_python_candidate "%PYTHON_BIN%"
+  if errorlevel 1 (
+    echo PYTHON_BIN must point to Python 3.10 or newer with the standard venv module: %PYTHON_BIN%
     pause
     exit /b 1
   )
 ) else (
-  for %%P in (python3 python) do (
-    where %%P >nul 2>nul
-    if not errorlevel 1 (
-      set "BOOTSTRAP_PYTHON=%%P"
-      goto :found_python
+  if defined VIRTUAL_ENV (
+    if exist "%VIRTUAL_ENV%\Scripts\python.exe" (
+      call :try_python_candidate "%VIRTUAL_ENV%\Scripts\python.exe"
+      if not errorlevel 1 goto :found_python
     )
+  )
+
+  for %%V in (3.14 3.13 3.12 3.11 3.10) do (
+    call :try_py_launcher %%V
+    if not errorlevel 1 goto :found_python
+  )
+
+  for %%P in (python3.14 python3.13 python3.12 python3.11 python3.10 python3 python) do (
+    call :try_python_candidate "%%P"
+    if not errorlevel 1 goto :found_python
   )
 )
 :found_python
 
 if "%BOOTSTRAP_PYTHON%"=="" (
-  echo Python 3.10 or newer is required. Install Python or set PYTHON_BIN.
+  echo Python 3.10 or newer is required. Install Python 3.10+ or set PYTHON_BIN.
   pause
   exit /b 1
 )
 
-:: --- Check Python version ---
-"%BOOTSTRAP_PYTHON%" -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)"
-if errorlevel 1 (
-  echo Python 3.10 or newer is required. Current interpreter is too old.
-  pause
-  exit /b 1
-)
+for /f %%V in ('call :run_bootstrap -c "import sys; print(str(sys.version_info[0]) + chr(46) + str(sys.version_info[1]))"') do set "BOOTSTRAP_PYTHON_VERSION=%%V"
+echo Using Python interpreter: %BOOTSTRAP_PYTHON% %BOOTSTRAP_PYTHON_ARGS% (Python %BOOTSTRAP_PYTHON_VERSION%)
 
 :: --- Ensure .venv exists ---
 if exist "%VENV_PYTHON%" (
-  "%VENV_PYTHON%" -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)" >nul 2>nul
+  "%VENV_PYTHON%" -c "import sys, venv; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)" >nul 2>nul
   if errorlevel 1 (
     echo Rebuilding .venv with a supported Python interpreter...
     rmdir /s /q "%VENV_DIR%"
@@ -64,12 +66,17 @@ if exist "%VENV_PYTHON%" (
 
 :create_venv
 echo Creating project .venv...
-"%BOOTSTRAP_PYTHON%" -m venv "%VENV_DIR%"
+call :run_bootstrap -m venv "%VENV_DIR%"
+if errorlevel 1 (
+  echo Failed to create .venv with %BOOTSTRAP_PYTHON% %BOOTSTRAP_PYTHON_ARGS%.
+  pause
+  exit /b 1
+)
 
 :venv_ready
 
 :: --- Ensure dependencies ---
-"%VENV_PYTHON%" -c "import fastapi, uvicorn, pydantic, requests" >nul 2>nul
+"%VENV_PYTHON%" -c "import fastapi, uvicorn, pydantic, requests, multipart" >nul 2>nul
 if errorlevel 1 (
   echo Installing UI dependencies into .venv...
   "%VENV_PYTHON%" -m pip install -U pip
@@ -88,3 +95,33 @@ if errorlevel 1 (
   echo UI exited with an error.
 )
 pause
+exit /b 0
+
+:try_python_candidate
+if exist "%~1" goto :try_python_candidate_found
+where "%~1" >nul 2>nul
+if errorlevel 1 exit /b 1
+
+:try_python_candidate_found
+"%~1" -c "import sys, venv; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)" >nul 2>nul
+if errorlevel 1 exit /b 1
+set "BOOTSTRAP_PYTHON=%~1"
+set "BOOTSTRAP_PYTHON_ARGS="
+exit /b 0
+
+:try_py_launcher
+where py >nul 2>nul
+if errorlevel 1 exit /b 1
+py -%~1 -c "import sys, venv; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)" >nul 2>nul
+if errorlevel 1 exit /b 1
+set "BOOTSTRAP_PYTHON=py"
+set "BOOTSTRAP_PYTHON_ARGS=-%~1"
+exit /b 0
+
+:run_bootstrap
+if defined BOOTSTRAP_PYTHON_ARGS (
+  "%BOOTSTRAP_PYTHON%" %BOOTSTRAP_PYTHON_ARGS% %*
+) else (
+  "%BOOTSTRAP_PYTHON%" %*
+)
+exit /b %errorlevel%

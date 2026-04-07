@@ -13,12 +13,25 @@ python_is_supported() {
   "$1" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)'
 }
 
+python_has_venv() {
+  "$1" -c 'import venv' >/dev/null 2>&1
+}
+
 python_has_ui_deps() {
   "$1" -c 'import fastapi, uvicorn, pydantic, requests, multipart' >/dev/null 2>&1
 }
 
 discover_python_candidates() {
-  printf '%s\n' "python3"
+  if [ -n "${VIRTUAL_ENV:-}" ] && [ -x "${VIRTUAL_ENV}/bin/python" ]; then
+    printf '%s\n' "${VIRTUAL_ENV}/bin/python"
+  fi
+
+  local minor=""
+  for minor in 14 13 12 11 10; do
+    printf 'python3.%s\n' "$minor"
+  done
+
+  printf '%s\n' "python3" "python"
 
   local dir=""
   local path=""
@@ -26,11 +39,11 @@ discover_python_candidates() {
   local old_ifs="$IFS"
   IFS=":"
   for dir in $PATH; do
-    for path in "$dir"/python3*; do
+    for path in "$dir"/python*; do
       [ -x "$path" ] || continue
       base="$(basename "$path")"
       case "$base" in
-        python3|python3.[0-9]|python3.[0-9][0-9])
+        python|python3|python3.[0-9]|python3.[0-9][0-9])
           printf '%s\n' "$path"
           ;;
       esac
@@ -46,6 +59,10 @@ resolve_python_bin() {
         echo "PYTHON_BIN must point to Python 3.10 or newer: $PYTHON_BIN" >&2
         exit 1
       fi
+      if ! python_has_venv "$PYTHON_BIN"; then
+        echo "PYTHON_BIN must provide the standard 'venv' module: $PYTHON_BIN" >&2
+        exit 1
+      fi
       printf '%s\n' "$PYTHON_BIN"
       return 0
     fi
@@ -53,14 +70,8 @@ resolve_python_bin() {
     exit 1
   fi
 
-  local best_candidate=""
-  local best_major=0
-  local best_minor=0
   local candidate=""
   local resolved=""
-  local version=""
-  local major=0
-  local minor=0
   while IFS= read -r candidate; do
     [ -n "$candidate" ] || continue
     resolved="$(command -v "$candidate" 2>/dev/null || true)"
@@ -69,29 +80,11 @@ resolve_python_bin() {
     fi
     [ -n "$resolved" ] || continue
 
-    version="$("$resolved" -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")' 2>/dev/null || true)"
-    case "$version" in
-      [0-9]*.[0-9]*) ;;
-      *) continue ;;
-    esac
-
-    major="${version%%.*}"
-    minor="${version##*.}"
-    if [ "$major" -lt 3 ] || { [ "$major" -eq 3 ] && [ "$minor" -lt 10 ]; }; then
-      continue
-    fi
-
-    if [ -z "$best_candidate" ] || [ "$major" -gt "$best_major" ] || { [ "$major" -eq "$best_major" ] && [ "$minor" -gt "$best_minor" ]; }; then
-      best_candidate="$resolved"
-      best_major="$major"
-      best_minor="$minor"
+    if python_is_supported "$resolved" && python_has_venv "$resolved"; then
+      printf '%s\n' "$resolved"
+      return 0
     fi
   done < <(discover_python_candidates | awk '!seen[$0]++')
-
-  if [ -n "$best_candidate" ]; then
-    printf '%s\n' "$best_candidate"
-    return 0
-  fi
 
   echo "Python 3.10 or newer is required. Install python3.10+ or set PYTHON_BIN." >&2
   exit 1
@@ -125,6 +118,8 @@ ensure_project_dependencies() {
 }
 
 BOOTSTRAP_PYTHON="$(resolve_python_bin)"
+BOOTSTRAP_PYTHON_VERSION="$("$BOOTSTRAP_PYTHON" -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")')"
+echo "Using Python interpreter: $BOOTSTRAP_PYTHON (Python $BOOTSTRAP_PYTHON_VERSION)"
 ensure_project_venv "$BOOTSTRAP_PYTHON"
 ensure_project_dependencies
 
