@@ -1,1 +1,0 @@
-import{p as e,h as i,m as d}from"./index-D_BSx2UW.js";function c(a,s){const r=e(s),m=i(a.workflow_data,a.schema_params),o=d(m,r.schemaParams);return{workflowData:r.workflowData,schemaParams:o.schemaParams,workflowId:a.workflow_id,description:a.description||"",editingWorkflowId:a.workflow_id,hasUnsavedChanges:!0,upgradeSummary:o.summary}}export{c as buildVersionUpgradeState};
