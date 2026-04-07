@@ -15,7 +15,12 @@ description: |
 
 As an Agent equipped with the ComfyUI skill, your objective is to translate the user's conversational requests into strict, structured parameters and execute workflows across multi-server environments.
 
-> **Prerequisites**: Install the CLI tool once: `pip install comfyui-skill-cli`. All commands must be run from this project's root directory.
+> **Prerequisites**: Install the CLI tool once: `pip install -U comfyui-skill-cli`. All commands must be run from this project's root directory.
+>
+> [!IMPORTANT]
+> **Directory Sensitivity**: This CLI reads configuration from the local `config.json` and `data/` folder.
+> - **Mandatory**: You **MUST** `cd` into the comfyui-skill project root (where this `SKILL.md` is located) before running any command.
+> - **Symptom**: If `list` returns an empty array `[]` or `server status` reports a server as not found, you are likely in the wrong directory.
 
 ### Quick Reference
 
