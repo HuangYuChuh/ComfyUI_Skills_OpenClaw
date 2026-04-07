@@ -22,8 +22,9 @@ This project converts agent/user natural language requests into structured param
 - `scripts/comfyui_client.py`: Injects args, calls ComfyUI APIs, waits and downloads.
 - `scripts/server_manager.py`: Manage multi-server settings from CLI.
 - `ui/`: FastAPI + frontend dashboard for server/workflow/schema management.
-- `data/<server_id>/workflows`: ComfyUI API workflows.
-- `data/<server_id>/schemas`: Parameter exposure and mapping schema.
+- `data/<server_id>/<workflow_id>/workflow.json`: normalized ComfyUI API workflow.
+- `data/<server_id>/<workflow_id>/schema.json`: parameter exposure and mapping schema.
+- `data/<server_id>/<workflow_id>/history/`: execution history records.
 
 ## Multi-server model
 - Server and workflow each have an enable/disable switch.

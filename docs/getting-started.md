@@ -59,6 +59,14 @@ cd comfyui-skill</code></pre>
     <div class="code-panel">
       <pre><code>pip install comfyui-skill-cli</code></pre>
     </div>
+    <p>If you already installed it, upgrade with:</p>
+    <div class="code-panel">
+      <pre><code># If installed with pipx
+pipx upgrade comfyui-skill-cli
+
+# If installed with pip
+python3 -m pip install -U comfyui-skill-cli</code></pre>
+    </div>
   </section>
 
   <section class="section-card">
@@ -82,7 +90,7 @@ comfyui-skill list</code></pre>
     <h2>Import your first workflow</h2>
     <div class="code-panel">
       <pre><code># Import a workflow JSON (auto-detects format, generates schema)
-comfyui-skill workflow import ./my-workflow.json
+comfyui-skill workflow import /absolute/path/to/my-workflow.json
 
 # Check and install dependencies
 comfyui-skill deps check local/my-workflow
@@ -91,6 +99,18 @@ comfyui-skill deps install local/my-workflow --all
 # Run it
 comfyui-skill run local/my-workflow --args '{"prompt": "a white cat"}'</code></pre>
     </div>
+    <p>
+      For manual CLI imports, prefer passing the workflow JSON as an absolute path.
+      This avoids path ambiguity and keeps the storage model simple.
+    </p>
+    <p>
+      Example:
+      <code>/Users/yourname/Downloads/my-workflow.json</code>
+    </p>
+    <p>
+      The formal storage layout used by the CLI, Web UI, and agent-driven imports is:
+      <code>data/&lt;server_id&gt;/&lt;workflow_id&gt;/workflow.json</code> plus <code>schema.json</code> and <code>history/</code>.
+    </p>
   </section>
 
   <section class="section-card">

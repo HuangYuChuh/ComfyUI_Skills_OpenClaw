@@ -23,7 +23,7 @@
   answer: The schema layer gives the agent a smaller and safer contract with clear aliases, types, descriptions, and required flags, which makes workflow calls more reliable than exposing every node field directly.
 
 - question: How do I import a new workflow?
-  answer: "Use the CLI: 'comfyui-skill workflow import ./my-workflow.json'. It auto-detects the format (editor or API), converts if needed, and generates the schema. Then run 'comfyui-skill deps check' to verify dependencies."
+  answer: "For manual CLI imports, pass the raw workflow JSON as an absolute path, for example 'comfyui-skill workflow import /absolute/path/to/my-workflow.json'. It auto-detects the format (editor or API), converts if needed, and generates the schema under 'data/<server_id>/<workflow_id>/'. Then run 'comfyui-skill deps check' to verify dependencies."
 
 - question: Can I check and install missing dependencies automatically?
   answer: "Yes. Run 'comfyui-skill deps check local/my-workflow' to see what's missing, then 'comfyui-skill deps install local/my-workflow --all' to install missing custom nodes and models via ComfyUI Manager."

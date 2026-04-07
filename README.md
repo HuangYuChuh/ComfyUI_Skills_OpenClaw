@@ -147,6 +147,16 @@ Or:
 pip install comfyui-skill-cli
 ```
 
+If you already have the CLI installed, upgrade it with:
+
+```bash
+# If you installed it with pipx
+pipx upgrade comfyui-skill-cli
+
+# If you installed it with pip
+python3 -m pip install -U comfyui-skill-cli
+```
+
 ### 4. Verify the setup
 
 ```bash
@@ -157,9 +167,28 @@ comfyui-skill list
 ### 5. Import and run your first workflow
 
 ```bash
-comfyui-skill workflow import ./my-workflow.json
+comfyui-skill workflow import /absolute/path/to/my-workflow.json
 comfyui-skill deps check local/my-workflow
 comfyui-skill run local/my-workflow --args '{"prompt": "a white cat"}'
+```
+
+For manual CLI imports, the recommended approach is to pass the workflow JSON as an absolute path. That avoids path ambiguity and keeps the storage model simple.
+
+For example:
+
+```bash
+comfyui-skill workflow import /Users/yourname/Downloads/my-workflow.json
+```
+
+After import, the CLI stores the normalized workflow and schema under `data/<server_id>/<workflow_id>/`, for example `data/local/my-workflow/workflow.json` and `data/local/my-workflow/schema.json`.
+
+This is also the formal layout used by the Web UI and by Agent/OpenClaw-driven imports:
+
+```bash
+data/<server_id>/<workflow_id>/
+  workflow.json
+  schema.json
+  history/
 ```
 
 At this point, the CLI will read your local `config.json`, discover available workflows, and execute them through your ComfyUI server.
@@ -305,8 +334,10 @@ comfyui-skill status <prompt_id>
 ### Import a workflow
 
 ```bash
-comfyui-skill workflow import ./my-workflow.json --check-deps
+comfyui-skill workflow import /absolute/path/to/my-workflow.json --check-deps
 ```
+
+For manual CLI imports, prefer an absolute path. After a successful import, the formal files live under `data/<server_id>/<workflow_id>/`.
 
 ### Check dependencies
 

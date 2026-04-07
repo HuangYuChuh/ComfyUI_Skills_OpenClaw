@@ -148,6 +148,16 @@ pipx install comfyui-skill-cli
 pip install comfyui-skill-cli
 ```
 
+すでに CLI をインストール済みの場合は、次のコマンドで更新できます。
+
+```bash
+# pipx でインストールした場合
+pipx upgrade comfyui-skill-cli
+
+# pip でインストールした場合
+python3 -m pip install -U comfyui-skill-cli
+```
+
 ### 4. セットアップを確認する
 
 ```bash
@@ -158,9 +168,28 @@ comfyui-skill list
 ### 5. 最初のワークフローをインポートして実行する
 
 ```bash
-comfyui-skill workflow import ./my-workflow.json
+comfyui-skill workflow import /absolute/path/to/my-workflow.json
 comfyui-skill deps check local/my-workflow
 comfyui-skill run local/my-workflow --args '{"prompt": "a white cat"}'
+```
+
+手動で CLI からインポートする場合は、workflow JSON の絶対パスをそのまま渡す方法を推奨します。その方が分かりやすく、余計なディレクトリ規約も増えません。
+
+例:
+
+```bash
+comfyui-skill workflow import /Users/yourname/Downloads/my-workflow.json
+```
+
+インポート後、CLI は正規化された workflow と schema を `data/<server_id>/<workflow_id>/` に保存します。たとえば `data/local/my-workflow/workflow.json` と `data/local/my-workflow/schema.json` です。
+
+これは Web UI と Agent/OpenClaw によるインポートでも共通の正式レイアウトです:
+
+```bash
+data/<server_id>/<workflow_id>/
+  workflow.json
+  schema.json
+  history/
 ```
 
 ここまでで、CLI はローカルの `config.json` を読み込み、利用可能なワークフローを発見し、ComfyUI サーバー経由で実行します。
@@ -306,8 +335,10 @@ comfyui-skill status <prompt_id>
 ### ワークフローをインポートする
 
 ```bash
-comfyui-skill workflow import ./my-workflow.json --check-deps
+comfyui-skill workflow import /absolute/path/to/my-workflow.json --check-deps
 ```
+
+手動 CLI インポートでは、絶対パスを直接渡す方法を推奨します。インポート成功後、正式ファイルは `data/<server_id>/<workflow_id>/` に保存されます。
 
 ### 依存関係を確認する
 

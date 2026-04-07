@@ -147,6 +147,16 @@ pipx install comfyui-skill-cli
 pip install comfyui-skill-cli
 ```
 
+如果你已经安装过 CLI，升级命令如下：
+
+```bash
+# 如果你是用 pipx 安装的
+pipx upgrade comfyui-skill-cli
+
+# 如果你是用 pip 安装的
+python3 -m pip install -U comfyui-skill-cli
+```
+
 ### 4. 验证环境
 
 ```bash
@@ -157,9 +167,28 @@ comfyui-skill list
 ### 5. 导入并运行第一个工作流
 
 ```bash
-comfyui-skill workflow import ./my-workflow.json
+comfyui-skill workflow import /absolute/path/to/my-workflow.json
 comfyui-skill deps check local/my-workflow
 comfyui-skill run local/my-workflow --args '{"prompt": "a white cat"}'
+```
+
+手动使用 CLI 导入时，推荐直接传 workflow JSON 的绝对路径，这样最不容易出错，也不会引入额外的目录规范。
+
+例如：
+
+```bash
+comfyui-skill workflow import /Users/yourname/Downloads/my-workflow.json
+```
+
+导入完成后，CLI 会把标准化后的工作流和 schema 保存到 `data/<server_id>/<workflow_id>/` 下，例如 `data/local/my-workflow/workflow.json` 和 `data/local/my-workflow/schema.json`。
+
+这也是 Web UI 和 Agent/OpenClaw 导入时遵循的正式目录规范：
+
+```bash
+data/<server_id>/<workflow_id>/
+  workflow.json
+  schema.json
+  history/
 ```
 
 到这里，CLI 就会读取本地 `config.json`，发现可用工作流，并通过你的 ComfyUI 服务器执行它们。
@@ -305,8 +334,10 @@ comfyui-skill status <prompt_id>
 ### 导入工作流
 
 ```bash
-comfyui-skill workflow import ./my-workflow.json --check-deps
+comfyui-skill workflow import /absolute/path/to/my-workflow.json --check-deps
 ```
+
+推荐手动 CLI 导入时直接传绝对路径。导入成功后，正式文件会写入 `data/<server_id>/<workflow_id>/`。
 
 ### 检查依赖
 
