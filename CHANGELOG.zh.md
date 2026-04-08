@@ -4,6 +4,24 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/)，版本号遵循[语义化版本](https://semver.org/)。
 
+## [0.4.0] - 2026-04-08
+
+### Added
+
+- **CLI 优先架构** — 所有工作流操作统一通过独立的 [ComfyUI Skill CLI](https://github.com/HuangYuChuh/ComfyUI_Skill_CLI) 执行，旧版 Python 脚本已移除 (#89 ~ #98)
+- **多语言 README** — 新增简体中文、繁体中文、日语版本 (#105)
+- **日语 UI** — 前端新增日语界面支持 (#115)
+
+### Fixed
+
+- **重复节点参数丢失** — 工作流中存在重复节点时，参数因 schema 名称冲突被覆盖 (#87, #88)
+- **Web UI 上传依赖修复** — 修复 Web UI 中上传功能异常 (#111)
+
+### Improved
+
+- 重新设计 README 徽章和横幅图 (#107, #112, #116, #117)
+- SKILL.md 全面改写为 CLI 命令参考 (#91, #92, #101)
+
 ## [0.3.1] - 2026-03-30
 
 ### Added

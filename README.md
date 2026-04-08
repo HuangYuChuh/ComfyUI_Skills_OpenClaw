@@ -468,9 +468,9 @@ Then install supported dependencies if needed.
 
 Recent highlights:
 
+- **v0.4.0**: Migrated to [CLI-first architecture](https://github.com/HuangYuChuh/ComfyUI_Skill_CLI) — all workflow operations (`run`, `submit`, `status`, `import`, `deps`) now go through a standalone CLI tool; legacy Python scripts have been removed.
 - **v0.3.1**: Added ComfyUI API Key support for cloud API nodes such as Kling, Sora, and Nano Banana.
 - **v0.3.0**: Added dependency check and install, non-blocking `submit` and `status`, image upload, import preview, and execution history.
-- **v0.2.0**: Moved frontend source code into a separate repository and added automated frontend sync support.
 
 See [CHANGELOG.md](./CHANGELOG.md) for the full release history.
 

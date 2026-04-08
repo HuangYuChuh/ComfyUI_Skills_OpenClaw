@@ -469,9 +469,9 @@ comfyui-skill deps check <workflow_id>
 
 最近の主な更新:
 
+- **v0.4.0**: [CLI ファーストアーキテクチャ](https://github.com/HuangYuChuh/ComfyUI_Skill_CLI)へ移行 — すべてのワークフロー操作（`run`、`submit`、`status`、`import`、`deps`）をスタンドアロン CLI に統一、レガシー Python スクリプトを削除
 - **v0.3.1**: Kling、Sora、Nano Banana などのクラウド API ノード向けに ComfyUI API Key サポートを追加
 - **v0.3.0**: 依存関係チェックとインストール、非同期 `submit` / `status`、画像アップロード、インポートプレビュー、実行履歴を追加
-- **v0.2.0**: フロントエンドのソースコードを別リポジトリへ移し、自動同期フローを追加
 
 完全な変更履歴は [CHANGELOG.md](./CHANGELOG.md) を参照してください。
 

@@ -468,9 +468,9 @@ comfyui-skill deps check <workflow_id>
 
 最近的重要更新：
 
+- **v0.4.0**：遷移至 [CLI 優先架構](https://github.com/HuangYuChuh/ComfyUI_Skill_CLI) — 所有工作流操作（`run`、`submit`、`status`、`import`、`deps`）統一透過獨立 CLI 執行，舊版 Python 腳本已移除。
 - **v0.3.1**：新增 ComfyUI API Key 支援，可用於 Kling、Sora、Nano Banana 等雲 API 節點。
 - **v0.3.0**：新增依賴檢查與安裝、非阻塞 `submit` / `status`、圖片上傳、匯入預覽與執行歷史。
-- **v0.2.0**：將前端原始碼拆分到獨立倉庫，並加入前端自動同步能力。
 
 完整版本記錄見 [CHANGELOG.zh.md](./CHANGELOG.zh.md)。
 

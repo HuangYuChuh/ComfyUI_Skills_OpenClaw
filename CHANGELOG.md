@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-04-08
+
+### Added
+
+- **CLI-first architecture** — All workflow operations now go through the standalone [ComfyUI Skill CLI](https://github.com/HuangYuChuh/ComfyUI_Skill_CLI). Legacy Python scripts have been removed (#89 ~ #98)
+- **Multilingual README** — Added Simplified Chinese, Traditional Chinese, and Japanese translations (#105)
+- **Japanese UI** — Frontend now supports Japanese locale (#115)
+
+### Fixed
+
+- **Duplicate node parameter collision** — Workflows with duplicate nodes no longer lose parameters due to schema name collision (#87, #88)
+- **Web UI upload dependency** — Fixed broken upload functionality in the web UI (#111)
+
+### Improved
+
+- Redesigned README badges and banner (#107, #112, #116, #117)
+- SKILL.md rewritten with full CLI command reference (#91, #92, #101)
+
 ## [0.3.1] - 2026-03-30
 
 ### Added
