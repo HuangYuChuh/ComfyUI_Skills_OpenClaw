@@ -77,6 +77,35 @@ def _get_auto_mapping(node_class: str, field: str) -> dict[str, Any]:
         if field == "num":
             return {"exposed": True, "required": False, "description": "Number of images to generate"}
 
+    # Audio text encoder nodes (AceStep, etc.)
+    if "AceStep" in node_class or "AudioTextEncode" in node_class:
+        if field == "tags":
+            return {"exposed": True, "required": True, "description": "Music style/genre tags"}
+        if field == "lyrics":
+            return {"exposed": True, "required": False, "description": "Song lyrics"}
+        if field == "bpm":
+            return {"exposed": True, "required": False, "description": "Beats per minute"}
+        if field == "duration":
+            return {"exposed": True, "required": False, "description": "Audio duration"}
+        if field == "language":
+            return {"exposed": True, "required": False, "description": "Language code"}
+        if field == "keyscale":
+            return {"exposed": True, "required": False, "description": "Musical key and scale"}
+        if field == "cfg_scale":
+            return {"exposed": True, "required": False, "description": "Classifier-free guidance scale"}
+        if field == "temperature":
+            return {"exposed": True, "required": False, "description": "Sampling temperature"}
+        if field == "seed":
+            return {"exposed": True, "required": False, "description": "Random seed"}
+
+    # Audio save nodes
+    if "SaveAudio" in node_class and field == "filename_prefix":
+        return {"exposed": True, "required": False, "description": "Output file prefix"}
+
+    # Audio latent nodes
+    if "LatentAudio" in node_class and field == "seconds":
+        return {"exposed": True, "required": False, "description": "Duration in seconds"}
+
     if field in {"text", "prompt"}:
         return {"exposed": True, "required": True, "description": "Text prompt"}
     if field == "seed":
@@ -85,6 +114,12 @@ def _get_auto_mapping(node_class: str, field: str) -> dict[str, Any]:
         return {"exposed": True, "required": False, "description": f"Workflow parameter: {field}"}
     if field == "filename_prefix":
         return {"exposed": True, "required": False, "description": "Output file prefix"}
+
+    # Generic audio parameter fallbacks
+    if field in {"tags", "lyrics"}:
+        return {"exposed": True, "required": field == "tags", "description": f"Audio parameter: {field}"}
+    if field in {"bpm", "duration", "seconds", "cfg_scale", "temperature", "keyscale", "language"}:
+        return {"exposed": True, "required": False, "description": f"Audio parameter: {field}"}
 
     return {"exposed": False, "required": False, "description": ""}
 

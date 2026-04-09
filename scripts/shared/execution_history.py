@@ -53,6 +53,8 @@ def build_run_record(
         "result": {
             "images": [],
             "image_count": 0,
+            "audio": [],
+            "audio_count": 0,
         },
         "error": None,
     }
@@ -139,5 +141,7 @@ def summarize_run_record(record: dict[str, Any]) -> dict[str, Any]:
         "resolved_args": record.get("resolved_args") if isinstance(record.get("resolved_args"), dict) else {},
         "image_count": result.get("image_count", 0),
         "images": result.get("images", []) if isinstance(result.get("images"), list) else [],
+        "audio_count": result.get("audio_count", 0),
+        "audio": result.get("audio", []) if isinstance(result.get("audio"), list) else [],
         "error_message": error.get("message") if isinstance(error.get("message"), str) else "",
     }
