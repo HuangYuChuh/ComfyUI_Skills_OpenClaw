@@ -7,6 +7,10 @@ description: |
   (1) The user requests to "generate an image", "draw a picture", or "execute a ComfyUI workflow".
   (2) The user has specific stylistic, character, or scene requirements for image generation.
   (3) The user asks you to import, register, sync, or configure saved ComfyUI workflows for later reuse.
+metadata:
+  requires:
+    bins: ["comfyui-skill"]
+  cliHelp: "comfyui-skill --help"
 ---
 
 # ComfyUI Agent SKILL
