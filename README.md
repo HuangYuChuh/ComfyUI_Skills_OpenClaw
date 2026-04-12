@@ -51,21 +51,6 @@ Use it when you want to import existing ComfyUI workflows, expose only the param
 | Multi-machine setups | One namespace for local and remote ComfyUI servers |
 | Users who want visual setup and testing | An optional Web UI for configuring, previewing, and validating workflows before agents use them |
 
-## Why This Project
-
-Working with ComfyUI directly is powerful, but not ideal for agent-driven execution.
-
-Raw workflow graphs are noisy, fragile, and difficult for an agent to use safely. Direct API calls also require you to manually manage parameter injection, workflow naming, server selection, dependency checks, and output handling. This project adds a stable abstraction layer on top of ComfyUI so agents can discover workflows, call them with structured arguments, and get predictable results.
-
-Compared with working directly against ComfyUI workflows or lower-level tooling, the CLI in this project is designed to be more agent-friendly: clearer inputs, safer parameter exposure, better workflow discovery, and more predictable execution results.
-
-This makes the project useful when you want to:
-
-- Turn an existing ComfyUI workflow into an agent tool
-- Expose a safe parameter contract instead of the full graph
-- Run workflows across multiple ComfyUI servers
-- Reuse the same workflow setup across OpenClaw, Codex, Claude Code, and similar agents
-
 ## Features
 
 | Capability | Why it matters |
@@ -215,19 +200,7 @@ Use this path if you want coding agents to call ComfyUI workflows through shell 
 
 ### Web UI
 
-Use this path if you want a visual interface for configuration, inspection, and testing while keeping the CLI as the primary agent-facing interface.
-
-```bash
-./ui/run_ui.sh
-```
-
-The launch script automatically creates a project `.venv` if needed and installs the required UI dependencies into that virtual environment.
-
-Then open:
-
-```text
-http://localhost:18189
-```
+Use this path if you want a visual interface for configuration, inspection, and testing. See the [Web UI](#web-ui) section below for launch instructions and details.
 
 ### Manual Setup
 
@@ -281,43 +254,14 @@ data/local/my-workflow/
 
 </details>
 
-## How It Works
-
-The project adds a controlled execution layer between agents and ComfyUI workflows.
-
-1. Export a workflow from ComfyUI in API format.
-2. Import the workflow and define which parameters should be exposed.
-3. Store that mapping in `schema.json`.
-4. Call the workflow through `comfyui-skill` with structured arguments.
-5. Submit the job to the target ComfyUI server and return generated outputs.
-
-In practice, the flow looks like this:
-
-```text
-ComfyUI workflow.json
-  -> schema.json parameter mapping
-  -> comfyui-skill CLI
-  -> ComfyUI server
-  -> generated image outputs
-```
-
-This structure lets agents work with a stable contract instead of reasoning about raw ComfyUI graph nodes.
-
 ## Common Commands
 
-Use these commands for the most common workflow operations.
+Beyond the commands shown in [Quick Start](#quick-start), here are additional operations you may need:
 
-### Discover workflows
+### Inspect a workflow
 
 ```bash
-comfyui-skill list
 comfyui-skill info local/txt2img
-```
-
-### Run a workflow
-
-```bash
-comfyui-skill run local/txt2img --args '{"prompt": "a white cat"}'
 ```
 
 ### Submit a workflow asynchronously
@@ -327,30 +271,14 @@ comfyui-skill submit local/txt2img --args '{"prompt": "a white cat"}'
 comfyui-skill status <prompt_id>
 ```
 
-### Import a workflow
-
-```bash
-comfyui-skill workflow import /absolute/path/to/my-workflow.json --check-deps
-```
-
-For manual CLI imports, prefer an absolute path. After a successful import, the formal files live under `data/<server_id>/<workflow_id>/`.
-
-### Check dependencies
-
-```bash
-comfyui-skill deps check local/my-workflow
-comfyui-skill deps install local/my-workflow --all
-```
-
 ### Manage servers
 
 ```bash
 comfyui-skill server list
 comfyui-skill server add --id remote --url http://10.0.0.1:8188
-comfyui-skill server status
 ```
 
-For the full CLI reference, see [ComfyUI Skill CLI](https://github.com/HuangYuChuh/ComfyUI_Skill_CLI).
+For the full CLI reference, run `comfyui-skill --help` or see [ComfyUI Skill CLI](https://github.com/HuangYuChuh/ComfyUI_Skill_CLI).
 
 ## Workflow Requirements
 
