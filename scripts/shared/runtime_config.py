@@ -125,53 +125,19 @@ def migrate_workflow_storage_layout() -> None:
         _migrate_server_storage_layout(server_dir.name)
 
 
-def _apply_env_overrides(config: dict[str, object]) -> dict[str, object]:
-    """Apply environment variable overrides to a COPY of the config.
-
-    Supported:
-      COMFYUI_SERVER_URL   — override default server's URL
-      COMFYUI_SERVER_ID    — override which server is default
-
-    Returns a shallow-copied config so env overrides never pollute the
-    persisted config.json when other code paths call save_json().
-    """
-    import copy
-    import os
-
-    env_url = os.environ.get("COMFYUI_SERVER_URL")
-    env_default = os.environ.get("COMFYUI_SERVER_ID")
-
-    if not env_url and not env_default:
-        return config
-
-    config = copy.deepcopy(config)
-
-    if env_default:
-        config["default_server"] = env_default
-
-    if env_url:
-        default_id = str(config.get("default_server", DEFAULT_SERVER_ID))
-        for server in config.get("servers", []):
-            if isinstance(server, dict) and server.get("id") == default_id:
-                server["url"] = env_url
-                break
-
-    return config
-
-
 def get_runtime_config() -> dict[str, object]:
     """Load the full multi-server config, migrating from legacy format if needed."""
     migrate_legacy_config()
     migrate_workflow_storage_layout()
 
     if not CONFIG_PATH.exists():
-        return _apply_env_overrides(default_config())
+        return default_config()
 
     loaded = load_json(CONFIG_PATH)
     if not isinstance(loaded, dict) or "servers" not in loaded:
-        return _apply_env_overrides(default_config())
+        return default_config()
 
-    return _apply_env_overrides(loaded)
+    return loaded
 
 
 def get_server_by_id(server_id: str) -> dict[str, object] | None:
