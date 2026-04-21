@@ -126,16 +126,25 @@ def migrate_workflow_storage_layout() -> None:
 
 
 def _apply_env_overrides(config: dict[str, object]) -> dict[str, object]:
-    """Apply environment variable overrides to server config.
+    """Apply environment variable overrides to a COPY of the config.
 
     Supported:
       COMFYUI_SERVER_URL   — override default server's URL
       COMFYUI_SERVER_ID    — override which server is default
+
+    Returns a shallow-copied config so env overrides never pollute the
+    persisted config.json when other code paths call save_json().
     """
+    import copy
     import os
 
     env_url = os.environ.get("COMFYUI_SERVER_URL")
     env_default = os.environ.get("COMFYUI_SERVER_ID")
+
+    if not env_url and not env_default:
+        return config
+
+    config = copy.deepcopy(config)
 
     if env_default:
         config["default_server"] = env_default
