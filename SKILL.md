@@ -1,7 +1,7 @@
 ---
 name: comfyui-skill-openclaw
 description: |
-  Run ComfyUI workflows from any AI agent (Claude Code, OpenClaw, Codex) via a single CLI.
+  Run ComfyUI workflows from any AI agent (Claude Code, OpenClaw, Codex, Hermes) via a single CLI.
   Import workflows, manage dependencies, execute across multiple servers, and track history
   — all through shell commands.
 
@@ -9,10 +9,19 @@ description: |
   (1) The user requests to "generate an image", "draw a picture", or "execute a ComfyUI workflow".
   (2) The user has specific stylistic, character, or scene requirements for image generation.
   (3) The user asks you to import, register, sync, or configure saved ComfyUI workflows for later reuse.
+version: 1.0.0
+license: Apache-2.0
+platforms: [macos, linux, windows]
+prerequisites:
+  commands: ["comfyui-skill"]
+  env_vars: []
 metadata:
   requires:
     bins: ["comfyui-skill"]
   cliHelp: "comfyui-skill --help"
+  hermes:
+    tags: [image-generation, comfyui, ai-art, workflow, stable-diffusion, flux]
+    related_skills: []
 ---
 
 # ComfyUI Agent SKILL
