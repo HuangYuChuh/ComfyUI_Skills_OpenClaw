@@ -21,6 +21,23 @@ def file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def find_duplicate_run(server_id: str, workflow_id: str, job_id: str) -> dict[str, Any] | None:
+    """Check if a run with this job_id already exists (idempotency guard)."""
+    if not job_id:
+        return None
+    history_dir = get_server_history_dir(server_id, workflow_id)
+    if not history_dir.exists():
+        return None
+    for path in history_dir.glob("*.json"):
+        try:
+            payload = load_json(path)
+        except Exception:
+            continue
+        if isinstance(payload, dict) and payload.get("job_id") == job_id:
+            return payload
+    return None
+
+
 def build_run_record(
     server_id: str,
     workflow_id: str,
@@ -28,9 +45,12 @@ def build_run_record(
     raw_args: dict[str, Any],
     workflow_path: Path,
     schema_path: Path,
+    *,
+    job_id: str = "",
 ) -> dict[str, Any]:
     timestamp = utc_now_iso()
     return {
+        "job_id": job_id,
         "run_id": run_id,
         "server_id": server_id,
         "workflow_id": workflow_id,

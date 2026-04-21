@@ -75,6 +75,7 @@ class WorkflowSummary:
     source_label: str = ""
     tags: list[str] = field(default_factory=list)
     has_history: bool = False
+    param_count: int = 0
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -87,6 +88,7 @@ class WorkflowSummary:
             "origin": self.origin,
             "source_label": self.source_label,
             "tags": self.tags,
+            "param_count": self.param_count,
             # Keep the key for backward compatibility with older bundles,
             # but always disable the list-level history entry point.
             "has_history": False,
@@ -230,6 +232,7 @@ class UIStorageService:
                 origin = ""
                 source_label = ""
                 tags: list[str] = []
+                param_count = 0
                 try:
                     schema_data = _read_json(schema_path, fallback={})
                     if isinstance(schema_data, dict):
@@ -240,6 +243,9 @@ class UIStorageService:
                         raw_tags = schema_data.get("tags")
                         if isinstance(raw_tags, list):
                             tags = [str(tag) for tag in raw_tags if str(tag).strip()]
+                        params = schema_data.get("parameters")
+                        if isinstance(params, dict):
+                            param_count = len(params)
                 except Exception:
                     enabled = True
 
@@ -257,6 +263,7 @@ class UIStorageService:
                     source_label=source_label,
                     tags=tags,
                     has_history=False,
+                    param_count=param_count,
                 ))
 
             server_workflows.sort(
